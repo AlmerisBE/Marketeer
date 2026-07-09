@@ -1,0 +1,13 @@
+{
+  "Author": "Almeris",
+  "Name": "BasePlugin",
+  "InternalName": "BasePlugin",
+  "AssemblyVersion": "0.0.0.1",
+  "Description": "Plugin base for Dalamud development",
+  "ApplicableVersion": "any",
+  "DalamudApiLevel": 15,
+  "LoadRequiredState": 0,
+  "LoadSync": false,
+  "LoadPriority": 0,
+  "Punchline": "Use this as a base to develop your own plugin."
+}

@@ -1,0 +1,11 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="BasePlugin.Tests/BasePlugin.Tests.csproj" Id="a0a8d917-fcb7-468e-866a-87d41dcfbff3">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="BasePlugin/BasePlugin.csproj" Id="96a435a5-e91a-4685-aa82-b4317d2313d1">
+    <Platform Project="x64" />
+  </Project>
+</Solution>
