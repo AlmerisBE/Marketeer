@@ -55,23 +55,29 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
         var fetchedListings = this.listingProvider.GetActiveRetainerListings();
         var config = this.configService.GetConfig();
-        config.KnownListings ??= [];
+        config.KnownListings ??= new List<TrackedListing>();
 
+        // 1. Isolate existing listings to preserve prices if the UI parser returns 0
+        var existingListings = config.KnownListings
+            .Where(l => l.AssociatedRetainerId == activeRetainerId.Value)
+            .ToList();
+
+        // 2. Brutally remove ALL known listings for this retainer to purge any legacy duplicates
+        config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value);
+
+        // 3. Merge fresh data and fallback to previous prices if current UI parsing failed
         foreach (var fetched in fetchedListings) {
-            var existing = config.KnownListings.FirstOrDefault(l => l.AssociatedRetainerId == activeRetainerId.Value && l.SlotIndex == fetched.SlotIndex);
+            var existing = existingListings.FirstOrDefault(l => l.SlotIndex == fetched.SlotIndex)
+                        ?? existingListings.FirstOrDefault(l => l.ItemId == fetched.ItemId);
+
             if (existing != null) {
-                existing.ItemId = fetched.ItemId;
-                existing.Quantity = fetched.Quantity;
-                if (fetched.PricePerUnit > 0) {
-                    existing.PricePerUnit = fetched.PricePerUnit;
+                if (fetched.PricePerUnit == 0 && existing.PricePerUnit > 0) {
+                    fetched.PricePerUnit = existing.PricePerUnit;
                 }
             }
-            else {
-                config.KnownListings.Add(fetched);
-            }
-        }
 
-        config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value && !fetchedListings.Any(f => f.SlotIndex == l.SlotIndex));
+            config.KnownListings.Add(fetched);
+        }
 
         this.configService.Save();
         this.logger.Info($"Successfully recorded {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");

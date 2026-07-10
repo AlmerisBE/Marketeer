@@ -24,7 +24,8 @@ public class GameEventService : IGameEventService, IDisposable {
 
         this.condition.ConditionChange += this.OnConditionChange;
 
-        this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", this.OnRetainerSellListOpened);
+        // Changed to PostRefresh to ensure UI nodes are populated with text data before parsing
+        this.addonLifecycle.RegisterListener(AddonEvent.PostRefresh, "RetainerSellList", this.OnRetainerSellListOpened);
         this.addonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnRetainerSellClosed);
     }
 
@@ -36,7 +37,7 @@ public class GameEventService : IGameEventService, IDisposable {
     }
 
     private void OnRetainerSellListOpened(AddonEvent type, AddonArgs args) {
-        this.logger.Debug("Retainer sell list addon opened.");
+        this.logger.Debug("Retainer sell list addon populated and refreshed.");
         this.RetainerListingsOpened?.Invoke();
     }
 
@@ -47,7 +48,7 @@ public class GameEventService : IGameEventService, IDisposable {
 
     public void Dispose() {
         this.condition.ConditionChange -= this.OnConditionChange;
-        this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "RetainerSellList", this.OnRetainerSellListOpened);
+        this.addonLifecycle.UnregisterListener(AddonEvent.PostRefresh, "RetainerSellList", this.OnRetainerSellListOpened);
         this.addonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnRetainerSellClosed);
     }
 }

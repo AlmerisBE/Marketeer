@@ -39,7 +39,6 @@ public class GameEventServiceTests {
         service.RetainerListingsOpened += () => eventFired = true;
 
         // Act
-        // Match the updated addon name: "RetainerSellList"
         var call = mockAddonLifecycle.ReceivedCalls()
             .FirstOrDefault(c => c.GetMethodInfo().Name == "RegisterListener" && (string)c.GetArguments()[1]! == "RetainerSellList");
 
@@ -48,7 +47,8 @@ public class GameEventServiceTests {
         var capturedDelegate = call.GetArguments()[2] as Delegate;
         Assert.NotNull(capturedDelegate);
 
-        capturedDelegate.DynamicInvoke(AddonEvent.PostSetup, null);
+        // Updated event type to match PostRefresh
+        capturedDelegate.DynamicInvoke(AddonEvent.PostRefresh, null);
 
         // Assert
         Assert.True(eventFired);
