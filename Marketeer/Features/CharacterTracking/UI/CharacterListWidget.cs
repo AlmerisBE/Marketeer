@@ -43,8 +43,8 @@ public class CharacterListWidget : IDashboardWidget {
             var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
             var headerText = $"{character.Name} ({worldName})###{character.Name}_{character.HomeWorldId}";
 
-            // Framed gives the "bubble" look. AllowOverlap lets us put the button on the same line.
-            var treeFlags = ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.AllowOverlap;
+            // Use AllowItemOverlap instead of AllowOverlap to match Dalamud's current ImGui bindings
+            var treeFlags = ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.AllowItemOverlap;
 
             bool isExpanded = ImGui.TreeNodeEx(headerText, treeFlags);
 
