@@ -1,14 +1,12 @@
 {
   "CharacterList_TabName": "キャラクター",
   "CharacterList_NoCharacters": "まだキャラクターが記録されていません。開始するにはキャラクターにログインしてください。",
-  "CharacterList_ColName": "キャラクター名",
-  "CharacterList_ColWorld": "ホームワールド",
-  "CharacterList_ColActions": "アクション",
   "CharacterList_BtnForget": "忘れる",
   "CharacterList_TooltipForget": "現在ログインしているキャラクターを忘れることはできません。",
+  "CharacterList_NoRetainers": "リテイナーが見つかりません。",
+  "CharacterList_RetainerColName": "リテイナー名",
   "Command_Characters_Description": "チャットで記録されたすべてのキャラクターをリストします。",
   "Command_Characters_NoCharacters": "まだキャラクターが記録されていません。",
   "Command_Characters_Header": "記録されたキャラクター:",
-  "Command_Characters_Line": "- {0} ({1})",
-  "CharacterList_NoRetainers": "リテイナーが見つかりません。"
+  "Command_Characters_Line": "- {0} ({1})"
 }

@@ -1,14 +1,12 @@
 {
   "CharacterList_TabName": "Charaktere",
   "CharacterList_NoCharacters": "Noch keine Charaktere erfasst. Logge dich mit einem Charakter ein, um zu beginnen.",
-  "CharacterList_ColName": "Charaktername",
-  "CharacterList_ColWorld": "Heimatwelt",
-  "CharacterList_ColActions": "Aktionen",
   "CharacterList_BtnForget": "Vergessen",
   "CharacterList_TooltipForget": "Du kannst den aktuell eingeloggten Charakter nicht vergessen.",
+  "CharacterList_NoRetainers": "Keine Gehilfen gefunden.",
+  "CharacterList_RetainerColName": "Gehilfenname",
   "Command_Characters_Description": "Listet alle erfassten Charaktere im Chat auf.",
   "Command_Characters_NoCharacters": "Noch keine Charaktere erfasst.",
   "Command_Characters_Header": "Erfasste Charaktere:",
-  "Command_Characters_Line": "- {0} ({1})",
-  "CharacterList_NoRetainers": "Keine Gehilfen gefunden"
+  "Command_Characters_Line": "- {0} ({1})"
 }

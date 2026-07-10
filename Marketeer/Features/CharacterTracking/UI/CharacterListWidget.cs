@@ -18,7 +18,7 @@ public class CharacterListWidget : IDashboardWidget {
         ICharacterTrackerService trackerService,
         IWorldDataPresenter worldDataPresenter,
         ILocalizationService localizationService,
-        IRetainerDataPresenter retainerDataPresenter) { // Dependency Injected here
+        IRetainerDataPresenter retainerDataPresenter) {
 
         this.trackerService = trackerService;
         this.worldDataPresenter = worldDataPresenter;
@@ -34,69 +34,66 @@ public class CharacterListWidget : IDashboardWidget {
             return;
         }
 
-        if (ImGui.BeginTable("CharacterTable", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
-            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColName"));
-            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColWorld"));
-            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColActions"), ImGuiTableColumnFlags.WidthFixed, 100f);
-            ImGui.TableHeadersRow();
+        var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
+        var forgetTooltip = this.localizationService.Translate("CharacterList_TooltipForget");
+        var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
+        var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
 
-            var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
-            var forgetTooltip = this.localizationService.Translate("CharacterList_TooltipForget");
-            var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
+        foreach (var character in characters) {
+            var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
+            var headerText = $"{character.Name} ({worldName})###{character.Name}_{character.HomeWorldId}";
 
-            foreach (var character in characters) {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+            // Framed gives the "bubble" look. AllowOverlap lets us put the button on the same line.
+            var treeFlags = ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.AllowOverlap;
 
-                // Using TreeNodeEx to create the accordion effect over the entire row width
-                bool isExpanded = ImGui.TreeNodeEx($"{character.Name}##{character.HomeWorldId}", ImGuiTreeNodeFlags.SpanFullWidth);
+            bool isExpanded = ImGui.TreeNodeEx(headerText, treeFlags);
 
-                ImGui.TableNextColumn();
-                var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
-                ImGui.Text(worldName);
+            // Calculate position to align the Forget button to the right of the header
+            var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + 16f; // Add padding to text size
+            ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - buttonWidth);
 
-                ImGui.TableNextColumn();
+            var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
+            if (isActive) {
+                ImGui.BeginDisabled();
+            }
 
-                var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
-                if (isActive) {
-                    ImGui.BeginDisabled();
+            if (ImGui.Button($"{forgetLabel}##btn_{character.Name}_{character.HomeWorldId}")) {
+                this.trackerService.ForgetCharacter(character.Name, character.HomeWorldId);
+            }
+
+            if (isActive) {
+                ImGui.EndDisabled();
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                    ImGui.SetTooltip(forgetTooltip);
                 }
+            }
 
-                if (ImGui.Button($"{forgetLabel}##btn_{character.Name}_{character.HomeWorldId}")) {
-                    this.trackerService.ForgetCharacter(character.Name, character.HomeWorldId);
+            // Draw the retainers table inside the accordion if expanded
+            if (isExpanded) {
+                var retainers = this.retainerDataPresenter.GetRetainers(character.Name, character.HomeWorldId);
+
+                if (retainers.Count == 0) {
+                    ImGui.TextDisabled(noRetainersLabel);
                 }
+                else {
+                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 1, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+                        ImGui.TableSetupColumn(retainerColName);
+                        ImGui.TableHeadersRow();
 
-                if (isActive) {
-                    ImGui.EndDisabled();
-                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-                        ImGui.SetTooltip(forgetTooltip);
-                    }
-                }
-
-                // If the user expanded the character accordion, query and draw the retainers
-                if (isExpanded) {
-                    var retainers = this.retainerDataPresenter.GetRetainers(character.Name, character.HomeWorldId);
-
-                    if (retainers.Count == 0) {
-                        ImGui.TableNextRow();
-                        ImGui.TableNextColumn();
-                        ImGui.Text($"   {noRetainersLabel}");
-                        ImGui.TableNextColumn(); // Empty
-                        ImGui.TableNextColumn(); // Empty
-                    }
-                    else {
                         foreach (var retainer in retainers) {
                             ImGui.TableNextRow();
                             ImGui.TableNextColumn();
-                            ImGui.Text($"   - {retainer.Name}");
-                            ImGui.TableNextColumn(); // Keep empty for visual hierarchy
-                            ImGui.TableNextColumn(); // Keep empty for visual hierarchy
+                            ImGui.Text(retainer.Name);
                         }
+
+                        ImGui.EndTable();
                     }
-                    ImGui.TreePop();
                 }
+
+                // Add some spacing after the table for visual breathing room
+                ImGui.Spacing();
+                ImGui.TreePop();
             }
-            ImGui.EndTable();
         }
     }
 }

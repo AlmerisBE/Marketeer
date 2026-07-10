@@ -1,14 +1,12 @@
 {
   "CharacterList_TabName": "Personnages",
   "CharacterList_NoCharacters": "Aucun personnage suivi pour le moment. Connectez-vous à un personnage pour commencer.",
-  "CharacterList_ColName": "Nom du personnage",
-  "CharacterList_ColWorld": "Monde d'origine",
-  "CharacterList_ColActions": "Actions",
   "CharacterList_BtnForget": "Oublier",
   "CharacterList_TooltipForget": "Vous ne pouvez pas oublier le personnage actuellement connecté.",
+  "CharacterList_NoRetainers": "Aucun servant trouvé.",
+  "CharacterList_RetainerColName": "Nom du servant",
   "Command_Characters_Description": "Liste tous les personnages suivis dans le chat.",
   "Command_Characters_NoCharacters": "Aucun personnage suivi pour le moment.",
   "Command_Characters_Header": "Personnages suivis :",
-  "Command_Characters_Line": "- {0} ({1})",
-  "CharacterList_NoRetainers": "Aucun servant trouvé."
+  "Command_Characters_Line": "- {0} ({1})"
 }
