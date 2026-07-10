@@ -1,3 +1,5 @@
 {
-  "Dashboard_Title": "Marketeer - Tableau de bord"
+  "Dashboard_Title": "Marketeer - Tableau de bord",
+  "Dashboard_PriceUpdateRequired": "Prix à mettre à jour",
+  "Dashboard_SyncRequired": "Désynchronisation détectée. Ouvrez la liste des ventes."
 }

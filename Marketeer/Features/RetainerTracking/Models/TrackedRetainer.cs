@@ -7,6 +7,8 @@ public class TrackedRetainer {
     public ulong RetainerId { get; set; }
     public string Name { get; set; } = string.Empty;
 
+    public uint MarketItemCount { get; set; }
+
     public string AssociatedCharacterName { get; set; } = string.Empty;
     public uint AssociatedHomeWorldId { get; set; }
 

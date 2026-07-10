@@ -15,9 +15,9 @@ public class GameEventServiceTests {
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockLogger = Substitute.For<ILoggerService>();
-        var mockFramework = Substitute.For<IFramework>();
 
-        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger, mockFramework);
+        // Instantiated with 3 arguments, matching the updated service constructor
+        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger);
         var eventFired = false;
         service.RetainerBellOpened += () => eventFired = true;
 
@@ -34,9 +34,8 @@ public class GameEventServiceTests {
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockLogger = Substitute.For<ILoggerService>();
-        var mockFramework = Substitute.For<IFramework>();
 
-        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger, mockFramework);
+        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger);
         var eventFired = false;
         service.RetainerListingsOpened += () => eventFired = true;
 
@@ -61,9 +60,8 @@ public class GameEventServiceTests {
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockLogger = Substitute.For<ILoggerService>();
-        var mockFramework = Substitute.For<IFramework>();
 
-        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger, mockFramework);
+        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger);
         var eventFired = false;
         service.RetainerListingAdded += () => eventFired = true;
 

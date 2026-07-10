@@ -17,7 +17,8 @@ public class RetainerDataPresenter : IRetainerDataPresenter {
         return this.retainerTrackerService.GetRetainersForCharacter(characterName, homeWorldId)
             .Select(r => new RetainerDisplayData {
                 RetainerId = r.RetainerId,
-                Name = r.Name
+                Name = r.Name,
+                MarketItemCount = r.MarketItemCount
             })
             .ToList();
     }

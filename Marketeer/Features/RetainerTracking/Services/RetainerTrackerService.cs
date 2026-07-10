@@ -12,7 +12,7 @@ using System.Linq;
 namespace Marketeer.Features.RetainerTracking.Services;
 
 public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
-    private IObjectTable objectTable; // <-- Retour à l'interface correcte
+    private IObjectTable objectTable;
     private IConfigurationService configService;
     private IRetainerProvider retainerProvider;
     private ICharacterTrackerService characterTrackerService;
@@ -54,7 +54,7 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         }
 
         var characterName = localPlayer.Name.TextValue;
-        var worldId = localPlayer.HomeWorld.RowId; // <-- Retour à RowId
+        var worldId = localPlayer.HomeWorld.RowId;
 
         var activeRetainers = this.retainerProvider.GetActiveRetainers();
         if (activeRetainers.Count == 0) {
@@ -75,6 +75,10 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
             if (existing != null) {
                 if (existing.Name != retainer.Name) {
                     existing.Name = retainer.Name;
+                    isModified = true;
+                }
+                if (existing.MarketItemCount != retainer.MarketItemCount) {
+                    existing.MarketItemCount = retainer.MarketItemCount;
                     isModified = true;
                 }
             }

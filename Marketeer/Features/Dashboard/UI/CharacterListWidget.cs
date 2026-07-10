@@ -45,7 +45,9 @@ public class CharacterListWidget : IDashboardWidget {
         var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
         var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
         var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
+
         var updateRequiredTooltip = this.localizationService.Translate("Dashboard_PriceUpdateRequired");
+        var syncRequiredTooltip = this.localizationService.Translate("Dashboard_SyncRequired");
 
         var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + (ImGui.GetStyle().FramePadding.X * 2);
 
@@ -112,17 +114,26 @@ public class CharacterListWidget : IDashboardWidget {
                             var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
                             var distinctItems = listings.Count;
                             var totalValue = listings.Sum(l => (long)l.Quantity * l.PricePerUnit);
-                            var needsUpdate = listings.Any(l => l.PricePerUnit == 0);
+
+                            var needsPriceUpdate = distinctItems > 0 && listings.Any(l => l.PricePerUnit == 0);
+                            var isDesynced = distinctItems != retainer.MarketItemCount;
 
                             ImGui.TableNextColumn();
-                            ImGui.Text(distinctItems.ToString());
-
-                            ImGui.TableNextColumn();
-                            if (distinctItems > 0 && needsUpdate) {
-                                // Display warning indicator if soft sync detected new items
-                                ImGui.Text($"{totalValue:N0} (!)");
+                            if (isDesynced) {
+                                ImGui.TextDisabled($"{retainer.MarketItemCount} (!)");
                                 if (ImGui.IsItemHovered()) {
-                                    ImGui.SetTooltip(updateRequiredTooltip);
+                                    ImGui.SetTooltip(syncRequiredTooltip);
+                                }
+                            }
+                            else {
+                                ImGui.Text(retainer.MarketItemCount.ToString());
+                            }
+
+                            ImGui.TableNextColumn();
+                            if (isDesynced || needsPriceUpdate) {
+                                ImGui.TextDisabled($"{totalValue:N0} (!)");
+                                if (ImGui.IsItemHovered()) {
+                                    ImGui.SetTooltip(isDesynced ? syncRequiredTooltip : updateRequiredTooltip);
                                 }
                             }
                             else {
