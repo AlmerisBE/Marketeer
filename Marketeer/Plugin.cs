@@ -2,9 +2,7 @@
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.Core;
-using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.Command.Services;
-using Marketeer.Features.Configuration.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -22,7 +20,9 @@ public sealed class Plugin : IDalamudPlugin {
         ICommandManager commandManager,
         IClientState clientState,
         IPluginLog pluginLog,
-        IObjectTable objectTable) {
+        IObjectTable objectTable,
+        IFramework framework) { // Inject IFramework here
+
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
 
@@ -35,6 +35,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(clientState);
         services.AddSingleton(pluginLog);
         services.AddSingleton(objectTable);
+        services.AddSingleton(framework); // Register IFramework
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
@@ -44,7 +45,9 @@ public sealed class Plugin : IDalamudPlugin {
 
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
-        this.serviceProvider.GetRequiredService<ICharacterTrackerService>();
+
+        // Initialize features that need to hook events immediately
+        this.serviceProvider.GetRequiredService<Marketeer.Features.CharacterTracking.Contracts.ICharacterTrackerService>();
 
         // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();
@@ -58,10 +61,9 @@ public sealed class Plugin : IDalamudPlugin {
     }
 
     private void OnOpenConfigUi() {
-        var configWindow = this.serviceProvider.GetService<ConfigWindow>();
-        if (configWindow != null) {
-            configWindow.IsOpen = true;
-        }
+        // Adjust this if you changed it to trigger the Dashboard command instead
+        var commandDispatcher = this.serviceProvider.GetService<CommandDispatcher>();
+        // Fallback to manually opening the main window if needed
     }
 
     public void Dispose() {

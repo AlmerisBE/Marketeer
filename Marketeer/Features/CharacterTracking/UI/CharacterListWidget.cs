@@ -38,8 +38,24 @@ public class CharacterListWidget : IDashboardWidget {
                 ImGui.Text(character.HomeWorldId.ToString());
 
                 ImGui.TableNextColumn();
+
+                // UI Logic: Disable the button if this is the active character
+                var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
+
+                if (isActive) {
+                    ImGui.BeginDisabled();
+                }
+
                 if (ImGui.Button($"Forget##{character.Name}_{character.HomeWorldId}")) {
                     this.trackerService.ForgetCharacter(character.Name, character.HomeWorldId);
+                }
+
+                if (isActive) {
+                    ImGui.EndDisabled();
+                    // Provide a tooltip so the user understands why the button is greyed out
+                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                        ImGui.SetTooltip("You cannot forget the currently logged-in character.");
+                    }
                 }
             }
             ImGui.EndTable();

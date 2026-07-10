@@ -11,6 +11,5 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool ExampleCheckbox { get; set; } = false;
 
-    // New property to store our characters
-    public List<TrackedCharacter> KnownCharacters { get; set; } = new();
+    public List<TrackedCharacter> KnownCharacters { get; set; } = [];
 }
