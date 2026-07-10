@@ -15,10 +15,17 @@ public class PluginTests {
         var mockCommandManager = Substitute.For<ICommandManager>();
         var mockClientState = Substitute.For<IClientState>();
         var mockLogger = Substitute.For<IPluginLog>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
 
         // Act & Assert
         // We verify that building the plugin (and its DI container) throws no exceptions
-        var exception = Record.Exception(() => new Plugin(mockPluginInterface, mockChatGui, mockCommandManager, mockClientState, mockLogger));
+        var exception = Record.Exception(() => new Plugin(
+            mockPluginInterface,
+            mockChatGui,
+            mockCommandManager,
+            mockClientState,
+            mockLogger,
+            mockObjectTable));
 
         Assert.Null(exception);
     }

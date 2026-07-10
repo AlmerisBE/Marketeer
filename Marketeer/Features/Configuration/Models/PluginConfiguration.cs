@@ -1,5 +1,7 @@
 ﻿using Dalamud.Configuration;
+using Marketeer.Features.CharacterTracking.Models;
 using System;
+using System.Collections.Generic;
 
 namespace Marketeer.Features.Configuration.Models;
 
@@ -7,6 +9,8 @@ namespace Marketeer.Features.Configuration.Models;
 public class PluginConfiguration : IPluginConfiguration {
     public int Version { get; set; } = 0;
 
-    // Ajoute ici toutes tes futures options de sauvegarde
     public bool ExampleCheckbox { get; set; } = false;
+
+    // New property to store our characters
+    public List<TrackedCharacter> KnownCharacters { get; set; } = new();
 }

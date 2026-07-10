@@ -1,9 +1,10 @@
-﻿using Marketeer.Core;
-using Marketeer.Features.Command.Services;
-using Marketeer.Features.Configuration.UI;
-using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Marketeer.Core;
+using Marketeer.Features.CharacterTracking.Contracts;
+using Marketeer.Features.Command.Services;
+using Marketeer.Features.Configuration.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -20,7 +21,8 @@ public sealed class Plugin : IDalamudPlugin {
         IChatGui chatGui,
         ICommandManager commandManager,
         IClientState clientState,
-        IPluginLog pluginLog) {
+        IPluginLog pluginLog,
+        IObjectTable objectTable) {
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
 
@@ -32,6 +34,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(commandManager);
         services.AddSingleton(clientState);
         services.AddSingleton(pluginLog);
+        services.AddSingleton(objectTable);
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
@@ -41,6 +44,7 @@ public sealed class Plugin : IDalamudPlugin {
 
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
+        this.serviceProvider.GetRequiredService<ICharacterTrackerService>();
 
         // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();
