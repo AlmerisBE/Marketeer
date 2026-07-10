@@ -42,20 +42,25 @@ public class CharacterListWidget : IDashboardWidget {
 
         var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + (ImGui.GetStyle().FramePadding.X * 2);
 
-        if (ImGui.BeginTable("CharacterLayoutTable", 2, ImGuiTableFlags.None)) {
-            ImGui.TableSetupColumn("Header", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.NoClip);
-            ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, buttonWidth);
+        foreach (var character in characters) {
+            bool isExpanded = false;
 
-            foreach (var character in characters) {
+            // Micro-layout table strictly for aligning the header and the button
+            if (ImGui.BeginTable($"HeaderLayout_{character.Name}_{character.HomeWorldId}", 2, ImGuiTableFlags.None)) {
+                ImGui.TableSetupColumn("Header", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, buttonWidth);
+
                 ImGui.TableNextRow();
 
+                // Column 0: The accordion header
                 ImGui.TableNextColumn();
                 var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
                 var headerText = $"{character.Name} ({worldName})###{character.Name}_{character.HomeWorldId}";
 
                 var treeFlags = ImGuiTreeNodeFlags.Framed;
-                bool isExpanded = ImGui.TreeNodeEx(headerText, treeFlags);
+                isExpanded = ImGui.TreeNodeEx(headerText, treeFlags);
 
+                // Column 1: The isolated button
                 ImGui.TableNextColumn();
                 var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
                 if (isActive) {
@@ -73,42 +78,40 @@ public class CharacterListWidget : IDashboardWidget {
                     }
                 }
 
-                if (isExpanded) {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-
-                    float indent = ImGui.GetStyle().IndentSpacing;
-                    ImGui.Unindent(indent);
-
-                    var retainers = this.retainerDataPresenter.GetRetainers(character.Name, character.HomeWorldId);
-
-                    if (retainers.Count == 0) {
-                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().CellPadding.X);
-                        ImGui.TextDisabled(noRetainersLabel);
-                    }
-                    else {
-                        float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
-
-                        if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 1, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
-                            ImGui.TableSetupColumn(retainerColName);
-                            ImGui.TableHeadersRow();
-
-                            foreach (var retainer in retainers) {
-                                ImGui.TableNextRow();
-                                ImGui.TableNextColumn();
-                                ImGui.Text(retainer.Name);
-                            }
-
-                            ImGui.EndTable();
-                        }
-                    }
-
-                    ImGui.Indent(indent);
-                    ImGui.Spacing();
-                    ImGui.TreePop();
-                }
+                // Close the layout table immediately so the retainer table is not constrained by it
+                ImGui.EndTable();
             }
-            ImGui.EndTable();
+
+            // Draw the retainers table in the main window space
+            if (isExpanded) {
+                float indent = ImGui.GetStyle().IndentSpacing;
+                ImGui.Unindent(indent);
+
+                var retainers = this.retainerDataPresenter.GetRetainers(character.Name, character.HomeWorldId);
+
+                if (retainers.Count == 0) {
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().CellPadding.X);
+                    ImGui.TextDisabled(noRetainersLabel);
+                }
+                else {
+                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 1, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+                        ImGui.TableSetupColumn(retainerColName);
+                        ImGui.TableHeadersRow();
+
+                        foreach (var retainer in retainers) {
+                            ImGui.TableNextRow();
+                            ImGui.TableNextColumn();
+                            ImGui.Text(retainer.Name);
+                        }
+
+                        ImGui.EndTable();
+                    }
+                }
+
+                ImGui.Indent(indent);
+                ImGui.Spacing();
+                ImGui.TreePop();
+            }
         }
     }
 }
