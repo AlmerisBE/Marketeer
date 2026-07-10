@@ -50,6 +50,7 @@ public sealed class Plugin : IDalamudPlugin {
 
         // Initialize features that need to hook events immediately
         this.serviceProvider.GetRequiredService<Marketeer.Features.CharacterTracking.Contracts.ICharacterTrackerService>();
+        this.serviceProvider.GetRequiredService<Marketeer.Features.RetainerTracking.Contracts.IRetainerTrackerService>();
 
         // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();

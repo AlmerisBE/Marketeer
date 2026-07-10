@@ -7,7 +7,6 @@ public class TrackedCharacter {
     public string Name { get; set; } = string.Empty;
     public uint HomeWorldId { get; set; }
 
-    // Override Equals and GetHashCode to easily prevent duplicates
     public override bool Equals(object? obj) {
         if (obj is TrackedCharacter other) {
             return this.Name == other.Name && this.HomeWorldId == other.HomeWorldId;

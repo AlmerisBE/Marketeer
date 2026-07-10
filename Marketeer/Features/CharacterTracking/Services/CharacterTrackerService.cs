@@ -16,6 +16,8 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
     private ILoggerService logger;
     private IFramework framework;
 
+    public event Action<string, uint>? CharacterForgotten;
+
     public CharacterTrackerService(
         IClientState clientState,
         IObjectTable objectTable,
@@ -106,6 +108,9 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
             config.KnownCharacters.Remove(targetCharacter);
             this.configService.Save();
             this.logger.Info($"Character forgotten manually: {name} (World ID: {homeWorldId})");
+
+            // Notify subscribers (like RetainerTracking) that this character is gone
+            this.CharacterForgotten?.Invoke(name, homeWorldId);
         }
     }
 
