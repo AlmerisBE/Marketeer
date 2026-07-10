@@ -1,0 +1,9 @@
+{
+  "CharacterList_TabName": "Personnages",
+  "CharacterList_NoCharacters": "Aucun personnage suivi pour le moment. Connectez-vous à un personnage pour commencer.",
+  "CharacterList_ColName": "Nom du personnage",
+  "CharacterList_ColWorld": "Monde d'origine",
+  "CharacterList_ColActions": "Actions",
+  "CharacterList_BtnForget": "Oublier",
+  "CharacterList_TooltipForget": "Vous ne pouvez pas oublier le personnage actuellement connecté."
+}

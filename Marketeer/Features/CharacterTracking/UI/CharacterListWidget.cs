@@ -1,34 +1,44 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.Dashboard.Contracts;
+using Marketeer.Features.Localization.Contracts;
 using System.Linq;
 
 namespace Marketeer.Features.CharacterTracking.UI;
 
 public class CharacterListWidget : IDashboardWidget {
     private ICharacterTrackerService trackerService;
-    private IWorldDataPresenter worldDataService;
+    private IWorldDataPresenter worldDataPresenter;
+    private ILocalizationService localizationService;
 
-    public string Name => "Characters";
+    public string Name => this.localizationService.Translate("CharacterList_TabName");
 
-    public CharacterListWidget(ICharacterTrackerService trackerService, IWorldDataPresenter worldDataService) {
+    public CharacterListWidget(
+        ICharacterTrackerService trackerService,
+        IWorldDataPresenter worldDataPresenter,
+        ILocalizationService localizationService) {
+
         this.trackerService = trackerService;
-        this.worldDataService = worldDataService;
+        this.worldDataPresenter = worldDataPresenter;
+        this.localizationService = localizationService;
     }
 
     public void Draw() {
         var characters = this.trackerService.GetKnownCharacters().ToList();
 
         if (characters.Count == 0) {
-            ImGui.Text("No characters tracked yet. Log in to a character to start.");
+            ImGui.Text(this.localizationService.Translate("CharacterList_NoCharacters"));
             return;
         }
 
         if (ImGui.BeginTable("CharacterTable", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
-            ImGui.TableSetupColumn("Character Name");
-            ImGui.TableSetupColumn("Home World");
-            ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 100f);
+            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColName"));
+            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColWorld"));
+            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColActions"), ImGuiTableColumnFlags.WidthFixed, 100f);
             ImGui.TableHeadersRow();
+
+            var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
+            var forgetTooltip = this.localizationService.Translate("CharacterList_TooltipForget");
 
             foreach (var character in characters) {
                 ImGui.TableNextRow();
@@ -37,7 +47,7 @@ public class CharacterListWidget : IDashboardWidget {
                 ImGui.Text(character.Name);
 
                 ImGui.TableNextColumn();
-                var worldName = this.worldDataService.GetWorldName(character.HomeWorldId);
+                var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
                 ImGui.Text(worldName);
 
                 ImGui.TableNextColumn();
@@ -47,14 +57,14 @@ public class CharacterListWidget : IDashboardWidget {
                     ImGui.BeginDisabled();
                 }
 
-                if (ImGui.Button($"Forget##{character.Name}_{character.HomeWorldId}")) {
+                if (ImGui.Button($"{forgetLabel}##{character.Name}_{character.HomeWorldId}")) {
                     this.trackerService.ForgetCharacter(character.Name, character.HomeWorldId);
                 }
 
                 if (isActive) {
                     ImGui.EndDisabled();
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-                        ImGui.SetTooltip("You cannot forget the currently logged-in character.");
+                        ImGui.SetTooltip(forgetTooltip);
                     }
                 }
             }

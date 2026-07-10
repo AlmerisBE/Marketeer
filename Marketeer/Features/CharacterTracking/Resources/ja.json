@@ -1,0 +1,9 @@
+{
+  "CharacterList_TabName": "キャラクター",
+  "CharacterList_NoCharacters": "まだキャラクターが記録されていません。開始するにはキャラクターにログインしてください。",
+  "CharacterList_ColName": "キャラクター名",
+  "CharacterList_ColWorld": "ホームワールド",
+  "CharacterList_ColActions": "アクション",
+  "CharacterList_BtnForget": "忘れる",
+  "CharacterList_TooltipForget": "現在ログインしているキャラクターを忘れることはできません。"
+}

@@ -1,0 +1,9 @@
+{
+  "CharacterList_TabName": "Characters",
+  "CharacterList_NoCharacters": "No characters tracked yet. Log in to a character to start.",
+  "CharacterList_ColName": "Character Name",
+  "CharacterList_ColWorld": "Home World",
+  "CharacterList_ColActions": "Actions",
+  "CharacterList_BtnForget": "Forget",
+  "CharacterList_TooltipForget": "You cannot forget the currently logged-in character."
+}

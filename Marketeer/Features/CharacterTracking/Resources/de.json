@@ -1,0 +1,9 @@
+{
+  "CharacterList_TabName": "Charaktere",
+  "CharacterList_NoCharacters": "Noch keine Charaktere erfasst. Logge dich mit einem Charakter ein, um zu beginnen.",
+  "CharacterList_ColName": "Charaktername",
+  "CharacterList_ColWorld": "Heimatwelt",
+  "CharacterList_ColActions": "Aktionen",
+  "CharacterList_BtnForget": "Vergessen",
+  "CharacterList_TooltipForget": "Du kannst den aktuell eingeloggten Charakter nicht vergessen."
+}

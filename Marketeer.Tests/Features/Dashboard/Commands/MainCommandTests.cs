@@ -1,6 +1,8 @@
 ﻿using Marketeer.Features.Dashboard.Commands;
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Dashboard.UI;
+using Marketeer.Features.Localization.Contracts;
+using NSubstitute;
 using Xunit;
 
 namespace Marketeer.Tests.Features.Dashboard.Commands;
@@ -10,7 +12,12 @@ public class MainCommandTests {
     public void MainCommand_Execute_TogglesWindowVisibility() {
         // Arrange
         var emptyWidgets = new List<IDashboardWidget>();
-        var window = new DashboardWindow(emptyWidgets);
+        var mockLocalizationService = Substitute.For<ILocalizationService>();
+
+        // Ensure the mock returns a valid string for the window title
+        mockLocalizationService.Translate("Dashboard_Title").Returns("Marketeer - Dashboard");
+
+        var window = new DashboardWindow(emptyWidgets, mockLocalizationService);
         var command = new MainCommand(window);
 
         window.IsOpen = false;
