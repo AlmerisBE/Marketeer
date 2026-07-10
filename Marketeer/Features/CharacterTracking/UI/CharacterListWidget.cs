@@ -10,17 +10,20 @@ public class CharacterListWidget : IDashboardWidget {
     private ICharacterTrackerService trackerService;
     private IWorldDataPresenter worldDataPresenter;
     private ILocalizationService localizationService;
+    private IRetainerDataPresenter retainerDataPresenter;
 
     public string Name => this.localizationService.Translate("CharacterList_TabName");
 
     public CharacterListWidget(
         ICharacterTrackerService trackerService,
         IWorldDataPresenter worldDataPresenter,
-        ILocalizationService localizationService) {
+        ILocalizationService localizationService,
+        IRetainerDataPresenter retainerDataPresenter) { // Dependency Injected here
 
         this.trackerService = trackerService;
         this.worldDataPresenter = worldDataPresenter;
         this.localizationService = localizationService;
+        this.retainerDataPresenter = retainerDataPresenter;
     }
 
     public void Draw() {
@@ -39,12 +42,14 @@ public class CharacterListWidget : IDashboardWidget {
 
             var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
             var forgetTooltip = this.localizationService.Translate("CharacterList_TooltipForget");
+            var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
 
             foreach (var character in characters) {
                 ImGui.TableNextRow();
-
                 ImGui.TableNextColumn();
-                ImGui.Text(character.Name);
+
+                // Using TreeNodeEx to create the accordion effect over the entire row width
+                bool isExpanded = ImGui.TreeNodeEx($"{character.Name}##{character.HomeWorldId}", ImGuiTreeNodeFlags.SpanFullWidth);
 
                 ImGui.TableNextColumn();
                 var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
@@ -57,7 +62,7 @@ public class CharacterListWidget : IDashboardWidget {
                     ImGui.BeginDisabled();
                 }
 
-                if (ImGui.Button($"{forgetLabel}##{character.Name}_{character.HomeWorldId}")) {
+                if (ImGui.Button($"{forgetLabel}##btn_{character.Name}_{character.HomeWorldId}")) {
                     this.trackerService.ForgetCharacter(character.Name, character.HomeWorldId);
                 }
 
@@ -66,6 +71,29 @@ public class CharacterListWidget : IDashboardWidget {
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
                         ImGui.SetTooltip(forgetTooltip);
                     }
+                }
+
+                // If the user expanded the character accordion, query and draw the retainers
+                if (isExpanded) {
+                    var retainers = this.retainerDataPresenter.GetRetainers(character.Name, character.HomeWorldId);
+
+                    if (retainers.Count == 0) {
+                        ImGui.TableNextRow();
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"   {noRetainersLabel}");
+                        ImGui.TableNextColumn(); // Empty
+                        ImGui.TableNextColumn(); // Empty
+                    }
+                    else {
+                        foreach (var retainer in retainers) {
+                            ImGui.TableNextRow();
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"   - {retainer.Name}");
+                            ImGui.TableNextColumn(); // Keep empty for visual hierarchy
+                            ImGui.TableNextColumn(); // Keep empty for visual hierarchy
+                        }
+                    }
+                    ImGui.TreePop();
                 }
             }
             ImGui.EndTable();

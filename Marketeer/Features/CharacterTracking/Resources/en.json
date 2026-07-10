@@ -9,5 +9,6 @@
   "Command_Characters_Description": "Lists all tracked characters in chat.",
   "Command_Characters_NoCharacters": "No characters tracked yet.",
   "Command_Characters_Header": "Tracked Characters:",
-  "Command_Characters_Line": "- {0} ({1})"
+  "Command_Characters_Line": "- {0} ({1})",
+  "CharacterList_NoRetainers": "No retainers found."
 }
