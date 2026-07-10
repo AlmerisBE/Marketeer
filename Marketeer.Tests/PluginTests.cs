@@ -19,6 +19,7 @@ public class PluginTests {
         var mockObjectTable = Substitute.For<IObjectTable>();
         var mockFramework = Substitute.For<IFramework>();
         var mockDataManager = Substitute.For<IDataManager>();
+        var mockCondition = Substitute.For<ICondition>();
 
         mockObjectTable.LocalPlayer.Returns((IPlayerCharacter?)null);
 
@@ -31,7 +32,8 @@ public class PluginTests {
             mockLogger,
             mockObjectTable,
             mockFramework,
-            mockDataManager));
+            mockDataManager,
+            mockCondition));
 
         Assert.Null(exception);
     }

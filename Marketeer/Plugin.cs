@@ -22,7 +22,8 @@ public sealed class Plugin : IDalamudPlugin {
         IPluginLog pluginLog,
         IObjectTable objectTable,
         IFramework framework,
-        IDataManager dataManager) {
+        IDataManager dataManager,
+        ICondition condition) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -38,6 +39,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(objectTable);
         services.AddSingleton(framework);
         services.AddSingleton(dataManager);
+        services.AddSingleton(condition);
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
@@ -51,6 +53,7 @@ public sealed class Plugin : IDalamudPlugin {
         // Initialize features that need to hook events immediately
         this.serviceProvider.GetRequiredService<Marketeer.Features.CharacterTracking.Contracts.ICharacterTrackerService>();
         this.serviceProvider.GetRequiredService<Marketeer.Features.RetainerTracking.Contracts.IRetainerTrackerService>();
+        this.serviceProvider.GetRequiredService<Marketeer.Features.GameEvents.Contracts.IGameEventService>();
 
         // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();

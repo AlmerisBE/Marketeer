@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.Configuration.Contracts;
+using Marketeer.Features.GameEvents.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.RetainerTracking.Contracts;
 using Marketeer.Features.RetainerTracking.Models;
@@ -11,10 +12,11 @@ using System.Linq;
 namespace Marketeer.Features.RetainerTracking.Services;
 
 public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
-    private IObjectTable objectTable;
+    private IObjectTable objectTable; // <-- Retour à l'interface correcte
     private IConfigurationService configService;
     private IRetainerProvider retainerProvider;
     private ICharacterTrackerService characterTrackerService;
+    private IGameEventService gameEventService;
     private ILoggerService logger;
 
     public RetainerTrackerService(
@@ -22,16 +24,18 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         IConfigurationService configService,
         IRetainerProvider retainerProvider,
         ICharacterTrackerService characterTrackerService,
+        IGameEventService gameEventService,
         ILoggerService logger) {
 
         this.objectTable = objectTable;
         this.configService = configService;
         this.retainerProvider = retainerProvider;
         this.characterTrackerService = characterTrackerService;
+        this.gameEventService = gameEventService;
         this.logger = logger;
 
-        // Subscribe to the character tracking event to handle cascading deletes
         this.characterTrackerService.CharacterForgotten += this.OnCharacterForgotten;
+        this.gameEventService.RetainerBellOpened += this.RecordRetainers;
     }
 
     public IReadOnlyList<TrackedRetainer> GetRetainersForCharacter(string characterName, uint homeWorldId) {
@@ -50,9 +54,8 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         }
 
         var characterName = localPlayer.Name.TextValue;
-        var worldId = localPlayer.HomeWorld.RowId;
+        var worldId = localPlayer.HomeWorld.RowId; // <-- Retour à RowId
 
-        // Read unmanaged memory
         var activeRetainers = this.retainerProvider.GetActiveRetainers();
         if (activeRetainers.Count == 0) {
             return;
@@ -64,11 +67,9 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         bool isModified = false;
 
         foreach (var retainer in activeRetainers) {
-            // Assign foreign keys
             retainer.AssociatedCharacterName = characterName;
             retainer.AssociatedHomeWorldId = worldId;
 
-            // Check for existing retainer to avoid duplicates, but update name if it changed
             var existing = config.KnownRetainers.FirstOrDefault(r => r.RetainerId == retainer.RetainerId);
 
             if (existing != null) {
@@ -94,8 +95,6 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         config.KnownRetainers ??= new List<TrackedRetainer>();
 
         var initialCount = config.KnownRetainers.Count;
-
-        // Remove all retainers matching the foreign keys
         config.KnownRetainers.RemoveAll(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId);
 
         if (config.KnownRetainers.Count < initialCount) {
@@ -106,5 +105,6 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
 
     public void Dispose() {
         this.characterTrackerService.CharacterForgotten -= this.OnCharacterForgotten;
+        this.gameEventService.RetainerBellOpened -= this.RecordRetainers;
     }
 }
