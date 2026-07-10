@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
-using Marketeer.Features.CharacterTracking.Contracts;
+using Marketeer.Features.Dashboard.Contracts;
 
 namespace Marketeer.Features.GameData.Services;
 

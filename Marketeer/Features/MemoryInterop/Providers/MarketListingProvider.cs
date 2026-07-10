@@ -25,7 +25,6 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         if (activeRetainer != null && activeRetainer->RetainerId != 0) {
             return activeRetainer->RetainerId;
         }
-
         return null;
     }
 
@@ -47,7 +46,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
             return listings;
         }
 
-        var prices = this.ParsePricesFromAddon();
+        var uiRows = this.ParseUiRowNumbers();
 
         for (int i = 0; i < container->Size; i++) {
             var item = container->GetInventorySlot(i);
@@ -56,16 +55,24 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
                 continue;
             }
 
+            uint quantity = (uint)item->Quantity;
             uint price = 0;
-            if (i < prices.Count) {
-                price = prices[i];
+
+            if (i < uiRows.Count) {
+                var numbersInRow = uiRows[i];
+                if (numbersInRow.Count > 0) {
+                    price = numbersInRow.LastOrDefault(n => n != quantity);
+                    if (price == 0) {
+                        price = numbersInRow.Last();
+                    }
+                }
             }
 
             listings.Add(new TrackedListing {
                 AssociatedRetainerId = activeRetainerId.Value,
                 SlotIndex = (uint)i,
                 ItemId = item->ItemId,
-                Quantity = (uint)item->Quantity,
+                Quantity = quantity,
                 PricePerUnit = price
             });
         }
@@ -73,60 +80,74 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         return listings;
     }
 
-    private List<uint> ParsePricesFromAddon() {
-        var prices = new List<uint>();
-
-        // Extract the raw address from the Dalamud wrapper struct
+    private List<List<uint>> ParseUiRowNumbers() {
+        var rows = new List<List<uint>>();
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList", 1);
-        var addon = (AtkUnitBase*)addonPtr.Address;
 
-        if (addon == null || !addon->IsVisible) {
-            return prices;
+        if (addonPtr == nint.Zero) {
+            return rows;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        if (addon == null) {
+            return rows;
         }
 
         try {
+            AtkComponentNode* listComponent = null;
+
             for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
                 var node = addon->UldManager.NodeList[i];
-                if (node == null || node->Type != NodeType.Component) {
-                    continue;
-                }
-
-                var componentNode = (AtkComponentNode*)node;
-                if (componentNode->Component->UldManager.NodeListCount < 20) {
-                    continue;
-                }
-
-                for (int j = 0; j < componentNode->Component->UldManager.NodeListCount; j++) {
-                    var itemNode = componentNode->Component->UldManager.NodeList[j];
-                    if (itemNode == null || itemNode->Type != NodeType.Component) {
-                        continue;
-                    }
-
-                    var itemComponentNode = (AtkComponentNode*)itemNode;
-
-                    for (int k = 0; k < itemComponentNode->Component->UldManager.NodeListCount; k++) {
-                        var innerNode = itemComponentNode->Component->UldManager.NodeList[k];
-                        if (innerNode == null || innerNode->Type != NodeType.Text) {
-                            continue;
-                        }
-
-                        var textNode = (AtkTextNode*)innerNode;
-                        string text = textNode->NodeText.ToString();
-
-                        string numericString = new string(text.Where(char.IsDigit).ToArray());
-                        if (!string.IsNullOrEmpty(numericString) && uint.TryParse(numericString, out uint price) && price > 0) {
-                            prices.Add(price);
-                            break;
-                        }
+                if (node != null && node->Type == NodeType.Component) {
+                    var compNode = (AtkComponentNode*)node;
+                    if (compNode->Component->UldManager.NodeListCount == 20) {
+                        listComponent = compNode;
+                        break;
                     }
                 }
             }
+
+            if (listComponent != null) {
+                for (int j = 0; j < listComponent->Component->UldManager.NodeListCount; j++) {
+                    var itemNode = listComponent->Component->UldManager.NodeList[j];
+                    var numbers = new List<uint>();
+
+                    // Trigger deep recursive scan for this specific UI row
+                    this.ExtractNumbersRecursively(itemNode, numbers);
+
+                    rows.Add(numbers);
+                }
+
+                rows.Reverse();
+            }
         }
         catch {
-            // Silently ignore memory read access violations to prevent plugin crashes
+            // Silently abort on memory access violations
         }
 
-        prices.Reverse();
-        return prices;
+        return rows;
+    }
+
+    // Bulletproof recursive scanner: hunts down any numeric text node nested inside the component tree
+    private void ExtractNumbersRecursively(AtkResNode* node, List<uint> numbers) {
+        if (node == null) {
+            return;
+        }
+
+        if (node->Type == NodeType.Text) {
+            var textNode = (AtkTextNode*)node;
+            string text = textNode->NodeText.ToString();
+
+            string numericString = new string(text.Where(char.IsDigit).ToArray());
+            if (!string.IsNullOrEmpty(numericString) && uint.TryParse(numericString, out uint val)) {
+                numbers.Add(val);
+            }
+        }
+        else if (node->Type == NodeType.Component) {
+            var compNode = (AtkComponentNode*)node;
+            for (int i = 0; i < compNode->Component->UldManager.NodeListCount; i++) {
+                this.ExtractNumbersRecursively(compNode->Component->UldManager.NodeList[i], numbers);
+            }
+        }
     }
 }

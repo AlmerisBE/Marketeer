@@ -5,7 +5,7 @@ using Marketeer.Features.Localization.Contracts;
 using System.Linq;
 using System.Numerics;
 
-namespace Marketeer.Features.CharacterTracking.UI;
+namespace Marketeer.Features.Dashboard.UI;
 
 public class CharacterListWidget : IDashboardWidget {
     private ICharacterTrackerService trackerService;
@@ -45,6 +45,7 @@ public class CharacterListWidget : IDashboardWidget {
         var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
         var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
         var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
+        var updateRequiredTooltip = this.localizationService.Translate("Dashboard_PriceUpdateRequired");
 
         var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + (ImGui.GetStyle().FramePadding.X * 2);
 
@@ -96,7 +97,6 @@ public class CharacterListWidget : IDashboardWidget {
                 else {
                     float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
 
-                    // Added columns to support listings count and total value
                     if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
                         ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
                         ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 80f);
@@ -106,21 +106,28 @@ public class CharacterListWidget : IDashboardWidget {
                         foreach (var retainer in retainers) {
                             ImGui.TableNextRow();
 
-                            // Name
                             ImGui.TableNextColumn();
                             ImGui.Text(retainer.Name);
 
                             var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
                             var distinctItems = listings.Count;
                             var totalValue = listings.Sum(l => (long)l.Quantity * l.PricePerUnit);
+                            var needsUpdate = listings.Any(l => l.PricePerUnit == 0);
 
-                            // Count
                             ImGui.TableNextColumn();
                             ImGui.Text(distinctItems.ToString());
 
-                            // Total Value formatted nicely
                             ImGui.TableNextColumn();
-                            ImGui.Text($"{totalValue:N0}");
+                            if (distinctItems > 0 && needsUpdate) {
+                                // Display warning indicator if soft sync detected new items
+                                ImGui.Text($"{totalValue:N0} (!)");
+                                if (ImGui.IsItemHovered()) {
+                                    ImGui.SetTooltip(updateRequiredTooltip);
+                                }
+                            }
+                            else {
+                                ImGui.Text($"{totalValue:N0}");
+                            }
                         }
 
                         ImGui.EndTable();

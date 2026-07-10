@@ -1,4 +1,4 @@
-﻿namespace Marketeer.Features.CharacterTracking.Models;
+﻿namespace Marketeer.Features.Dashboard.Models;
 
 public class RetainerDisplayData {
     public ulong RetainerId { get; set; }

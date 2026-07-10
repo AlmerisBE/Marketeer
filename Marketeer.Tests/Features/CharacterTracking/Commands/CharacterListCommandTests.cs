@@ -2,6 +2,7 @@
 using Marketeer.Features.CharacterTracking.Commands;
 using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.CharacterTracking.Models;
+using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using NSubstitute;
 using Xunit;

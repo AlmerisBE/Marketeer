@@ -1,5 +1,5 @@
 ﻿using Marketeer.Core;
-using Marketeer.Features.CharacterTracking.Contracts;
+using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.GameData.Services;
 using Microsoft.Extensions.DependencyInjection;
 

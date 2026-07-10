@@ -16,6 +16,7 @@ public class GameEventService : IGameEventService, IDisposable {
     public event Action? RetainerBellOpened;
     public event Action? RetainerListingsOpened;
     public event Action? RetainerListingAdded;
+    public event Action? RetainerMainMenuOpened;
 
     public GameEventService(ICondition condition, IAddonLifecycle addonLifecycle, ILoggerService logger) {
         this.condition = condition;
@@ -27,6 +28,7 @@ public class GameEventService : IGameEventService, IDisposable {
         // Changed to PostRefresh to ensure UI nodes are populated with text data before parsing
         this.addonLifecycle.RegisterListener(AddonEvent.PostRefresh, "RetainerSellList", this.OnRetainerSellListOpened);
         this.addonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnRetainerSellClosed);
+        this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectString", this.OnSelectStringOpened);
     }
 
     private void OnConditionChange(ConditionFlag flag, bool value) {
@@ -46,9 +48,15 @@ public class GameEventService : IGameEventService, IDisposable {
         this.RetainerListingAdded?.Invoke();
     }
 
+    private void OnSelectStringOpened(AddonEvent type, AddonArgs args) {
+        this.logger.Debug("SelectString dialog opened. Dispatching RetainerMainMenuOpened.");
+        this.RetainerMainMenuOpened?.Invoke();
+    }
+
     public void Dispose() {
         this.condition.ConditionChange -= this.OnConditionChange;
         this.addonLifecycle.UnregisterListener(AddonEvent.PostRefresh, "RetainerSellList", this.OnRetainerSellListOpened);
         this.addonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnRetainerSellClosed);
+        this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "SelectString", this.OnSelectStringOpened);
     }
 }

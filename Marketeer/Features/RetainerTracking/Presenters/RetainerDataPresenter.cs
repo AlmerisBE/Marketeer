@@ -1,5 +1,5 @@
-﻿using Marketeer.Features.CharacterTracking.Contracts;
-using Marketeer.Features.CharacterTracking.Models;
+﻿using Marketeer.Features.Dashboard.Contracts;
+using Marketeer.Features.Dashboard.Models;
 using Marketeer.Features.RetainerTracking.Contracts;
 using System.Collections.Generic;
 using System.Linq;

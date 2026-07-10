@@ -1,6 +1,6 @@
-﻿using Marketeer.Features.CharacterTracking.Contracts;
-using Marketeer.Features.CharacterTracking.Models;
-using Marketeer.Features.Configuration.Contracts;
+﻿using Marketeer.Features.Configuration.Contracts;
+using Marketeer.Features.Dashboard.Contracts;
+using Marketeer.Features.Dashboard.Models;
 using Marketeer.Features.GameEvents.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.MarketListingTracking.Contracts;
