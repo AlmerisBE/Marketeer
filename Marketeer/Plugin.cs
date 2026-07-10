@@ -17,6 +17,7 @@ public sealed class Plugin : IDalamudPlugin {
     public Plugin(
         IDalamudPluginInterface pluginInterface,
         IChatGui chatGui,
+        IGameGui gameGui,
         ICommandManager commandManager,
         IClientState clientState,
         IPluginLog pluginLog,
@@ -34,6 +35,7 @@ public sealed class Plugin : IDalamudPlugin {
         // 1. Register Dalamud Services
         services.AddSingleton(this.pluginInterface);
         services.AddSingleton(chatGui);
+        services.AddSingleton(gameGui);
         services.AddSingleton(commandManager);
         services.AddSingleton(clientState);
         services.AddSingleton(pluginLog);

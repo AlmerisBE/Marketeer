@@ -28,7 +28,7 @@ public class GameEventServiceTests {
     }
 
     [Fact]
-    public void AddonLifecycle_WhenRetainerSellOpened_FiresRetainerListingsOpenedEvent() {
+    public void AddonLifecycle_WhenRetainerSellListOpened_FiresRetainerListingsOpenedEvent() {
         // Arrange
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
@@ -39,7 +39,33 @@ public class GameEventServiceTests {
         service.RetainerListingsOpened += () => eventFired = true;
 
         // Act
-        // Use NSubstitute's ReceivedCalls to dynamically find the registered delegate
+        // Match the updated addon name: "RetainerSellList"
+        var call = mockAddonLifecycle.ReceivedCalls()
+            .FirstOrDefault(c => c.GetMethodInfo().Name == "RegisterListener" && (string)c.GetArguments()[1]! == "RetainerSellList");
+
+        Assert.NotNull(call);
+
+        var capturedDelegate = call.GetArguments()[2] as Delegate;
+        Assert.NotNull(capturedDelegate);
+
+        capturedDelegate.DynamicInvoke(AddonEvent.PostSetup, null);
+
+        // Assert
+        Assert.True(eventFired);
+    }
+
+    [Fact]
+    public void AddonLifecycle_WhenRetainerSellClosed_FiresRetainerListingAddedEvent() {
+        // Arrange
+        var mockCondition = Substitute.For<ICondition>();
+        var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
+        var mockLogger = Substitute.For<ILoggerService>();
+
+        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger);
+        var eventFired = false;
+        service.RetainerListingAdded += () => eventFired = true;
+
+        // Act
         var call = mockAddonLifecycle.ReceivedCalls()
             .FirstOrDefault(c => c.GetMethodInfo().Name == "RegisterListener" && (string)c.GetArguments()[1]! == "RetainerSell");
 
@@ -48,9 +74,7 @@ public class GameEventServiceTests {
         var capturedDelegate = call.GetArguments()[2] as Delegate;
         Assert.NotNull(capturedDelegate);
 
-        // Since our method doesn't use the AddonArgs parameter, we can safely pass null 
-        // instead of trying to mock a class without a parameterless constructor.
-        capturedDelegate.DynamicInvoke(AddonEvent.PostSetup, null);
+        capturedDelegate.DynamicInvoke(AddonEvent.PreFinalize, null);
 
         // Assert
         Assert.True(eventFired);

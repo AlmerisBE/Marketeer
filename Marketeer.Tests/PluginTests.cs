@@ -13,6 +13,7 @@ public class PluginTests {
         // Arrange
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
         var mockChatGui = Substitute.For<IChatGui>();
+        var mockGameUi = Substitute.For<IGameGui>();
         var mockCommandManager = Substitute.For<ICommandManager>();
         var mockClientState = Substitute.For<IClientState>();
         var mockLogger = Substitute.For<IPluginLog>();
@@ -28,6 +29,7 @@ public class PluginTests {
         var exception = Record.Exception(() => new Plugin(
             mockPluginInterface,
             mockChatGui,
+            mockGameUi,
             mockCommandManager,
             mockClientState,
             mockLogger,

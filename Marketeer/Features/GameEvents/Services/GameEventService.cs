@@ -15,6 +15,7 @@ public class GameEventService : IGameEventService, IDisposable {
 
     public event Action? RetainerBellOpened;
     public event Action? RetainerListingsOpened;
+    public event Action? RetainerListingAdded;
 
     public GameEventService(ICondition condition, IAddonLifecycle addonLifecycle, ILoggerService logger) {
         this.condition = condition;
@@ -22,7 +23,9 @@ public class GameEventService : IGameEventService, IDisposable {
         this.logger = logger;
 
         this.condition.ConditionChange += this.OnConditionChange;
-        this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellOpened);
+
+        this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", this.OnRetainerSellListOpened);
+        this.addonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnRetainerSellClosed);
     }
 
     private void OnConditionChange(ConditionFlag flag, bool value) {
@@ -32,13 +35,19 @@ public class GameEventService : IGameEventService, IDisposable {
         }
     }
 
-    private void OnRetainerSellOpened(AddonEvent type, AddonArgs args) {
+    private void OnRetainerSellListOpened(AddonEvent type, AddonArgs args) {
         this.logger.Debug("Retainer sell list addon opened.");
         this.RetainerListingsOpened?.Invoke();
     }
 
+    private void OnRetainerSellClosed(AddonEvent type, AddonArgs args) {
+        this.logger.Debug("Retainer sell addon closed (listing added or modified).");
+        this.RetainerListingAdded?.Invoke();
+    }
+
     public void Dispose() {
         this.condition.ConditionChange -= this.OnConditionChange;
-        this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellOpened);
+        this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "RetainerSellList", this.OnRetainerSellListOpened);
+        this.addonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnRetainerSellClosed);
     }
 }
