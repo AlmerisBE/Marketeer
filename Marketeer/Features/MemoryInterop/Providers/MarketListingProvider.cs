@@ -128,7 +128,6 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         return rows;
     }
 
-    // Bulletproof recursive scanner: hunts down any numeric text node nested inside the component tree
     private void ExtractNumbersRecursively(AtkResNode* node, List<uint> numbers) {
         if (node == null) {
             return;
@@ -136,11 +135,16 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
 
         if (node->Type == NodeType.Text) {
             var textNode = (AtkTextNode*)node;
-            string text = textNode->NodeText.ToString();
+            var textPtr = textNode->NodeText.StringPtr;
 
-            string numericString = new string(text.Where(char.IsDigit).ToArray());
-            if (!string.IsNullOrEmpty(numericString) && uint.TryParse(numericString, out uint val)) {
-                numbers.Add(val);
+            // CStringPointer requires accessing the .Value property to get the raw byte pointer
+            if (textPtr.Value != null) {
+                string text = System.Runtime.InteropServices.Marshal.PtrToStringUTF8((nint)textPtr.Value) ?? string.Empty;
+
+                string numericString = new string(text.Where(char.IsDigit).ToArray());
+                if (!string.IsNullOrEmpty(numericString) && uint.TryParse(numericString, out uint val)) {
+                    numbers.Add(val);
+                }
             }
         }
         else if (node->Type == NodeType.Component) {

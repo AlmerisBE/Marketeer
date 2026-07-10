@@ -15,8 +15,9 @@ public class GameEventServiceTests {
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockLogger = Substitute.For<ILoggerService>();
+        var mockFramework = Substitute.For<IFramework>();
 
-        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger);
+        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger, mockFramework);
         var eventFired = false;
         service.RetainerBellOpened += () => eventFired = true;
 
@@ -33,8 +34,9 @@ public class GameEventServiceTests {
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockLogger = Substitute.For<ILoggerService>();
+        var mockFramework = Substitute.For<IFramework>();
 
-        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger);
+        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger, mockFramework);
         var eventFired = false;
         service.RetainerListingsOpened += () => eventFired = true;
 
@@ -47,7 +49,6 @@ public class GameEventServiceTests {
         var capturedDelegate = call.GetArguments()[2] as Delegate;
         Assert.NotNull(capturedDelegate);
 
-        // Updated event type to match PostRefresh
         capturedDelegate.DynamicInvoke(AddonEvent.PostRefresh, null);
 
         // Assert
@@ -60,8 +61,9 @@ public class GameEventServiceTests {
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockLogger = Substitute.For<ILoggerService>();
+        var mockFramework = Substitute.For<IFramework>();
 
-        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger);
+        var service = new GameEventService(mockCondition, mockAddonLifecycle, mockLogger, mockFramework);
         var eventFired = false;
         service.RetainerListingAdded += () => eventFired = true;
 
