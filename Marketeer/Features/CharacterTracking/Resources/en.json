@@ -5,5 +5,9 @@
   "CharacterList_ColWorld": "Home World",
   "CharacterList_ColActions": "Actions",
   "CharacterList_BtnForget": "Forget",
-  "CharacterList_TooltipForget": "You cannot forget the currently logged-in character."
+  "CharacterList_TooltipForget": "You cannot forget the currently logged-in character.",
+  "Command_Characters_Description": "Lists all tracked characters in chat.",
+  "Command_Characters_NoCharacters": "No characters tracked yet.",
+  "Command_Characters_Header": "Tracked Characters:",
+  "Command_Characters_Line": "- {0} ({1})"
 }

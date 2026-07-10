@@ -18,12 +18,6 @@
 		<EmbeddedResource Include="Features\**\*.json" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Remove="Features\Dashboard\Resources\ja.json" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Compile Include="Features\Dashboard\Resources\ja.json" />
-	</ItemGroup>
-	<ItemGroup>
 	  <Folder Include="Features\CharacterTracking\Resources\" />
 	</ItemGroup>
 </Project>

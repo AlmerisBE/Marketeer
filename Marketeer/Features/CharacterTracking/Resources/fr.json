@@ -5,5 +5,9 @@
   "CharacterList_ColWorld": "Monde d'origine",
   "CharacterList_ColActions": "Actions",
   "CharacterList_BtnForget": "Oublier",
-  "CharacterList_TooltipForget": "Vous ne pouvez pas oublier le personnage actuellement connecté."
+  "CharacterList_TooltipForget": "Vous ne pouvez pas oublier le personnage actuellement connecté.",
+  "Command_Characters_Description": "Liste tous les personnages suivis dans le chat.",
+  "Command_Characters_NoCharacters": "Aucun personnage suivi pour le moment.",
+  "Command_Characters_Header": "Personnages suivis :",
+  "Command_Characters_Line": "- {0} ({1})"
 }

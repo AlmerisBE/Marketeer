@@ -5,5 +5,9 @@
   "CharacterList_ColWorld": "ホームワールド",
   "CharacterList_ColActions": "アクション",
   "CharacterList_BtnForget": "忘れる",
-  "CharacterList_TooltipForget": "現在ログインしているキャラクターを忘れることはできません。"
+  "CharacterList_TooltipForget": "現在ログインしているキャラクターを忘れることはできません。",
+  "Command_Characters_Description": "チャットで記録されたすべてのキャラクターをリストします。",
+  "Command_Characters_NoCharacters": "まだキャラクターが記録されていません。",
+  "Command_Characters_Header": "記録されたキャラクター:",
+  "Command_Characters_Line": "- {0} ({1})"
 }
