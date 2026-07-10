@@ -43,7 +43,7 @@ public class CharacterListWidget : IDashboardWidget {
         var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + (ImGui.GetStyle().FramePadding.X * 2);
 
         if (ImGui.BeginTable("CharacterLayoutTable", 2, ImGuiTableFlags.None)) {
-            ImGui.TableSetupColumn("Header", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("Header", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.NoClip);
             ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, buttonWidth);
 
             foreach (var character in characters) {
@@ -87,7 +87,9 @@ public class CharacterListWidget : IDashboardWidget {
                         ImGui.TextDisabled(noRetainersLabel);
                     }
                     else {
-                        if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 1, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+                        float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
+
+                        if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 1, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
                             ImGui.TableSetupColumn(retainerColName);
                             ImGui.TableHeadersRow();
 
