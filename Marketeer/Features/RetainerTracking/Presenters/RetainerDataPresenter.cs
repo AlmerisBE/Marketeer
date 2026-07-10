@@ -15,7 +15,10 @@ public class RetainerDataPresenter : IRetainerDataPresenter {
 
     public IReadOnlyList<RetainerDisplayData> GetRetainers(string characterName, uint homeWorldId) {
         return this.retainerTrackerService.GetRetainersForCharacter(characterName, homeWorldId)
-            .Select(r => new RetainerDisplayData { Name = r.Name })
+            .Select(r => new RetainerDisplayData {
+                RetainerId = r.RetainerId,
+                Name = r.Name
+            })
             .ToList();
     }
 }

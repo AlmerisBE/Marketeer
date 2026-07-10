@@ -23,7 +23,8 @@ public sealed class Plugin : IDalamudPlugin {
         IObjectTable objectTable,
         IFramework framework,
         IDataManager dataManager,
-        ICondition condition) {
+        ICondition condition,
+        IAddonLifecycle addonLifecycle) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -40,6 +41,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(framework);
         services.AddSingleton(dataManager);
         services.AddSingleton(condition);
+        services.AddSingleton(addonLifecycle);
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();

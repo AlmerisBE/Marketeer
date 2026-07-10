@@ -12,6 +12,7 @@ public class CharacterListWidget : IDashboardWidget {
     private IWorldDataPresenter worldDataPresenter;
     private ILocalizationService localizationService;
     private IRetainerDataPresenter retainerDataPresenter;
+    private IMarketListingTrackerService marketListingTrackerService;
 
     public string Name => this.localizationService.Translate("CharacterList_TabName");
 
@@ -19,12 +20,14 @@ public class CharacterListWidget : IDashboardWidget {
         ICharacterTrackerService trackerService,
         IWorldDataPresenter worldDataPresenter,
         ILocalizationService localizationService,
-        IRetainerDataPresenter retainerDataPresenter) {
+        IRetainerDataPresenter retainerDataPresenter,
+        IMarketListingTrackerService marketListingTrackerService) {
 
         this.trackerService = trackerService;
         this.worldDataPresenter = worldDataPresenter;
         this.localizationService = localizationService;
         this.retainerDataPresenter = retainerDataPresenter;
+        this.marketListingTrackerService = marketListingTrackerService;
     }
 
     public void Draw() {
@@ -38,29 +41,28 @@ public class CharacterListWidget : IDashboardWidget {
         var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
         var forgetTooltip = this.localizationService.Translate("CharacterList_TooltipForget");
         var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
+
         var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
+        var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
+        var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
 
         var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + (ImGui.GetStyle().FramePadding.X * 2);
 
         foreach (var character in characters) {
             bool isExpanded = false;
 
-            // Micro-layout table strictly for aligning the header and the button
             if (ImGui.BeginTable($"HeaderLayout_{character.Name}_{character.HomeWorldId}", 2, ImGuiTableFlags.None)) {
                 ImGui.TableSetupColumn("Header", ImGuiTableColumnFlags.WidthStretch);
                 ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, buttonWidth);
 
                 ImGui.TableNextRow();
-
-                // Column 0: The accordion header
                 ImGui.TableNextColumn();
+
                 var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
                 var headerText = $"{character.Name} ({worldName})###{character.Name}_{character.HomeWorldId}";
 
-                var treeFlags = ImGuiTreeNodeFlags.Framed;
-                isExpanded = ImGui.TreeNodeEx(headerText, treeFlags);
+                isExpanded = ImGui.TreeNodeEx(headerText, ImGuiTreeNodeFlags.Framed);
 
-                // Column 1: The isolated button
                 ImGui.TableNextColumn();
                 var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
                 if (isActive) {
@@ -78,11 +80,9 @@ public class CharacterListWidget : IDashboardWidget {
                     }
                 }
 
-                // Close the layout table immediately so the retainer table is not constrained by it
                 ImGui.EndTable();
             }
 
-            // Draw the retainers table in the main window space
             if (isExpanded) {
                 float indent = ImGui.GetStyle().IndentSpacing;
                 ImGui.Unindent(indent);
@@ -94,14 +94,33 @@ public class CharacterListWidget : IDashboardWidget {
                     ImGui.TextDisabled(noRetainersLabel);
                 }
                 else {
-                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 1, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
-                        ImGui.TableSetupColumn(retainerColName);
+                    float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
+
+                    // Added columns to support listings count and total value
+                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
+                        ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
+                        ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 80f);
+                        ImGui.TableSetupColumn(totalColName, ImGuiTableColumnFlags.WidthFixed, 120f);
                         ImGui.TableHeadersRow();
 
                         foreach (var retainer in retainers) {
                             ImGui.TableNextRow();
+
+                            // Name
                             ImGui.TableNextColumn();
                             ImGui.Text(retainer.Name);
+
+                            var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
+                            var distinctItems = listings.Count;
+                            var totalValue = listings.Sum(l => (long)l.Quantity * l.PricePerUnit);
+
+                            // Count
+                            ImGui.TableNextColumn();
+                            ImGui.Text(distinctItems.ToString());
+
+                            // Total Value formatted nicely
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"{totalValue:N0}");
                         }
 
                         ImGui.EndTable();

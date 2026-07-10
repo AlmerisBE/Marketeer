@@ -8,5 +8,7 @@
   "Command_Characters_Description": "チャットで記録されたすべてのキャラクターをリストします。",
   "Command_Characters_NoCharacters": "まだキャラクターが記録されていません。",
   "Command_Characters_Header": "記録されたキャラクター:",
-  "Command_Characters_Line": "- {0} ({1})"
+  "Command_Characters_Line": "- {0} ({1})",
+  "CharacterList_ColListingsCount": "出品数",
+  "CharacterList_ColTotalValue": "合計額"
 }

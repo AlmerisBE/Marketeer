@@ -8,5 +8,7 @@
   "Command_Characters_Description": "Listet alle erfassten Charaktere im Chat auf.",
   "Command_Characters_NoCharacters": "Noch keine Charaktere erfasst.",
   "Command_Characters_Header": "Erfasste Charaktere:",
-  "Command_Characters_Line": "- {0} ({1})"
+  "Command_Characters_Line": "- {0} ({1})",
+  "CharacterList_ColListingsCount": "Angebote",
+  "CharacterList_ColTotalValue": "Gesamtwert"
 }
