@@ -1,7 +1,7 @@
-﻿using Marketeer.Features.Command.Contracts;
-using Marketeer.Features.Command.Services;
-using Dalamud.Game.Command;
+﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
+using Marketeer.Features.Command.Contracts;
+using Marketeer.Features.Command.Services;
 using NSubstitute;
 using Xunit;
 
@@ -18,7 +18,7 @@ public class CommandDispatcherTests {
         using var dispatcher = new CommandDispatcher(mockCommandManager, commands);
 
         // Assert
-        mockCommandManager.Received(1).AddHandler("/baseplugin", Arg.Any<CommandInfo>());
+        mockCommandManager.Received(1).AddHandler("/marketeer", Arg.Any<CommandInfo>());
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class CommandDispatcherTests {
 
         // Act
         // Invoke the handler dynamically from the captured object
-        capturedCommandInfo.Handler.Invoke("/baseplugin", "hello world");
+        capturedCommandInfo.Handler.Invoke("/marketeer", "hello world");
 
         // Assert
         mockCommand.Received(1).Execute("world");
@@ -63,7 +63,7 @@ public class CommandDispatcherTests {
         using var dispatcher = new CommandDispatcher(mockCommandManager, commands);
 
         // Act
-        capturedCommandInfo.Handler.Invoke("/baseplugin", "HeLlO arGuments");
+        capturedCommandInfo.Handler.Invoke("/marketeer", "HeLlO arGuments");
 
         // Assert
         mockCommand.Received(1).Execute("arGuments");
@@ -81,6 +81,6 @@ public class CommandDispatcherTests {
         dispatcher.Dispose();
 
         // Assert
-        mockCommandManager.Received(1).RemoveHandler("/baseplugin");
+        mockCommandManager.Received(1).RemoveHandler("/marketeer");
     }
 }

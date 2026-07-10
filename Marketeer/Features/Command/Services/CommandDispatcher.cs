@@ -1,6 +1,6 @@
-﻿using Marketeer.Features.Command.Contracts;
-using Dalamud.Game.Command;
+﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
+using Marketeer.Features.Command.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +10,14 @@ namespace Marketeer.Features.Command.Services;
 public class CommandDispatcher : IDisposable {
     private ICommandManager commandManager;
     private IEnumerable<ICommand> commands;
-    private string mainCommand = "/baseplugin";
+    private string mainCommand = "/marketeer";
 
     public CommandDispatcher(ICommandManager commandManager, IEnumerable<ICommand> commands) {
         this.commandManager = commandManager;
         this.commands = commands;
 
         this.commandManager.AddHandler(this.mainCommand, new CommandInfo(this.OnCommand) {
-            HelpMessage = "Type '/baseplugin help' for more information."
+            HelpMessage = "Type '/marketeer help' for more information."
         });
     }
 
