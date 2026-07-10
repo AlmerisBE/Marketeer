@@ -55,12 +55,12 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
         var fetchedListings = this.listingProvider.GetActiveRetainerListings();
         var config = this.configService.GetConfig();
-        config.KnownListings ??= new List<TrackedListing>();
+        config.KnownListings ??= [];
 
-        // Merge logic: Retain existing prices if the UI parser failed to grab them this time
         foreach (var fetched in fetchedListings) {
-            var existing = config.KnownListings.FirstOrDefault(l => l.AssociatedRetainerId == activeRetainerId.Value && l.ItemId == fetched.ItemId);
+            var existing = config.KnownListings.FirstOrDefault(l => l.AssociatedRetainerId == activeRetainerId.Value && l.SlotIndex == fetched.SlotIndex);
             if (existing != null) {
+                existing.ItemId = fetched.ItemId;
                 existing.Quantity = fetched.Quantity;
                 if (fetched.PricePerUnit > 0) {
                     existing.PricePerUnit = fetched.PricePerUnit;
@@ -71,8 +71,7 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
             }
         }
 
-        // Remove sold items
-        config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value && !fetchedListings.Any(f => f.ItemId == l.ItemId));
+        config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value && !fetchedListings.Any(f => f.SlotIndex == l.SlotIndex));
 
         this.configService.Save();
         this.logger.Info($"Successfully recorded {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");

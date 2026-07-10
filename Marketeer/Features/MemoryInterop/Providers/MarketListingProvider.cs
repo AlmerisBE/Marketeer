@@ -63,6 +63,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
 
             listings.Add(new TrackedListing {
                 AssociatedRetainerId = activeRetainerId.Value,
+                SlotIndex = (uint)i,
                 ItemId = item->ItemId,
                 Quantity = (uint)item->Quantity,
                 PricePerUnit = price
