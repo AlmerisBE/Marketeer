@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marketeer.Tests.Features.GameData.Services;
 
-public class WorldDataServiceTests {
+public class WorldDataPresenterTests {
     [Fact]
     public void GetWorldName_WhenSheetIsMissing_ReturnsIdAsString() {
         // Arrange
@@ -16,7 +16,7 @@ public class WorldDataServiceTests {
         // Simulate Dalamud failing to load the Excel sheet
         mockDataManager.GetExcelSheet<World>().Returns((ExcelSheet<World>?)null);
 
-        var service = new WorldDataService(mockDataManager);
+        var service = new WorldDataPresenter(mockDataManager);
         uint testId = 33;
 
         // Act

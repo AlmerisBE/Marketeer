@@ -4,10 +4,10 @@ using Marketeer.Features.CharacterTracking.Contracts;
 
 namespace Marketeer.Features.GameData.Services;
 
-public class WorldDataService : IWorldDataService {
+public class WorldDataPresenter : IWorldDataPresenter {
     private IDataManager dataManager;
 
-    public WorldDataService(IDataManager dataManager) {
+    public WorldDataPresenter(IDataManager dataManager) {
         this.dataManager = dataManager;
     }
 

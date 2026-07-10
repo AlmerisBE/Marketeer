@@ -7,6 +7,6 @@ namespace Marketeer.Features.GameData;
 
 public class GameDataFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
-        services.AddSingleton<IWorldDataService, WorldDataService>();
+        services.AddSingleton<IWorldDataPresenter, WorldDataPresenter>();
     }
 }

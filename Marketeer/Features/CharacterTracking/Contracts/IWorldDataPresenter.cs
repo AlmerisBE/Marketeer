@@ -1,5 +1,5 @@
 ﻿namespace Marketeer.Features.CharacterTracking.Contracts;
 
-public interface IWorldDataService {
+public interface IWorldDataPresenter {
     string GetWorldName(uint worldId);
 }

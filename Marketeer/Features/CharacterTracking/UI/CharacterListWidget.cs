@@ -7,11 +7,11 @@ namespace Marketeer.Features.CharacterTracking.UI;
 
 public class CharacterListWidget : IDashboardWidget {
     private ICharacterTrackerService trackerService;
-    private IWorldDataService worldDataService;
+    private IWorldDataPresenter worldDataService;
 
     public string Name => "Characters";
 
-    public CharacterListWidget(ICharacterTrackerService trackerService, IWorldDataService worldDataService) {
+    public CharacterListWidget(ICharacterTrackerService trackerService, IWorldDataPresenter worldDataService) {
         this.trackerService = trackerService;
         this.worldDataService = worldDataService;
     }
