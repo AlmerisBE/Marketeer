@@ -47,7 +47,9 @@ public class CharacterTrackerServiceTests {
         Assert.Single(pluginConfig.KnownCharacters);
         Assert.Equal("Almeris Tester", pluginConfig.KnownCharacters[0].Name);
         Assert.Equal((uint)0, pluginConfig.KnownCharacters[0].HomeWorldId);
-        mockConfigService.Received(2).Save(); // 1 from constructor trigger, 1 from explicit Act
+
+        // Only 1 save is expected because the second call correctly identifies the duplicate and skips saving.
+        mockConfigService.Received(1).Save();
     }
 
     [Fact]
