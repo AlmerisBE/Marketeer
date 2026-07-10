@@ -1,7 +1,7 @@
-﻿using Marketeer.Features.Configuration.Models;
-using Marketeer.Features.Configuration.Services;
-using Dalamud.Configuration;
+﻿using Dalamud.Configuration;
 using Dalamud.Plugin;
+using Marketeer.Features.Configuration.Models;
+using Marketeer.Features.Configuration.Services;
 using NSubstitute;
 using Xunit;
 
@@ -64,5 +64,26 @@ public class ConfigurationServiceTests {
         // Assert
         // Verify that SavePluginConfig was called exactly once with our config object
         mockPluginInterface.Received(1).SavePluginConfig(config);
+    }
+
+    [Fact]
+    public void ConfigurationService_Initialization_WithOldConfig_InitializesKnownCharacters() {
+        // Arrange
+        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
+
+        // Simulate an older JSON config where the list wasn't present (deserialized as null)
+        var oldConfig = new PluginConfiguration {
+            Version = 1,
+            KnownCharacters = null!
+        };
+        mockPluginInterface.GetPluginConfig().Returns(oldConfig);
+
+        // Act
+        var service = new ConfigurationService(mockPluginInterface);
+        var config = service.GetConfig();
+
+        // Assert
+        Assert.NotNull(config.KnownCharacters);
+        Assert.Empty(config.KnownCharacters);
     }
 }

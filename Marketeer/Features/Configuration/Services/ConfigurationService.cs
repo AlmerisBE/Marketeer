@@ -1,6 +1,8 @@
-﻿using Marketeer.Features.Configuration.Contracts;
+﻿using Dalamud.Plugin;
+using Marketeer.Features.CharacterTracking.Models;
+using Marketeer.Features.Configuration.Contracts;
 using Marketeer.Features.Configuration.Models;
-using Dalamud.Plugin;
+using System.Collections.Generic;
 
 namespace Marketeer.Features.Configuration.Services;
 
@@ -13,6 +15,9 @@ public class ConfigurationService : IConfigurationService {
 
         // Load existing config or create a new one
         this.config = this.pluginInterface.GetPluginConfig() as PluginConfiguration ?? new PluginConfiguration();
+
+        // Guard against null collections when loading old configuration files
+        this.config.KnownCharacters ??= new List<TrackedCharacter>();
     }
 
     public PluginConfiguration GetConfig() => this.config;
