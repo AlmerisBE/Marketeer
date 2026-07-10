@@ -76,4 +76,54 @@ public class CharacterTrackerServiceTests {
         Assert.Single(pluginConfig.KnownCharacters);
         mockConfigService.DidNotReceive().Save();
     }
+
+    [Fact]
+    public void ForgetCharacter_WhenCharacterExists_RemovesAndSavesConfig() {
+        // Arrange
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+
+        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter?)null);
+
+        var charToRemove = new TrackedCharacter { Name = "To Remove", HomeWorldId = 99 };
+        var pluginConfig = new PluginConfiguration {
+            KnownCharacters = new List<TrackedCharacter> { charToRemove }
+        };
+        mockConfigService.GetConfig().Returns(pluginConfig);
+
+        var service = new CharacterTrackerService(mockClientState, mockObjectTable, mockConfigService, mockLogger);
+
+        // Act
+        service.ForgetCharacter("To Remove", 99);
+
+        // Assert
+        Assert.Empty(pluginConfig.KnownCharacters);
+        mockConfigService.Received(1).Save();
+    }
+
+    [Fact]
+    public void ForgetCharacter_WhenCharacterDoesNotExist_DoesNotSaveConfig() {
+        // Arrange
+        var mockClientState = Substitute.For<IClientState>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+
+        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter?)null);
+
+        var pluginConfig = new PluginConfiguration {
+            KnownCharacters = new List<TrackedCharacter>()
+        };
+        mockConfigService.GetConfig().Returns(pluginConfig);
+
+        var service = new CharacterTrackerService(mockClientState, mockObjectTable, mockConfigService, mockLogger);
+
+        // Act
+        service.ForgetCharacter("Unknown", 99);
+
+        // Assert
+        mockConfigService.DidNotReceive().Save();
+    }
 }

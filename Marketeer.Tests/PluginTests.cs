@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin;
+﻿using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using NSubstitute;
 using Xunit;
@@ -16,6 +17,8 @@ public class PluginTests {
         var mockClientState = Substitute.For<IClientState>();
         var mockLogger = Substitute.For<IPluginLog>();
         var mockObjectTable = Substitute.For<IObjectTable>();
+
+        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter?)null);
 
         // Act & Assert
         // We verify that building the plugin (and its DI container) throws no exceptions
