@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Marketeer.Features.CharacterTracking.Commands;
 using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.CharacterTracking.Models;
 using Marketeer.Features.Localization.Contracts;
