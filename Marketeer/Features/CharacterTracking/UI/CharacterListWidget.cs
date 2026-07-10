@@ -7,11 +7,13 @@ namespace Marketeer.Features.CharacterTracking.UI;
 
 public class CharacterListWidget : IDashboardWidget {
     private ICharacterTrackerService trackerService;
+    private IWorldDataService worldDataService;
 
     public string Name => "Characters";
 
-    public CharacterListWidget(ICharacterTrackerService trackerService) {
+    public CharacterListWidget(ICharacterTrackerService trackerService, IWorldDataService worldDataService) {
         this.trackerService = trackerService;
+        this.worldDataService = worldDataService;
     }
 
     public void Draw() {
@@ -24,7 +26,7 @@ public class CharacterListWidget : IDashboardWidget {
 
         if (ImGui.BeginTable("CharacterTable", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn("Character Name");
-            ImGui.TableSetupColumn("Home World ID");
+            ImGui.TableSetupColumn("Home World");
             ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 100f);
             ImGui.TableHeadersRow();
 
@@ -35,13 +37,12 @@ public class CharacterListWidget : IDashboardWidget {
                 ImGui.Text(character.Name);
 
                 ImGui.TableNextColumn();
-                ImGui.Text(character.HomeWorldId.ToString());
+                var worldName = this.worldDataService.GetWorldName(character.HomeWorldId);
+                ImGui.Text(worldName);
 
                 ImGui.TableNextColumn();
 
-                // UI Logic: Disable the button if this is the active character
                 var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
-
                 if (isActive) {
                     ImGui.BeginDisabled();
                 }
@@ -52,7 +53,6 @@ public class CharacterListWidget : IDashboardWidget {
 
                 if (isActive) {
                     ImGui.EndDisabled();
-                    // Provide a tooltip so the user understands why the button is greyed out
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
                         ImGui.SetTooltip("You cannot forget the currently logged-in character.");
                     }

@@ -21,7 +21,8 @@ public sealed class Plugin : IDalamudPlugin {
         IClientState clientState,
         IPluginLog pluginLog,
         IObjectTable objectTable,
-        IFramework framework) { // Inject IFramework here
+        IFramework framework,
+        IDataManager dataManager) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -35,7 +36,8 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(clientState);
         services.AddSingleton(pluginLog);
         services.AddSingleton(objectTable);
-        services.AddSingleton(framework); // Register IFramework
+        services.AddSingleton(framework);
+        services.AddSingleton(dataManager);
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
