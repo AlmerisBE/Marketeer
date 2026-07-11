@@ -1,8 +1,13 @@
-﻿using Dalamud.Plugin.Services;
+﻿using Dalamud.Memory;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel.Sheets;
+using Marketeer.Features.Configuration.Contracts;
+using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.MarketListingTracking.Contracts;
 using Marketeer.Features.MarketListingTracking.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,9 +15,22 @@ namespace Marketeer.Features.MemoryInterop.Providers;
 
 public unsafe class MarketListingProvider : IMarketListingProvider {
     private IGameGui gameGui;
+    private ILoggerService logger;
+    private IDataManager dataManager;
+    private IConfigurationService configService;
 
-    public MarketListingProvider(IGameGui gameGui) {
+    private class UiRowData {
+        public float Y;
+        public uint TotalPrice;
+        public List<string> Texts = new();
+        public bool IsMatched;
+    }
+
+    public MarketListingProvider(IGameGui gameGui, ILoggerService logger, IDataManager dataManager, IConfigurationService configService) {
         this.gameGui = gameGui;
+        this.logger = logger;
+        this.dataManager = dataManager;
+        this.configService = configService;
     }
 
     public ulong? GetActiveRetainerId() {
@@ -46,7 +64,10 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
             return listings;
         }
 
-        var uiRows = this.ParseUiRowNumbers();
+        var uiRows = this.ParseUiRows();
+        var itemSheet = this.dataManager.GetExcelSheet<Item>();
+
+        var knownListings = this.configService.GetConfig().KnownListings ?? new List<TrackedListing>();
 
         for (int i = 0; i < container->Size; i++) {
             var item = container->GetInventorySlot(i);
@@ -56,15 +77,56 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
             }
 
             uint quantity = (uint)item->Quantity;
-            uint price = 0;
+            uint pricePerUnit = 0;
 
-            if (i < uiRows.Count) {
-                var numbersInRow = uiRows[i];
-                if (numbersInRow.Count > 0) {
-                    price = numbersInRow.LastOrDefault(n => n != quantity);
-                    if (price == 0) {
-                        price = numbersInRow.Last();
+            // FFXIV décale les ID des objets HQ de 1 000 000 en mémoire
+            uint baseItemId = item->ItemId > 1000000 ? item->ItemId - 1000000 : item->ItemId;
+
+            string itemName = string.Empty;
+            if (itemSheet != null && itemSheet.HasRow(baseItemId)) {
+                itemName = itemSheet.GetRow(baseItemId).Name.ToString();
+            }
+
+            string cleanItemName = this.NormalizeForMatch(itemName);
+
+            var matchedRow = uiRows.FirstOrDefault(r =>
+                !r.IsMatched &&
+                !string.IsNullOrEmpty(cleanItemName) &&
+                r.Texts.Any(t => {
+                    string cleanUiText = this.NormalizeForMatch(t);
+                    if (string.IsNullOrEmpty(cleanUiText)) {
+                        return false;
                     }
+
+                    // Permet d'associer les objets même si FFXIV tronque l'affichage avec "..."
+                    if (cleanUiText.Length > 5 && cleanItemName.StartsWith(cleanUiText)) {
+                        return true;
+                    }
+
+                    return cleanItemName == cleanUiText;
+                })
+            );
+
+            if (matchedRow != null) {
+                matchedRow.IsMatched = true;
+
+                // On divise le prix total lu dans l'UI par la quantité réelle pour obtenir le prix unitaire
+                if (quantity > 0) {
+                    pricePerUnit = matchedRow.TotalPrice / quantity;
+                }
+
+                this.logger.Debug($"[MarketListing] Mapped Slot {i} ({itemName}) successfully. Total: {matchedRow.TotalPrice}, Unit: {pricePerUnit}");
+            }
+            else {
+                // FALLBACK : L'objet a été déchargé de l'UI pendant le scroll. On restaure le dernier prix connu.
+                var historicalListing = knownListings.FirstOrDefault(l =>
+                    l.AssociatedRetainerId == activeRetainerId.Value &&
+                    l.SlotIndex == i &&
+                    l.ItemId == item->ItemId);
+
+                if (historicalListing != null && historicalListing.PricePerUnit > 0) {
+                    pricePerUnit = historicalListing.PricePerUnit;
+                    this.logger.Debug($"[MarketListing] Slot {i} ({itemName}) out of UI bounds. Rescued historical price: {pricePerUnit}.");
                 }
             }
 
@@ -73,15 +135,22 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
                 SlotIndex = (uint)i,
                 ItemId = item->ItemId,
                 Quantity = quantity,
-                PricePerUnit = price
+                PricePerUnit = pricePerUnit
             });
         }
 
         return listings;
     }
 
-    private List<List<uint>> ParseUiRowNumbers() {
-        var rows = new List<List<uint>>();
+    private string NormalizeForMatch(string input) {
+        if (string.IsNullOrWhiteSpace(input)) {
+            return string.Empty;
+        }
+        return new string(input.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+    }
+
+    private List<UiRowData> ParseUiRows() {
+        var rows = new List<UiRowData>();
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList", 1);
 
         if (addonPtr == nint.Zero) {
@@ -89,68 +158,64 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        if (addon == null) {
+        if (addon == null || addon->UldManager.NodeList == null) {
             return rows;
         }
 
-        try {
-            AtkComponentNode* listComponent = null;
-
-            for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
-                var node = addon->UldManager.NodeList[i];
-                if (node != null && node->Type == NodeType.Component) {
-                    var compNode = (AtkComponentNode*)node;
-                    if (compNode->Component->UldManager.NodeListCount == 20) {
-                        listComponent = compNode;
-                        break;
-                    }
-                }
-            }
-
-            if (listComponent != null) {
-                for (int j = 0; j < listComponent->Component->UldManager.NodeListCount; j++) {
-                    var itemNode = listComponent->Component->UldManager.NodeList[j];
-                    var numbers = new List<uint>();
-
-                    // Trigger deep recursive scan for this specific UI row
-                    this.ExtractNumbersRecursively(itemNode, numbers);
-
-                    rows.Add(numbers);
-                }
-
-                rows.Reverse();
-            }
-        }
-        catch {
-            // Silently abort on memory access violations
+        for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
+            this.ExtractUiRowsRecursively(addon->UldManager.NodeList[i], rows, 0f, null);
         }
 
-        return rows;
+        return rows.OrderBy(r => r.Y).ToList();
     }
 
-    private void ExtractNumbersRecursively(AtkResNode* node, List<uint> numbers) {
+    private void ExtractUiRowsRecursively(AtkResNode* node, List<UiRowData> rows, float currentY, UiRowData? currentRow) {
         if (node == null) {
             return;
         }
 
-        if (node->Type == NodeType.Text) {
-            var textNode = (AtkTextNode*)node;
-            var textPtr = textNode->NodeText.StringPtr;
+        float absoluteY = currentY + node->Y;
 
-            // CStringPointer requires accessing the .Value property to get the raw byte pointer
-            if (textPtr.Value != null) {
-                string text = System.Runtime.InteropServices.Marshal.PtrToStringUTF8((nint)textPtr.Value) ?? string.Empty;
+        if (currentRow != null && node->Type == NodeType.Text && node->NodeId < 100) {
+            if (((uint)node->NodeFlags & 0x10) != 0) {
+                var textNode = (AtkTextNode*)node;
 
-                string numericString = new string(text.Where(char.IsDigit).ToArray());
-                if (!string.IsNullOrEmpty(numericString) && uint.TryParse(numericString, out uint val)) {
-                    numbers.Add(val);
+                if (textNode->NodeText.StringPtr.Value != null) {
+                    try {
+                        var seString = MemoryHelper.ReadSeStringNullTerminated((nint)textNode->NodeText.StringPtr.Value);
+                        string rawText = seString.TextValue.Trim();
+
+                        if (!string.IsNullOrEmpty(rawText)) {
+                            currentRow.Texts.Add(rawText);
+
+                            if (node->NodeId == 7) {
+                                string numericString = new string(rawText.Where(char.IsDigit).ToArray());
+                                if (uint.TryParse(numericString, out uint val)) {
+                                    currentRow.TotalPrice = val;
+                                }
+                            }
+                        }
+                    }
+                    catch {
+                    }
                 }
             }
         }
-        else if (node->Type == NodeType.Component) {
+        else if (node->Type == NodeType.Component || (int)node->Type >= 1000) {
             var compNode = (AtkComponentNode*)node;
-            for (int i = 0; i < compNode->Component->UldManager.NodeListCount; i++) {
-                this.ExtractNumbersRecursively(compNode->Component->UldManager.NodeList[i], numbers);
+
+            bool isListItemStart = currentRow == null && (node->NodeId >= 50000 && node->NodeId < 60000);
+
+            UiRowData? nextRow = currentRow;
+            if (isListItemStart) {
+                nextRow = new UiRowData { Y = absoluteY, IsMatched = false };
+                rows.Add(nextRow);
+            }
+
+            if (compNode->Component != null) {
+                for (int i = 0; i < compNode->Component->UldManager.NodeListCount; i++) {
+                    this.ExtractUiRowsRecursively(compNode->Component->UldManager.NodeList[i], rows, absoluteY, nextRow);
+                }
             }
         }
     }

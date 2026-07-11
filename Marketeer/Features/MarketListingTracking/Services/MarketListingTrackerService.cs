@@ -49,7 +49,6 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
     private void RecordListings() {
         var activeRetainerId = this.listingProvider.GetActiveRetainerId();
         if (!activeRetainerId.HasValue) {
-            this.logger.Warning("Could not identify the active retainer while trying to record listings.");
             return;
         }
 
@@ -57,30 +56,43 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
         var config = this.configService.GetConfig();
         config.KnownListings ??= new List<TrackedListing>();
 
-        // 1. Isolate existing listings to preserve prices if the UI parser returns 0
         var existingListings = config.KnownListings
             .Where(l => l.AssociatedRetainerId == activeRetainerId.Value)
             .ToList();
 
-        // 2. Brutally remove ALL known listings for this retainer to purge any legacy duplicates
+        bool isModified = false;
+
+        if (existingListings.Count != fetchedListings.Count) {
+            isModified = true;
+        }
+
         config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value);
 
-        // 3. Merge fresh data and fallback to previous prices if current UI parsing failed
         foreach (var fetched in fetchedListings) {
             var existing = existingListings.FirstOrDefault(l => l.SlotIndex == fetched.SlotIndex)
                         ?? existingListings.FirstOrDefault(l => l.ItemId == fetched.ItemId);
 
             if (existing != null) {
+                // Keep the old price if the item is currently scrolled out of view (UI returns 0)
                 if (fetched.PricePerUnit == 0 && existing.PricePerUnit > 0) {
                     fetched.PricePerUnit = existing.PricePerUnit;
                 }
+
+                if (existing.PricePerUnit != fetched.PricePerUnit || existing.Quantity != fetched.Quantity || existing.ItemId != fetched.ItemId) {
+                    isModified = true;
+                }
+            }
+            else {
+                isModified = true; // Totally new listing found
             }
 
             config.KnownListings.Add(fetched);
         }
 
-        this.configService.Save();
-        this.logger.Info($"Successfully recorded {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");
+        if (isModified) {
+            this.configService.Save();
+            this.logger.Info($"[MarketListing] State modified. Saved {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");
+        }
     }
 
     public void Dispose() {
