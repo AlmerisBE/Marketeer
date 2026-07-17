@@ -10,5 +10,6 @@
   "Command_Characters_Header": "Personnages suivis :",
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "En vente",
-  "CharacterList_ColTotalValue": "Valeur totale"
+  "CharacterList_ColTotalValue": "Valeur totale",
+  "CharacterList_ColGil":  "Gils"
 }

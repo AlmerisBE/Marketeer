@@ -15,8 +15,13 @@ public class DashboardFeature : IFeatureModule {
         services.AddSingleton<ILocalizationProvider, DashboardLocalizationProvider>();
         services.AddSingleton<IDashboardWidget, CharacterListWidget>();
 
+        // Main window registration
         services.AddSingleton<DashboardWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<DashboardWindow>());
+
+        // Details window registration
+        services.AddSingleton<RetainerDetailsWindow>();
+        services.AddSingleton<Window>(provider => provider.GetRequiredService<RetainerDetailsWindow>());
 
         services.AddSingleton<ICommand, MainCommand>();
     }

@@ -13,6 +13,7 @@ public class CharacterListWidget : IDashboardWidget {
     private ILocalizationService localizationService;
     private IRetainerDataPresenter retainerDataPresenter;
     private IMarketListingTrackerService marketListingTrackerService;
+    private RetainerDetailsWindow retainerDetailsWindow;
 
     public string Name => this.localizationService.Translate("CharacterList_TabName");
 
@@ -21,13 +22,15 @@ public class CharacterListWidget : IDashboardWidget {
         IWorldDataPresenter worldDataPresenter,
         ILocalizationService localizationService,
         IRetainerDataPresenter retainerDataPresenter,
-        IMarketListingTrackerService marketListingTrackerService) {
+        IMarketListingTrackerService marketListingTrackerService,
+        RetainerDetailsWindow retainerDetailsWindow) {
 
         this.trackerService = trackerService;
         this.worldDataPresenter = worldDataPresenter;
         this.localizationService = localizationService;
         this.retainerDataPresenter = retainerDataPresenter;
         this.marketListingTrackerService = marketListingTrackerService;
+        this.retainerDetailsWindow = retainerDetailsWindow;
     }
 
     public void Draw() {
@@ -43,10 +46,10 @@ public class CharacterListWidget : IDashboardWidget {
         var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
 
         var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
-        // Ensure you add "CharacterList_ColGil" mapping to your translation JSON files (e.g. "Gils")
         var gilColName = this.localizationService.Translate("CharacterList_ColGil");
         var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
         var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
+        var detailsButtonLabel = this.localizationService.Translate("Dashboard_DetailsButton");
 
         var updateRequiredTooltip = this.localizationService.Translate("Dashboard_PriceUpdateRequired");
         var syncRequiredTooltip = this.localizationService.Translate("Dashboard_SyncRequired");
@@ -101,12 +104,13 @@ public class CharacterListWidget : IDashboardWidget {
                 else {
                     float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
 
-                    // Updated to 4 columns to accommodate the Gil tracking
-                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
+                    // Extended to 5 columns to fit the Details action button
+                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
                         ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
                         ImGui.TableSetupColumn(gilColName, ImGuiTableColumnFlags.WidthFixed, 100f);
-                        ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 80f);
-                        ImGui.TableSetupColumn(totalColName, ImGuiTableColumnFlags.WidthFixed, 120f);
+                        ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 60f);
+                        ImGui.TableSetupColumn(totalColName, ImGuiTableColumnFlags.WidthFixed, 100f);
+                        ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize(detailsButtonLabel).X + 16f);
                         ImGui.TableHeadersRow();
 
                         foreach (var retainer in retainers) {
@@ -138,6 +142,11 @@ public class CharacterListWidget : IDashboardWidget {
                             }
                             else {
                                 ImGui.Text($"{totalValue:N0}");
+                            }
+
+                            ImGui.TableNextColumn();
+                            if (ImGui.Button($"{detailsButtonLabel}##det_{retainer.RetainerId}")) {
+                                this.retainerDetailsWindow.OpenForRetainer(retainer.RetainerId, retainer.Name);
                             }
                         }
 

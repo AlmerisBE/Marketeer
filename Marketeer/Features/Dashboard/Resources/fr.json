@@ -2,5 +2,11 @@
   "Dashboard_Title": "Marketeer - Tableau de bord",
   "Dashboard_PriceUpdateRequired": "Prix à mettre à jour",
   "Dashboard_SyncRequired": "Désynchronisation détectée. Ouvrez la liste des ventes.",
-  "CharacterList_ColGil": "Gils"
+  "Dashboard_DetailsButton": "Détails",
+  "RetainerDetails_Title": "Détails du servant : {0}",
+  "RetainerDetails_ColName": "Objet",
+  "RetainerDetails_ColUnitPrice": "Prix unitaire",
+  "RetainerDetails_ColQuantity": "Qté",
+  "RetainerDetails_ColTotalPrice": "Prix total",
+  "RetainerDetails_ColTax": "Taxe (5%)"
 }
