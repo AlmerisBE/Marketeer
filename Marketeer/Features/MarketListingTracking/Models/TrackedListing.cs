@@ -7,8 +7,11 @@ public class TrackedListing {
     public ulong AssociatedRetainerId { get; set; }
     public uint SlotIndex { get; set; }
     public uint ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
     public uint Quantity { get; set; }
     public uint PricePerUnit { get; set; }
+    public uint TotalPrice { get; set; }
+    public uint Tax { get; set; }
 
     public override bool Equals(object? obj) {
         if (obj is TrackedListing other) {

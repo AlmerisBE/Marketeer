@@ -34,16 +34,22 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
     public IReadOnlyList<ListingDisplayData> GetListingsForRetainer(ulong retainerId) {
         var config = this.configService.GetConfig();
-        config.KnownListings ??= new List<TrackedListing>();
 
-        return config.KnownListings
-            .Where(listing => listing.AssociatedRetainerId == retainerId)
-            .Select(listing => new ListingDisplayData {
-                ItemId = listing.ItemId,
-                Quantity = listing.Quantity,
-                PricePerUnit = listing.PricePerUnit
-            })
-            .ToList();
+        lock (config) {
+            config.KnownListings ??= new List<TrackedListing>();
+
+            return config.KnownListings
+                .Where(listing => listing.AssociatedRetainerId == retainerId)
+                .Select(listing => new ListingDisplayData {
+                    ItemId = listing.ItemId,
+                    ItemName = listing.ItemName,
+                    Quantity = listing.Quantity,
+                    PricePerUnit = listing.PricePerUnit,
+                    TotalPrice = listing.TotalPrice,
+                    Tax = listing.Tax
+                })
+                .ToList();
+        }
     }
 
     private void RecordListings() {
@@ -54,44 +60,48 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
         var fetchedListings = this.listingProvider.GetActiveRetainerListings();
         var config = this.configService.GetConfig();
-        config.KnownListings ??= new List<TrackedListing>();
 
-        var existingListings = config.KnownListings
-            .Where(l => l.AssociatedRetainerId == activeRetainerId.Value)
-            .ToList();
+        lock (config) {
+            config.KnownListings ??= new List<TrackedListing>();
 
-        bool isModified = false;
+            var existingListings = config.KnownListings
+                .Where(l => l.AssociatedRetainerId == activeRetainerId.Value)
+                .ToList();
 
-        if (existingListings.Count != fetchedListings.Count) {
-            isModified = true;
-        }
+            bool isModified = false;
 
-        config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value);
+            if (existingListings.Count != fetchedListings.Count) {
+                isModified = true;
+            }
 
-        foreach (var fetched in fetchedListings) {
-            var existing = existingListings.FirstOrDefault(l => l.SlotIndex == fetched.SlotIndex)
-                        ?? existingListings.FirstOrDefault(l => l.ItemId == fetched.ItemId);
+            config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value);
 
-            if (existing != null) {
-                // Keep the old price if the item is currently scrolled out of view (UI returns 0)
-                if (fetched.PricePerUnit == 0 && existing.PricePerUnit > 0) {
-                    fetched.PricePerUnit = existing.PricePerUnit;
+            foreach (var fetched in fetchedListings) {
+                var existing = existingListings.FirstOrDefault(l => l.SlotIndex == fetched.SlotIndex)
+                            ?? existingListings.FirstOrDefault(l => l.ItemId == fetched.ItemId);
+
+                if (existing != null) {
+                    if (fetched.PricePerUnit == 0 && existing.PricePerUnit > 0) {
+                        fetched.PricePerUnit = existing.PricePerUnit;
+                        fetched.TotalPrice = fetched.PricePerUnit * fetched.Quantity;
+                        fetched.Tax = (uint)Math.Floor(fetched.TotalPrice * 0.05);
+                    }
+
+                    if (existing.PricePerUnit != fetched.PricePerUnit || existing.Quantity != fetched.Quantity || existing.ItemId != fetched.ItemId) {
+                        isModified = true;
+                    }
                 }
-
-                if (existing.PricePerUnit != fetched.PricePerUnit || existing.Quantity != fetched.Quantity || existing.ItemId != fetched.ItemId) {
+                else {
                     isModified = true;
                 }
-            }
-            else {
-                isModified = true; // Totally new listing found
+
+                config.KnownListings.Add(fetched);
             }
 
-            config.KnownListings.Add(fetched);
-        }
-
-        if (isModified) {
-            this.configService.Save();
-            this.logger.Info($"[MarketListing] State modified. Saved {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");
+            if (isModified) {
+                this.configService.Save();
+                this.logger.Info($"[MarketListing] State modified. Saved {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");
+            }
         }
     }
 
