@@ -18,7 +18,8 @@ public class RetainerDataPresenter : IRetainerDataPresenter {
             .Select(r => new RetainerDisplayData {
                 RetainerId = r.RetainerId,
                 Name = r.Name,
-                MarketItemCount = r.MarketItemCount
+                MarketItemCount = r.MarketItemCount,
+                Gil = r.Gil
             })
             .ToList();
     }

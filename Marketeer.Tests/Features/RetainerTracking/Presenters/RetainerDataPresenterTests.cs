@@ -1,4 +1,5 @@
 ﻿using Marketeer.Features.RetainerTracking.Contracts;
+using Marketeer.Features.RetainerTracking.Models;
 using Marketeer.Features.RetainerTracking.Presenters;
 using NSubstitute;
 using Xunit;
@@ -10,21 +11,27 @@ public class RetainerDataPresenterTests {
     public void GetRetainers_ReturnsMappedDisplayData() {
         // Arrange
         var mockService = Substitute.For<IRetainerTrackerService>();
-        mockService.GetRetainersForCharacter("Test Char", 33).Returns([
-            new() { Name = "Retainer A", RetainerId = 1 },
-            new() { Name = "Retainer B", RetainerId = 2 }
-        ]);
+
+        var retainers = new List<TrackedRetainer> {
+            new TrackedRetainer { Name = "Retainer A", RetainerId = 1, Gil = 150000u },
+            new TrackedRetainer { Name = "Retainer B", RetainerId = 2, Gil = 500u }
+        };
+
+        mockService.GetRetainersForCharacter("Test Char", 33u).Returns(retainers);
 
         var presenter = new RetainerDataPresenter(mockService);
 
         // Act
-        var result = presenter.GetRetainers("Test Char", 33);
+        var result = presenter.GetRetainers("Test Char", 33u);
 
         // Assert
         Assert.Equal(2, result.Count);
         Assert.Equal(1ul, result[0].RetainerId);
         Assert.Equal("Retainer A", result[0].Name);
+        Assert.Equal(150000u, result[0].Gil);
+
         Assert.Equal(2ul, result[1].RetainerId);
         Assert.Equal("Retainer B", result[1].Name);
+        Assert.Equal(500u, result[1].Gil);
     }
 }

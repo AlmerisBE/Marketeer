@@ -35,7 +35,8 @@ public unsafe class RetainerProvider : IRetainerProvider {
             retainers.Add(new TrackedRetainer {
                 RetainerId = retainer->RetainerId,
                 Name = name,
-                MarketItemCount = retainer->MarketItemCount
+                MarketItemCount = retainer->MarketItemCount,
+                Gil = retainer->Gil
             });
         }
 

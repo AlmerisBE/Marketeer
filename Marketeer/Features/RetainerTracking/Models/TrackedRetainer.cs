@@ -6,8 +6,8 @@ namespace Marketeer.Features.RetainerTracking.Models;
 public class TrackedRetainer {
     public ulong RetainerId { get; set; }
     public string Name { get; set; } = string.Empty;
-
     public uint MarketItemCount { get; set; }
+    public uint Gil { get; set; }
 
     public string AssociatedCharacterName { get; set; } = string.Empty;
     public uint AssociatedHomeWorldId { get; set; }

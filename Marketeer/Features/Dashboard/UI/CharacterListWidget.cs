@@ -43,6 +43,8 @@ public class CharacterListWidget : IDashboardWidget {
         var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
 
         var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
+        // Ensure you add "CharacterList_ColGil" mapping to your translation JSON files (e.g. "Gils")
+        var gilColName = this.localizationService.Translate("CharacterList_ColGil");
         var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
         var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
 
@@ -99,8 +101,10 @@ public class CharacterListWidget : IDashboardWidget {
                 else {
                     float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
 
-                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
+                    // Updated to 4 columns to accommodate the Gil tracking
+                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
                         ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
+                        ImGui.TableSetupColumn(gilColName, ImGuiTableColumnFlags.WidthFixed, 100f);
                         ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 80f);
                         ImGui.TableSetupColumn(totalColName, ImGuiTableColumnFlags.WidthFixed, 120f);
                         ImGui.TableHeadersRow();
@@ -111,17 +115,18 @@ public class CharacterListWidget : IDashboardWidget {
                             ImGui.TableNextColumn();
                             ImGui.Text(retainer.Name);
 
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"{retainer.Gil:N0}");
+
                             var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
                             var distinctItems = listings.Count;
 
-                            // Using the pre-calculated total prices saved from memory
                             var totalValue = listings.Sum(l => l.TotalPrice);
 
                             var needsPriceUpdate = distinctItems > 0 && listings.Any(l => l.PricePerUnit == 0);
                             var isDesynced = distinctItems != retainer.MarketItemCount;
 
                             ImGui.TableNextColumn();
-                            // Always display the true server item count directly without warnings
                             ImGui.Text(retainer.MarketItemCount.ToString());
 
                             ImGui.TableNextColumn();

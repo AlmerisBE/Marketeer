@@ -36,7 +36,6 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
 
         this.characterTrackerService.CharacterForgotten += this.OnCharacterForgotten;
 
-        // Abonnement massif : le compte du servant est mis à jour en temps réel à chaque interaction
         this.gameEventService.RetainerBellOpened += this.RecordRetainers;
         this.gameEventService.RetainerListingsOpened += this.RecordRetainers;
         this.gameEventService.RetainerListingAdded += this.RecordRetainers;
@@ -44,11 +43,13 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
 
     public IReadOnlyList<TrackedRetainer> GetRetainersForCharacter(string characterName, uint homeWorldId) {
         var config = this.configService.GetConfig();
-        config.KnownRetainers ??= new List<TrackedRetainer>();
 
-        return config.KnownRetainers
-            .Where(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId)
-            .ToList();
+        lock (config) {
+            config.KnownRetainers ??= new List<TrackedRetainer>();
+            return config.KnownRetainers
+                .Where(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId)
+                .ToList();
+        }
     }
 
     public void RecordRetainers() {
@@ -66,45 +67,57 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         }
 
         var config = this.configService.GetConfig();
-        config.KnownRetainers ??= new List<TrackedRetainer>();
 
-        bool isModified = false;
-        foreach (var retainer in activeRetainers) {
-            retainer.AssociatedCharacterName = characterName;
-            retainer.AssociatedHomeWorldId = worldId;
+        lock (config) {
+            config.KnownRetainers ??= new List<TrackedRetainer>();
+            bool isModified = false;
 
-            var existing = config.KnownRetainers.FirstOrDefault(r => r.RetainerId == retainer.RetainerId);
-            if (existing != null) {
-                if (existing.Name != retainer.Name) {
-                    existing.Name = retainer.Name;
-                    isModified = true;
+            foreach (var retainer in activeRetainers) {
+                retainer.AssociatedCharacterName = characterName;
+                retainer.AssociatedHomeWorldId = worldId;
+
+                var existing = config.KnownRetainers.FirstOrDefault(r => r.RetainerId == retainer.RetainerId);
+
+                if (existing != null) {
+                    if (existing.Name != retainer.Name) {
+                        existing.Name = retainer.Name;
+                        isModified = true;
+                    }
+                    if (existing.MarketItemCount != retainer.MarketItemCount) {
+                        existing.MarketItemCount = retainer.MarketItemCount;
+                        isModified = true;
+                    }
+                    if (existing.Gil != retainer.Gil) {
+                        existing.Gil = retainer.Gil;
+                        isModified = true;
+                    }
                 }
-                if (existing.MarketItemCount != retainer.MarketItemCount) {
-                    existing.MarketItemCount = retainer.MarketItemCount;
+                else {
+                    config.KnownRetainers.Add(retainer);
                     isModified = true;
+                    this.logger.Info($"New retainer recorded: {retainer.Name} (Owner: {characterName})");
                 }
             }
-            else {
-                config.KnownRetainers.Add(retainer);
-                isModified = true;
-                this.logger.Info($"New retainer recorded: {retainer.Name} (Owner: {characterName})");
-            }
-        }
 
-        if (isModified) {
-            this.configService.Save();
+            if (isModified) {
+                this.configService.Save();
+            }
         }
     }
 
     private void OnCharacterForgotten(string characterName, uint homeWorldId) {
         var config = this.configService.GetConfig();
-        config.KnownRetainers ??= new List<TrackedRetainer>();
 
-        var initialCount = config.KnownRetainers.Count;
-        config.KnownRetainers.RemoveAll(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId);
-        if (config.KnownRetainers.Count < initialCount) {
-            this.configService.Save();
-            this.logger.Info($"Cascading delete executed: Retainers for {characterName} were removed.");
+        lock (config) {
+            config.KnownRetainers ??= new List<TrackedRetainer>();
+
+            var initialCount = config.KnownRetainers.Count;
+            config.KnownRetainers.RemoveAll(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId);
+
+            if (config.KnownRetainers.Count < initialCount) {
+                this.configService.Save();
+                this.logger.Info($"Cascading delete executed: Retainers for {characterName} were removed.");
+            }
         }
     }
 

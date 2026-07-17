@@ -1,5 +1,6 @@
 {
   "Dashboard_Title": "Marketeer - Dashboard",
   "Dashboard_PriceUpdateRequired": "Price update required",
-  "Dashboard_SyncRequired": "Desync detected. Open market listings."
+  "Dashboard_SyncRequired": "Desync detected. Open market listings.",
+  "CharacterList_ColGil": "Gils"
 }
