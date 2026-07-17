@@ -35,7 +35,6 @@ public class GameEventService : IGameEventService, IDisposable {
     }
 
     private async void OnRetainerListOpened(AddonEvent type, AddonArgs args) {
-        // 500ms network propagation delay to ensure memory structs are filled
         await Task.Delay(500);
         await this.framework.RunOnFrameworkThread(() => {
             this.logger.Debug("RetainerList addon delayed sync triggered.");

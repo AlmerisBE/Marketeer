@@ -35,7 +35,11 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         this.logger = logger;
 
         this.characterTrackerService.CharacterForgotten += this.OnCharacterForgotten;
+
+        // Abonnement massif : le compte du servant est mis à jour en temps réel à chaque interaction
         this.gameEventService.RetainerBellOpened += this.RecordRetainers;
+        this.gameEventService.RetainerListingsOpened += this.RecordRetainers;
+        this.gameEventService.RetainerListingAdded += this.RecordRetainers;
     }
 
     public IReadOnlyList<TrackedRetainer> GetRetainersForCharacter(string characterName, uint homeWorldId) {
@@ -65,13 +69,11 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         config.KnownRetainers ??= new List<TrackedRetainer>();
 
         bool isModified = false;
-
         foreach (var retainer in activeRetainers) {
             retainer.AssociatedCharacterName = characterName;
             retainer.AssociatedHomeWorldId = worldId;
 
             var existing = config.KnownRetainers.FirstOrDefault(r => r.RetainerId == retainer.RetainerId);
-
             if (existing != null) {
                 if (existing.Name != retainer.Name) {
                     existing.Name = retainer.Name;
@@ -100,7 +102,6 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
 
         var initialCount = config.KnownRetainers.Count;
         config.KnownRetainers.RemoveAll(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId);
-
         if (config.KnownRetainers.Count < initialCount) {
             this.configService.Save();
             this.logger.Info($"Cascading delete executed: Retainers for {characterName} were removed.");
@@ -109,6 +110,9 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
 
     public void Dispose() {
         this.characterTrackerService.CharacterForgotten -= this.OnCharacterForgotten;
+
         this.gameEventService.RetainerBellOpened -= this.RecordRetainers;
+        this.gameEventService.RetainerListingsOpened -= this.RecordRetainers;
+        this.gameEventService.RetainerListingAdded -= this.RecordRetainers;
     }
 }

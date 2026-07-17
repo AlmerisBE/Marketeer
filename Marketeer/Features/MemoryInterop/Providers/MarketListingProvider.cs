@@ -21,7 +21,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
 
     private class UiRowData {
         public float Y;
-        public uint TotalPrice;
+        public uint ExplicitUnitPrice;
         public List<string> Texts = new();
         public bool IsMatched;
     }
@@ -89,6 +89,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
 
             string cleanItemName = this.NormalizeForMatch(itemName);
 
+            // Liaison sécurisée par nom (ignore les majuscules, espaces et gère les truncations FFXIV "...")
             var matchedRow = uiRows.FirstOrDefault(r =>
                 !r.IsMatched &&
                 !string.IsNullOrEmpty(cleanItemName) &&
@@ -98,7 +99,6 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
                         return false;
                     }
 
-                    // Permet d'associer les objets même si FFXIV tronque l'affichage avec "..."
                     if (cleanUiText.Length > 5 && cleanItemName.StartsWith(cleanUiText)) {
                         return true;
                     }
@@ -110,15 +110,47 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
             if (matchedRow != null) {
                 matchedRow.IsMatched = true;
 
-                // On divise le prix total lu dans l'UI par la quantité réelle pour obtenir le prix unitaire
-                if (quantity > 0) {
-                    pricePerUnit = matchedRow.TotalPrice / quantity;
+                // Priorité au Prix Unitaire explicite (NodeId 9). S'il échoue, déduction mathématique.
+                if (matchedRow.ExplicitUnitPrice > 0) {
+                    pricePerUnit = matchedRow.ExplicitUnitPrice;
+                }
+                else {
+                    var candidateNumbers = new List<uint>();
+                    foreach (var t in matchedRow.Texts) {
+                        string numStr = new string(t.Where(char.IsDigit).ToArray());
+                        if (uint.TryParse(numStr, out uint val)) {
+                            candidateNumbers.Add(val);
+                        }
+                    }
+
+                    if (quantity == 1) {
+                        var possiblePrices = candidateNumbers.Where(n => n != 1).ToList();
+                        pricePerUnit = possiblePrices.Count > 0 ? possiblePrices.Max() : 1;
+                    }
+                    else {
+                        foreach (var num in candidateNumbers) {
+                            if (num == 0 || num == quantity) {
+                                continue;
+                            }
+
+                            if (candidateNumbers.Contains(num * quantity)) {
+                                pricePerUnit = num;
+                                break;
+                            }
+                        }
+                        if (pricePerUnit == 0) {
+                            var fallbackPrices = candidateNumbers.Where(n => n != quantity && n != 0).ToList();
+                            if (fallbackPrices.Count > 0) {
+                                pricePerUnit = fallbackPrices.Max();
+                            }
+                        }
+                    }
                 }
 
-                this.logger.Debug($"[MarketListing] Mapped Slot {i} ({itemName}) successfully. Total: {matchedRow.TotalPrice}, Unit: {pricePerUnit}");
+                this.logger.Debug($"[MarketListing] Mapped Slot {i} ({itemName}) successfully. Unit Price: {pricePerUnit}");
             }
             else {
-                // FALLBACK : L'objet a été déchargé de l'UI pendant le scroll. On restaure le dernier prix connu.
+                // FALLBACK : Objet hors-champ. Restaure le prix configuré.
                 var historicalListing = knownListings.FirstOrDefault(l =>
                     l.AssociatedRetainerId == activeRetainerId.Value &&
                     l.SlotIndex == i &&
@@ -146,6 +178,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         if (string.IsNullOrWhiteSpace(input)) {
             return string.Empty;
         }
+
         return new string(input.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
     }
 
@@ -177,33 +210,30 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         float absoluteY = currentY + node->Y;
 
         if (currentRow != null && node->Type == NodeType.Text && node->NodeId < 100) {
-            if (((uint)node->NodeFlags & 0x10) != 0) {
-                var textNode = (AtkTextNode*)node;
+            // Retrait de la condition NodeFlags & 0x10 qui filtrait erronément les nœuds enfants !
+            var textNode = (AtkTextNode*)node;
+            if (textNode->NodeText.StringPtr.Value != null) {
+                try {
+                    var seString = MemoryHelper.ReadSeStringNullTerminated((nint)textNode->NodeText.StringPtr.Value);
+                    string rawText = seString.TextValue.Trim();
 
-                if (textNode->NodeText.StringPtr.Value != null) {
-                    try {
-                        var seString = MemoryHelper.ReadSeStringNullTerminated((nint)textNode->NodeText.StringPtr.Value);
-                        string rawText = seString.TextValue.Trim();
+                    if (!string.IsNullOrEmpty(rawText)) {
+                        currentRow.Texts.Add(rawText);
 
-                        if (!string.IsNullOrEmpty(rawText)) {
-                            currentRow.Texts.Add(rawText);
-
-                            if (node->NodeId == 7) {
-                                string numericString = new string(rawText.Where(char.IsDigit).ToArray());
-                                if (uint.TryParse(numericString, out uint val)) {
-                                    currentRow.TotalPrice = val;
-                                }
+                        // NodeId 9 est l'ID FFXIV exact et vérifié pour le Prix Unitaire
+                        if (node->NodeId == 9) {
+                            string numericString = new string(rawText.Where(char.IsDigit).ToArray());
+                            if (uint.TryParse(numericString, out uint val)) {
+                                currentRow.ExplicitUnitPrice = val;
                             }
                         }
                     }
-                    catch {
-                    }
                 }
+                catch { }
             }
         }
         else if (node->Type == NodeType.Component || (int)node->Type >= 1000) {
             var compNode = (AtkComponentNode*)node;
-
             bool isListItemStart = currentRow == null && (node->NodeId >= 50000 && node->NodeId < 60000);
 
             UiRowData? nextRow = currentRow;
