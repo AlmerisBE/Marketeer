@@ -19,13 +19,6 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
     private IDataManager dataManager;
     private IConfigurationService configService;
 
-    private class UiRowData {
-        public List<string> Texts = new();
-        public uint UnitPrice;
-        public string ItemName = string.Empty;
-        public bool IsMatched;
-    }
-
     public MarketListingProvider(
         IGameGui gameGui,
         ILoggerService logger,
@@ -70,7 +63,6 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         }
 
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList", 1);
-        var uiRows = this.ParseUiRows(addonPtr);
         var atkValues = this.GetAllAtkValues(addonPtr);
 
         var config = this.configService.GetConfig();
@@ -82,88 +74,65 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
             }
         }
 
-        int priceOffset = 0;
-        bool isCalibrated = false;
+        // Mathematical Block Discovery: Instantly find Unit Price and Total Price arrays
+        int? unitPriceBlockStartIndex = null;
+        int? totalPriceBlockStartIndex = null;
 
-        // Step 1: Calibrate using visible UI rows and mathematical deduction
-        for (int i = 0; i < container->Size; i++) {
-            var item = container->GetInventorySlot(i);
+        if (atkValues.Count >= 20) {
+            for (int a = 0; a <= atkValues.Count - 20; a++) {
+                for (int b = 0; b <= atkValues.Count - 20; b++) {
+                    if (a == b) {
+                        continue;
+                    }
 
-            if (item == null || item->ItemId == 0u) {
-                continue;
-            }
+                    bool isValidPair = true;
+                    int matchWeight = 0;
 
-            uint qty = (uint)item->Quantity;
-            string name = this.GetItemName(item->ItemId);
-            string cleanName = this.NormalizeForMatch(name);
-
-            var matchedRow = uiRows.FirstOrDefault(r => !r.IsMatched && r.Texts.Any(t => {
-                string ct = this.NormalizeForMatch(t);
-                if (string.IsNullOrEmpty(ct)) {
-                    return false;
-                }
-
-                return cleanName == ct || (ct.Length > 5 && cleanName.StartsWith(ct));
-            }));
-
-            if (matchedRow != null) {
-                matchedRow.IsMatched = true;
-                matchedRow.ItemName = name;
-
-                var numbers = matchedRow.Texts.Select(t => {
-                    var numStr = new string(t.Where(char.IsDigit).ToArray());
-                    return uint.TryParse(numStr, out uint val) ? val : 0u;
-                }).Where(n => n > 0u).ToList();
-
-                if (qty == 1u) {
-                    var poss = numbers.Where(n => n != 1u).ToList();
-                    matchedRow.UnitPrice = poss.Count > 0 ? poss.Max() : 1u;
-                }
-                else {
-                    foreach (var num in numbers) {
-                        if (num == 0u || num == qty) {
+                    for (int k = 0; k < 20; k++) {
+                        var item = container->GetInventorySlot(k);
+                        // Skip empty inventory slots during calibration
+                        if (item == null || item->ItemId == 0u) {
                             continue;
                         }
 
-                        if (numbers.Contains(num * qty)) {
-                            matchedRow.UnitPrice = num;
+                        uint qty = (uint)item->Quantity;
+                        ulong? valA = atkValues[a + k];
+                        ulong? valB = atkValues[b + k];
+
+                        if (valA == null || valB == null) {
+                            isValidPair = false;
                             break;
+                        }
+
+                        // The absolute mathematical rule of FFXIV Market Board
+                        if (valA.Value * qty != valB.Value) {
+                            isValidPair = false;
+                            break;
+                        }
+
+                        if (valA.Value > 0u) {
+                            matchWeight++;
                         }
                     }
 
-                    if (matchedRow.UnitPrice == 0u && numbers.Count > 0) {
-                        var fallbackPrices = numbers.Where(n => n != qty).ToList();
-                        if (fallbackPrices.Count > 0) {
-                            matchedRow.UnitPrice = fallbackPrices.Min();
-                        }
+                    if (isValidPair && matchWeight > 0) {
+                        unitPriceBlockStartIndex = a;
+                        totalPriceBlockStartIndex = b;
+                        break;
                     }
+                }
+
+                if (unitPriceBlockStartIndex != null) {
+                    break;
                 }
             }
         }
 
-        // Step 2: Establish the array stride offset from FFXIV's unmanaged memory structure
-        var calibrationRow = uiRows.FirstOrDefault(r => r.IsMatched && r.UnitPrice > 0u);
-        if (calibrationRow != null) {
-            int nameIdx = atkValues.FindIndex(v => v is string s && this.NormalizeForMatch(s) == this.NormalizeForMatch(calibrationRow.ItemName));
-
-            if (nameIdx != -1) {
-                for (int j = 0; j < atkValues.Count; j++) {
-                    if (atkValues[j] is uint u && u == calibrationRow.UnitPrice) {
-                        int diff = Math.Abs(j - nameIdx);
-
-                        if (diff > 0 && diff % 20 == 0) {
-                            priceOffset = j - nameIdx;
-                            isCalibrated = true;
-                            this.logger.Debug($"[MarketListing] Memory offset calibrated perfectly at {priceOffset}.");
-                            break;
-                        }
-                    }
-                }
-            }
+        if (unitPriceBlockStartIndex != null) {
+            this.logger.Debug($"[MarketListing] Memory block calibrated successfully. Instant extraction enabled.");
         }
 
-        // Step 3: Extract all data flawlessly and instantaneously without scrolling
-        int lastSearchIdx = 0;
+        // Instant Extraction Loop (No scrolling required)
         for (int i = 0; i < container->Size; i++) {
             var item = container->GetInventorySlot(i);
 
@@ -174,28 +143,23 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
             uint quantity = (uint)item->Quantity;
             string name = this.GetItemName(item->ItemId);
             uint pricePerUnit = 0u;
+            uint totalPrice = 0u;
 
-            if (isCalibrated) {
-                int nIdx = atkValues.FindIndex(lastSearchIdx, v => v is string s && this.NormalizeForMatch(s) == this.NormalizeForMatch(name));
-
-                if (nIdx != -1) {
-                    lastSearchIdx = nIdx + 1;
-                    int targetIdx = nIdx + priceOffset;
-
-                    if (targetIdx >= 0 && targetIdx < atkValues.Count && atkValues[targetIdx] is uint extractedPrice) {
-                        pricePerUnit = extractedPrice;
-                    }
-                }
+            if (unitPriceBlockStartIndex.HasValue && totalPriceBlockStartIndex.HasValue) {
+                pricePerUnit = (uint)atkValues[unitPriceBlockStartIndex.Value + i].GetValueOrDefault();
+                totalPrice = (uint)atkValues[totalPriceBlockStartIndex.Value + i].GetValueOrDefault();
             }
 
+            // Fallback for edge cases where memory blocks are shifting
             if (pricePerUnit == 0u) {
                 var hist = knownListings.FirstOrDefault(l => l.AssociatedRetainerId == activeRetainerId.Value && l.SlotIndex == i);
                 if (hist != null && hist.PricePerUnit > 0u) {
                     pricePerUnit = hist.PricePerUnit;
+                    totalPrice = pricePerUnit * quantity;
                 }
             }
 
-            uint totalPrice = pricePerUnit * quantity;
+            // Standard FFXIV retainer tax is mathematically around 5% of total price
             uint tax = (uint)Math.Floor(totalPrice * 0.05);
 
             listings.Add(new TrackedListing {
@@ -216,6 +180,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
     private string GetItemName(uint itemId) {
         var itemSheet = this.dataManager.GetExcelSheet<Item>();
 
+        // FFXIV offsets High-Quality item IDs by 1,000,000 in memory
         uint baseItemId = itemId > 1000000u ? itemId - 1000000u : itemId;
 
         if (itemSheet != null && itemSheet.HasRow(baseItemId)) {
@@ -225,16 +190,9 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         return string.Empty;
     }
 
-    private string NormalizeForMatch(string input) {
-        if (string.IsNullOrWhiteSpace(input)) {
-            return string.Empty;
-        }
-
-        return new string(input.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
-    }
-
-    private List<object> GetAllAtkValues(nint addonPtr) {
-        var values = new List<object>();
+    // Extracts all numeric values from the unmanaged network payload array
+    private List<ulong?> GetAllAtkValues(nint addonPtr) {
+        var values = new List<ulong?>();
         if (addonPtr == nint.Zero) {
             return values;
         }
@@ -251,88 +209,32 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
                     try {
                         var seString = MemoryHelper.ReadSeStringNullTerminated((nint)stringPointer);
                         string rawText = seString.TextValue.Trim();
+                        string numericString = new string(rawText.Where(char.IsDigit).ToArray());
 
-                        if (!string.IsNullOrEmpty(rawText)) {
-                            values.Add(rawText);
+                        if (ulong.TryParse(numericString, out ulong parsedVal)) {
+                            values.Add(parsedVal);
                         }
                         else {
-                            values.Add(string.Empty);
+                            values.Add(null);
                         }
                     }
                     catch {
-                        values.Add(string.Empty);
+                        values.Add(null);
                     }
                 }
                 else {
-                    values.Add(string.Empty);
+                    values.Add(null);
                 }
             }
             else if (val.Type == AtkValueType.UInt || val.Type == AtkValueType.Int) {
-                uint num = val.Type == AtkValueType.UInt ? val.UInt : (uint)val.Int;
+                ulong num = val.Type == AtkValueType.UInt ? val.UInt : (ulong)val.Int;
                 values.Add(num);
             }
             else {
-                values.Add(string.Empty);
+                values.Add(null);
             }
         }
 
         return values;
-    }
-
-    private List<UiRowData> ParseUiRows(nint addonPtr) {
-        var rows = new List<UiRowData>();
-        if (addonPtr == nint.Zero) {
-            return rows;
-        }
-
-        var addon = (AtkUnitBase*)addonPtr;
-        if (addon == null || addon->UldManager.NodeList == null) {
-            return rows;
-        }
-
-        for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
-            this.ExtractUiRowsRecursively(addon->UldManager.NodeList[i], rows, null);
-        }
-
-        return rows;
-    }
-
-    private void ExtractUiRowsRecursively(AtkResNode* node, List<UiRowData> rows, UiRowData? currentRow) {
-        if (node == null) {
-            return;
-        }
-
-        if (currentRow != null && node->Type == NodeType.Text && node->NodeId < 100) {
-            var textNode = (AtkTextNode*)node;
-            var stringPointer = (byte*)textNode->NodeText.StringPtr;
-
-            if (stringPointer != null) {
-                try {
-                    var seString = MemoryHelper.ReadSeStringNullTerminated((nint)stringPointer);
-                    string rawText = seString.TextValue.Trim();
-
-                    if (!string.IsNullOrEmpty(rawText)) {
-                        currentRow.Texts.Add(rawText);
-                    }
-                }
-                catch { }
-            }
-        }
-        else if (node->Type == NodeType.Component || (int)node->Type >= 1000) {
-            var compNode = (AtkComponentNode*)node;
-            bool isListItemStart = currentRow == null && (node->NodeId >= 50000 && node->NodeId < 60000);
-
-            UiRowData? nextRow = currentRow;
-            if (isListItemStart) {
-                nextRow = new UiRowData { IsMatched = false };
-                rows.Add(nextRow);
-            }
-
-            if (compNode->Component != null) {
-                for (int i = 0; i < compNode->Component->UldManager.NodeListCount; i++) {
-                    this.ExtractUiRowsRecursively(compNode->Component->UldManager.NodeList[i], rows, nextRow);
-                }
-            }
-        }
     }
 }

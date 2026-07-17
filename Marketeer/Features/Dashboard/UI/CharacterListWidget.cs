@@ -113,21 +113,16 @@ public class CharacterListWidget : IDashboardWidget {
 
                             var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
                             var distinctItems = listings.Count;
-                            var totalValue = listings.Sum(l => (long)l.Quantity * l.PricePerUnit);
+
+                            // Using the pre-calculated total prices saved from memory
+                            var totalValue = listings.Sum(l => l.TotalPrice);
 
                             var needsPriceUpdate = distinctItems > 0 && listings.Any(l => l.PricePerUnit == 0);
                             var isDesynced = distinctItems != retainer.MarketItemCount;
 
                             ImGui.TableNextColumn();
-                            if (isDesynced) {
-                                ImGui.TextDisabled($"{retainer.MarketItemCount} (!)");
-                                if (ImGui.IsItemHovered()) {
-                                    ImGui.SetTooltip(syncRequiredTooltip);
-                                }
-                            }
-                            else {
-                                ImGui.Text(retainer.MarketItemCount.ToString());
-                            }
+                            // Always display the true server item count directly without warnings
+                            ImGui.Text(retainer.MarketItemCount.ToString());
 
                             ImGui.TableNextColumn();
                             if (isDesynced || needsPriceUpdate) {
