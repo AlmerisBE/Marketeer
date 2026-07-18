@@ -10,5 +10,6 @@
   "Command_Characters_Header": "Tracked Characters:",
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "Listings",
-  "CharacterList_ColTotalValue": "Total Value"
+  "CharacterList_ColTotalValue": "Total Value",
+  "CharacterList_ColGil": "Gil"
 }

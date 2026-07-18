@@ -1,3 +1,12 @@
 {
-  "Dashboard_Title": "Marketeer - ダッシュボード"
+  "Dashboard_Title": "Marketeer - ダッシュボード",
+  "Dashboard_PriceUpdateRequired": "価格の更新が必要です",
+  "Dashboard_SyncRequired": "非同期を検出しました。出品リストを開いてください。",
+  "Dashboard_DetailsButton": "詳細",
+  "RetainerDetails_Title": "リテイナー詳細: {0}",
+  "RetainerDetails_ColName": "アイテム",
+  "RetainerDetails_ColUnitPrice": "単価",
+  "RetainerDetails_ColQuantity": "数量",
+  "RetainerDetails_ColTotalPrice": "合計価格",
+  "RetainerDetails_ColTax": "税金 (5%)"
 }

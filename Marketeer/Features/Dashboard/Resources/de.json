@@ -1,3 +1,12 @@
 {
-  "Dashboard_Title": "Marketeer - Dashboard"
+  "Dashboard_Title": "Marketeer - Dashboard",
+  "Dashboard_PriceUpdateRequired": "Preisaktualisierung erforderlich",
+  "Dashboard_SyncRequired": "Desynchronisierung erkannt. Öffne Verkaufslisten.",
+  "Dashboard_DetailsButton": "Details",
+  "RetainerDetails_Title": "Gehilfen-Details: {0}",
+  "RetainerDetails_ColName": "Gegenstand",
+  "RetainerDetails_ColUnitPrice": "Stückpreis",
+  "RetainerDetails_ColQuantity": "Menge",
+  "RetainerDetails_ColTotalPrice": "Gesamtpreis",
+  "RetainerDetails_ColTax": "Steuer (5%)"
 }

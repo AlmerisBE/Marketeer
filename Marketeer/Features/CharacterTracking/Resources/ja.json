@@ -10,5 +10,6 @@
   "Command_Characters_Header": "記録されたキャラクター:",
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "出品数",
-  "CharacterList_ColTotalValue": "合計額"
+  "CharacterList_ColTotalValue": "合計額",
+  "CharacterList_ColGil": "ギル"
 }

@@ -2,5 +2,11 @@
   "Dashboard_Title": "Marketeer - Dashboard",
   "Dashboard_PriceUpdateRequired": "Price update required",
   "Dashboard_SyncRequired": "Desync detected. Open market listings.",
-  "CharacterList_ColGil": "Gils"
+  "Dashboard_DetailsButton": "Details",
+  "RetainerDetails_Title": "Retainer Details: {0}",
+  "RetainerDetails_ColName": "Item",
+  "RetainerDetails_ColUnitPrice": "Unit Price",
+  "RetainerDetails_ColQuantity": "Qty",
+  "RetainerDetails_ColTotalPrice": "Total Price",
+  "RetainerDetails_ColTax": "Tax (5%)"
 }

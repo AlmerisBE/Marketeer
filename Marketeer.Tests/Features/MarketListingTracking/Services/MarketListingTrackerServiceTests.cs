@@ -62,8 +62,8 @@ public class MarketListingTrackerServiceTests {
 
         var service = new MarketListingTrackerService(mockConfigService, mockGameEventService, mockProvider, mockLogger);
 
-        // Act
-        mockGameEventService.RetainerListingsOpened += Raise.Event<Action>();
+        // Act - Replaced obsolete event trigger with the consolidated event
+        mockGameEventService.RetainerSellListUpdated += Raise.Event<Action>();
 
         // Assert
         Assert.Equal(3, pluginConfig.KnownListings.Count);

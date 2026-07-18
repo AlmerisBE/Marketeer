@@ -28,8 +28,7 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
         this.listingProvider = listingProvider;
         this.logger = logger;
 
-        this.gameEventService.RetainerListingsOpened += this.RecordListings;
-        this.gameEventService.RetainerListingAdded += this.RecordListings;
+        this.gameEventService.RetainerSellListUpdated += this.RecordListings;
     }
 
     public IReadOnlyList<ListingDisplayData> GetListingsForRetainer(ulong retainerId) {
@@ -53,12 +52,20 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
     }
 
     private void RecordListings() {
+        this.logger.Debug("[MarketListingTrackerService] RecordListings triggered by GameEventService.");
+
         var activeRetainerId = this.listingProvider.GetActiveRetainerId();
         if (!activeRetainerId.HasValue) {
             return;
         }
 
         var fetchedListings = this.listingProvider.GetActiveRetainerListings();
+        this.logger.Debug($"[MarketListingTrackerService] Fetched {fetchedListings.Count} listings from provider.");
+
+        if (fetchedListings.Count == 0) {
+            return;
+        }
+
         var config = this.configService.GetConfig();
 
         lock (config) {
@@ -72,6 +79,7 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
             if (existingListings.Count != fetchedListings.Count) {
                 isModified = true;
+                this.logger.Debug($"[MarketListingTrackerService] Listing count changed from {existingListings.Count} to {fetchedListings.Count}. Marking as modified.");
             }
 
             config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value);
@@ -85,14 +93,17 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
                         fetched.PricePerUnit = existing.PricePerUnit;
                         fetched.TotalPrice = fetched.PricePerUnit * fetched.Quantity;
                         fetched.Tax = (uint)Math.Floor(fetched.TotalPrice * 0.05);
+                        this.logger.Debug($"[MarketListingTrackerService] Restored missing price {fetched.PricePerUnit} for item {fetched.ItemName}.");
                     }
 
                     if (existing.PricePerUnit != fetched.PricePerUnit || existing.Quantity != fetched.Quantity || existing.ItemId != fetched.ItemId) {
                         isModified = true;
+                        this.logger.Debug($"[MarketListingTrackerService] Value modified for {fetched.ItemName}: Price {existing.PricePerUnit} -> {fetched.PricePerUnit}, Qty {existing.Quantity} -> {fetched.Quantity}.");
                     }
                 }
                 else {
                     isModified = true;
+                    this.logger.Debug($"[MarketListingTrackerService] New listing discovered for {fetched.ItemName}. Marking as modified.");
                 }
 
                 config.KnownListings.Add(fetched);
@@ -100,13 +111,15 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
             if (isModified) {
                 this.configService.Save();
-                this.logger.Info($"[MarketListing] State modified. Saved {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");
+                this.logger.Info($"[MarketListingTrackerService] State modified. Saved {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");
+            }
+            else {
+                this.logger.Debug("[MarketListingTrackerService] No state changes detected. Save bypassed.");
             }
         }
     }
 
     public void Dispose() {
-        this.gameEventService.RetainerListingsOpened -= this.RecordListings;
-        this.gameEventService.RetainerListingAdded -= this.RecordListings;
+        this.gameEventService.RetainerSellListUpdated -= this.RecordListings;
     }
 }

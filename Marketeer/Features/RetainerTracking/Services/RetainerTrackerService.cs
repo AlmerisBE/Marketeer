@@ -36,9 +36,9 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
 
         this.characterTrackerService.CharacterForgotten += this.OnCharacterForgotten;
 
+        // Subscribing to the Bell list and the new consolidated Sell list event
         this.gameEventService.RetainerBellOpened += this.RecordRetainers;
-        this.gameEventService.RetainerListingsOpened += this.RecordRetainers;
-        this.gameEventService.RetainerListingAdded += this.RecordRetainers;
+        this.gameEventService.RetainerSellListUpdated += this.RecordRetainers;
     }
 
     public IReadOnlyList<TrackedRetainer> GetRetainersForCharacter(string characterName, uint homeWorldId) {
@@ -125,7 +125,6 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         this.characterTrackerService.CharacterForgotten -= this.OnCharacterForgotten;
 
         this.gameEventService.RetainerBellOpened -= this.RecordRetainers;
-        this.gameEventService.RetainerListingsOpened -= this.RecordRetainers;
-        this.gameEventService.RetainerListingAdded -= this.RecordRetainers;
+        this.gameEventService.RetainerSellListUpdated -= this.RecordRetainers;
     }
 }

@@ -10,5 +10,6 @@
   "Command_Characters_Header": "Erfasste Charaktere:",
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "Angebote",
-  "CharacterList_ColTotalValue": "Gesamtwert"
+  "CharacterList_ColTotalValue": "Gesamtwert",
+  "CharacterList_ColGil": "Gil"
 }

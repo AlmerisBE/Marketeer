@@ -3,6 +3,7 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.Core;
 using Marketeer.Features.Command.Services;
+using Marketeer.Features.Configuration.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -54,10 +55,8 @@ public sealed class Plugin : IDalamudPlugin {
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
 
-        // Initialize features that need to hook events immediately
-        this.serviceProvider.GetRequiredService<Marketeer.Features.CharacterTracking.Contracts.ICharacterTrackerService>();
-        this.serviceProvider.GetRequiredService<Marketeer.Features.RetainerTracking.Contracts.IRetainerTrackerService>();
-        this.serviceProvider.GetRequiredService<Marketeer.Features.GameEvents.Contracts.IGameEventService>();
+        // Force instantiation of the GameEventService so it starts listening immediately
+        this.serviceProvider.GetRequiredService<Features.GameEvents.Contracts.IGameEventService>();
 
         // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();
@@ -71,9 +70,10 @@ public sealed class Plugin : IDalamudPlugin {
     }
 
     private void OnOpenConfigUi() {
-        // Adjust this if you changed it to trigger the Dashboard command instead
-        var commandDispatcher = this.serviceProvider.GetService<CommandDispatcher>();
-        // Fallback to manually opening the main window if needed
+        var configWindow = this.serviceProvider.GetService<ConfigWindow>();
+        if (configWindow != null) {
+            configWindow.IsOpen = true;
+        }
     }
 
     public void Dispose() {
