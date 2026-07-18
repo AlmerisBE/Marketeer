@@ -55,6 +55,10 @@ public sealed class Plugin : IDalamudPlugin {
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
 
+        // Start Window Tracking
+        var windowTracker = this.serviceProvider.GetRequiredService<Marketeer.Features.WindowAbstraction.Contracts.IWindowTrackerService>();
+        windowTracker.EnableTracking();
+
         // Force instantiation of the GameEventService so it starts listening immediately
         this.serviceProvider.GetRequiredService<Features.GameEvents.Contracts.IGameEventService>();
 
