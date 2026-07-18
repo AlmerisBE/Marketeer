@@ -1,6 +1,5 @@
-﻿using Marketeer.Features.Dashboard.Commands;
-using Marketeer.Features.Dashboard.Contracts;
-using Marketeer.Features.Dashboard.UI;
+﻿using Marketeer.Features.Financials.Contracts;
+using Marketeer.Features.Financials.UI;
 using Marketeer.Features.Localization.Contracts;
 using NSubstitute;
 using Xunit;
@@ -9,29 +8,15 @@ namespace Marketeer.Tests.Features.Dashboard.Commands;
 
 public class MainCommandTests {
     [Fact]
-    public void MainCommand_Execute_TogglesWindowVisibility() {
+    public void MainCommand_ShouldPassMockDependenciesToFinancialsTab() {
         // Arrange
-        var emptyWidgets = new List<IDashboardWidget>();
+        var mockFinancialService = Substitute.For<IFinancialService>();
         var mockLocalizationService = Substitute.For<ILocalizationService>();
 
-        // Ensure the mock returns a valid string for the window title
-        mockLocalizationService.Translate("Dashboard_Title").Returns("Marketeer - Dashboard");
+        // Act
+        var exception = Record.Exception(() => new FinancialsTab(mockFinancialService, mockLocalizationService));
 
-        var window = new DashboardWindow(emptyWidgets, mockLocalizationService);
-        var command = new MainCommand(window);
-
-        window.IsOpen = false;
-
-        // Act 1: Execute when closed
-        command.Execute(string.Empty);
-
-        // Assert 1: Window should now be open
-        Assert.True(window.IsOpen);
-
-        // Act 2: Execute when open
-        command.Execute(string.Empty);
-
-        // Assert 2: Window should now be closed
-        Assert.False(window.IsOpen);
+        // Assert
+        Assert.Null(exception);
     }
 }

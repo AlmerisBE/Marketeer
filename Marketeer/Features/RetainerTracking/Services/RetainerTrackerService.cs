@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.Configuration.Contracts;
+using Marketeer.Features.Financials.Models;
 using Marketeer.Features.GameEvents.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.RetainerTracking.Contracts;
@@ -34,22 +35,26 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         this.gameEventService = gameEventService;
         this.logger = logger;
 
-        this.characterTrackerService.CharacterForgotten += this.OnCharacterForgotten;
-
-        // Subscribing to the Bell list and the new consolidated Sell list event
         this.gameEventService.RetainerBellOpened += this.RecordRetainers;
         this.gameEventService.RetainerSellListUpdated += this.RecordRetainers;
     }
 
     public IReadOnlyList<TrackedRetainer> GetRetainersForCharacter(string characterName, uint homeWorldId) {
         var config = this.configService.GetConfig();
+        var storageKey = $"{characterName}_{homeWorldId}";
 
-        lock (config) {
-            config.KnownRetainers ??= new List<TrackedRetainer>();
-            return config.KnownRetainers
-                .Where(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId)
-                .ToList();
+        if (!config.FinancialRecords.TryGetValue(storageKey, out var charData)) {
+            return new List<TrackedRetainer>();
         }
+
+        return charData.Retainers.Values.Select(r => new TrackedRetainer {
+            RetainerId = r.RetainerId,
+            Name = r.Name,
+            Gil = (uint)r.GilHeld,
+            MarketItemCount = (uint)r.MarketListings.Count,
+            AssociatedCharacterName = characterName,
+            AssociatedHomeWorldId = homeWorldId
+        }).ToList();
     }
 
     public void RecordRetainers() {
@@ -58,44 +63,37 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
             return;
         }
 
-        var characterName = localPlayer.Name.TextValue;
-        var worldId = localPlayer.HomeWorld.RowId;
-
         var activeRetainers = this.retainerProvider.GetActiveRetainers();
         if (activeRetainers.Count == 0) {
             return;
         }
 
         var config = this.configService.GetConfig();
+        var storageKey = $"{localPlayer.Name.TextValue}_{localPlayer.HomeWorld.RowId}";
 
         lock (config) {
-            config.KnownRetainers ??= new List<TrackedRetainer>();
+            if (!config.FinancialRecords.TryGetValue(storageKey, out var charData)) {
+                return;
+            }
+
             bool isModified = false;
 
             foreach (var retainer in activeRetainers) {
-                retainer.AssociatedCharacterName = characterName;
-                retainer.AssociatedHomeWorldId = worldId;
-
-                var existing = config.KnownRetainers.FirstOrDefault(r => r.RetainerId == retainer.RetainerId);
-
-                if (existing != null) {
-                    if (existing.Name != retainer.Name) {
-                        existing.Name = retainer.Name;
-                        isModified = true;
-                    }
-                    if (existing.MarketItemCount != retainer.MarketItemCount) {
-                        existing.MarketItemCount = retainer.MarketItemCount;
-                        isModified = true;
-                    }
-                    if (existing.Gil != retainer.Gil) {
-                        existing.Gil = retainer.Gil;
-                        isModified = true;
-                    }
+                if (!charData.Retainers.TryGetValue(retainer.RetainerId, out var existing)) {
+                    existing = new RetainerFinancialData {
+                        RetainerId = retainer.RetainerId,
+                        Name = retainer.Name,
+                        GilHeld = retainer.Gil
+                    };
+                    charData.Retainers[retainer.RetainerId] = existing;
+                    isModified = true;
                 }
                 else {
-                    config.KnownRetainers.Add(retainer);
-                    isModified = true;
-                    this.logger.Info($"New retainer recorded: {retainer.Name} (Owner: {characterName})");
+                    if (existing.Name != retainer.Name || existing.GilHeld != retainer.Gil) {
+                        existing.Name = retainer.Name;
+                        existing.GilHeld = retainer.Gil;
+                        isModified = true;
+                    }
                 }
             }
 
@@ -105,25 +103,7 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         }
     }
 
-    private void OnCharacterForgotten(string characterName, uint homeWorldId) {
-        var config = this.configService.GetConfig();
-
-        lock (config) {
-            config.KnownRetainers ??= new List<TrackedRetainer>();
-
-            var initialCount = config.KnownRetainers.Count;
-            config.KnownRetainers.RemoveAll(r => r.AssociatedCharacterName == characterName && r.AssociatedHomeWorldId == homeWorldId);
-
-            if (config.KnownRetainers.Count < initialCount) {
-                this.configService.Save();
-                this.logger.Info($"Cascading delete executed: Retainers for {characterName} were removed.");
-            }
-        }
-    }
-
     public void Dispose() {
-        this.characterTrackerService.CharacterForgotten -= this.OnCharacterForgotten;
-
         this.gameEventService.RetainerBellOpened -= this.RecordRetainers;
         this.gameEventService.RetainerSellListUpdated -= this.RecordRetainers;
     }

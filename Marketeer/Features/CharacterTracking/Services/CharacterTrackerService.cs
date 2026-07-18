@@ -2,6 +2,7 @@
 using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.CharacterTracking.Models;
 using Marketeer.Features.Configuration.Contracts;
+using Marketeer.Features.Financials.Models;
 using Marketeer.Features.Logging.Contracts;
 using System;
 using System.Collections.Generic;
@@ -33,8 +34,6 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
 
         this.clientState.Login += this.OnLogin;
 
-        // Dispatch the initial check to the main framework thread.
-        // This prevents "Not on main thread!" exceptions when hot-reloading the plugin while already logged in.
         this.framework.RunOnFrameworkThread(() => {
             if (this.clientState.IsLoggedIn) {
                 this.RecordCurrentCharacter();
@@ -43,7 +42,11 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
     }
 
     public IReadOnlyList<TrackedCharacter> GetKnownCharacters() {
-        return this.configService.GetConfig().KnownCharacters;
+        var config = this.configService.GetConfig();
+        return config.FinancialRecords.Values.Select(c => new TrackedCharacter {
+            Name = c.CharacterName,
+            HomeWorldId = c.HomeWorldId
+        }).ToList();
     }
 
     public void RecordCurrentCharacter() {
@@ -53,30 +56,23 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
             }
 
             var localPlayer = this.objectTable.LocalPlayer;
-
             if (localPlayer == null || localPlayer.Name == null) {
                 return;
             }
 
             var characterName = localPlayer.Name.TextValue;
-            if (string.IsNullOrWhiteSpace(characterName)) {
-                return;
-            }
-
             var worldId = localPlayer.HomeWorld.RowId;
-
-            var currentCharacter = new TrackedCharacter {
-                Name = characterName,
-                HomeWorldId = worldId
-            };
+            var storageKey = $"{characterName}_{worldId}";
 
             var config = this.configService.GetConfig();
-            config.KnownCharacters ??= new List<TrackedCharacter>();
 
-            if (!config.KnownCharacters.Contains(currentCharacter)) {
-                config.KnownCharacters.Add(currentCharacter);
+            if (!config.FinancialRecords.ContainsKey(storageKey)) {
+                config.FinancialRecords[storageKey] = new CharacterFinancialData {
+                    CharacterName = characterName,
+                    HomeWorldId = worldId
+                };
                 this.configService.Save();
-                this.logger.Info($"New character recorded: {characterName} (World ID: {worldId})");
+                this.logger.Info($"New character recorded: {characterName} ({worldId})");
             }
         }
         catch (Exception ex) {
@@ -95,21 +91,14 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
 
     public void ForgetCharacter(string name, uint homeWorldId) {
         if (this.IsActiveCharacter(name, homeWorldId)) {
-            this.logger.Warning($"Attempted to forget active character {name}. Action aborted.");
             return;
         }
 
+        var storageKey = $"{name}_{homeWorldId}";
         var config = this.configService.GetConfig();
-        config.KnownCharacters ??= new List<TrackedCharacter>();
 
-        var targetCharacter = config.KnownCharacters.FirstOrDefault(c => c.Name == name && c.HomeWorldId == homeWorldId);
-
-        if (targetCharacter != null) {
-            config.KnownCharacters.Remove(targetCharacter);
+        if (config.FinancialRecords.Remove(storageKey)) {
             this.configService.Save();
-            this.logger.Info($"Character forgotten manually: {name} (World ID: {homeWorldId})");
-
-            // Notify subscribers (like RetainerTracking) that this character is gone
             this.CharacterForgotten?.Invoke(name, homeWorldId);
         }
     }

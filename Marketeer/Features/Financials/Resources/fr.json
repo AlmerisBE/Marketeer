@@ -1,0 +1,9 @@
+{
+  "Financials_TabName": "Statistiques Financières",
+  "Financials_LiquidGil": "Grand Total (Gils Disponibles) :",
+  "Financials_MarketValue": "Grand Total (Valeur Marchande Active) :",
+  "Financials_ColHeader_CharacterRetainer": "Personnage / Servant",
+  "Financials_ColHeader_LiquidGil": "Gils Disponibles",
+  "Financials_ColHeader_MarketValue": "Valeur Marchande",
+  "Financials_ColHeader_CombinedTotal": "Total Combiné"
+}

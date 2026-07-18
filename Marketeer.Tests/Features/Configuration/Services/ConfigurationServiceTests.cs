@@ -17,7 +17,6 @@ public class ConfigurationServiceTests {
             ExampleCheckbox = true
         };
 
-        // Mock Dalamud returning an existing configuration file
         mockPluginInterface.GetPluginConfig().Returns(existingConfig);
 
         // Act
@@ -34,8 +33,6 @@ public class ConfigurationServiceTests {
     public void ConfigurationService_Initialization_CreatesNewConfigIfNull() {
         // Arrange
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-
-        // Mock Dalamud returning null (first time the plugin is launched)
         mockPluginInterface.GetPluginConfig().Returns((IPluginConfiguration)null!);
 
         // Act
@@ -44,7 +41,7 @@ public class ConfigurationServiceTests {
 
         // Assert
         Assert.NotNull(config);
-        Assert.False(config.ExampleCheckbox); // Default value expected
+        Assert.False(config.ExampleCheckbox);
         Assert.Equal(0, config.Version);
     }
 
@@ -55,26 +52,22 @@ public class ConfigurationServiceTests {
         var service = new ConfigurationService(mockPluginInterface);
         var config = service.GetConfig();
 
-        // Modify a value to simulate user interaction in the UI
         config.ExampleCheckbox = true;
 
         // Act
         service.Save();
 
         // Assert
-        // Verify that SavePluginConfig was called exactly once with our config object
         mockPluginInterface.Received(1).SavePluginConfig(config);
     }
 
     [Fact]
-    public void ConfigurationService_Initialization_WithOldConfig_InitializesKnownCharacters() {
+    public void ConfigurationService_Initialization_EnsuresFinancialRecordsCollectionIsNotNull() {
         // Arrange
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-
-        // Simulate an older JSON config where the list wasn't present (deserialized as null)
         var oldConfig = new PluginConfiguration {
             Version = 1,
-            KnownCharacters = null!
+            FinancialRecords = null!
         };
         mockPluginInterface.GetPluginConfig().Returns(oldConfig);
 
@@ -83,7 +76,6 @@ public class ConfigurationServiceTests {
         var config = service.GetConfig();
 
         // Assert
-        Assert.NotNull(config.KnownCharacters);
-        Assert.Empty(config.KnownCharacters);
+        Assert.NotNull(config.FinancialRecords);
     }
 }

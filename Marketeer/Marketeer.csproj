@@ -20,5 +20,6 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="Features\CharacterTracking\Resources\" />
+	  <Folder Include="Features\Financials\Resources\" />
 	</ItemGroup>
 </Project>

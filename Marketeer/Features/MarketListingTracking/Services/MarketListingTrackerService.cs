@@ -1,10 +1,12 @@
-﻿using Marketeer.Features.Configuration.Contracts;
+﻿using Dalamud.Plugin.Services;
+using Lumina.Excel.Sheets;
+using Marketeer.Features.Configuration.Contracts;
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Dashboard.Models;
+using Marketeer.Features.Financials.Models;
 using Marketeer.Features.GameEvents.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.MarketListingTracking.Contracts;
-using Marketeer.Features.MarketListingTracking.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,17 +17,20 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
     private IConfigurationService configService;
     private IGameEventService gameEventService;
     private IMarketListingProvider listingProvider;
+    private IDataManager dataManager;
     private ILoggerService logger;
 
     public MarketListingTrackerService(
         IConfigurationService configService,
         IGameEventService gameEventService,
         IMarketListingProvider listingProvider,
+        IDataManager dataManager,
         ILoggerService logger) {
 
         this.configService = configService;
         this.gameEventService = gameEventService;
         this.listingProvider = listingProvider;
+        this.dataManager = dataManager;
         this.logger = logger;
 
         this.gameEventService.RetainerSellListUpdated += this.RecordListings;
@@ -35,33 +40,39 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
         var config = this.configService.GetConfig();
 
         lock (config) {
-            config.KnownListings ??= new List<TrackedListing>();
-
-            return config.KnownListings
-                .Where(listing => listing.AssociatedRetainerId == retainerId)
-                .Select(listing => new ListingDisplayData {
-                    ItemId = listing.ItemId,
-                    ItemName = listing.ItemName,
-                    Quantity = listing.Quantity,
-                    PricePerUnit = listing.PricePerUnit,
-                    TotalPrice = listing.TotalPrice,
-                    Tax = listing.Tax
-                })
-                .ToList();
+            foreach (var charData in config.FinancialRecords.Values) {
+                if (charData.Retainers.TryGetValue(retainerId, out var rData)) {
+                    return rData.MarketListings.Values.Select(l => new ListingDisplayData {
+                        ItemId = l.ItemId,
+                        ItemName = this.GetItemName(l.ItemId),
+                        Quantity = l.Quantity,
+                        PricePerUnit = l.PricePerUnit,
+                        TotalPrice = l.PricePerUnit * l.Quantity,
+                        Tax = (uint)Math.Floor((l.PricePerUnit * l.Quantity) * 0.05)
+                    }).ToList();
+                }
+            }
+            return new List<ListingDisplayData>();
         }
     }
 
-    private void RecordListings() {
-        this.logger.Debug("[MarketListingTrackerService] RecordListings triggered by GameEventService.");
+    private string GetItemName(uint itemId) {
+        var sheet = this.dataManager.GetExcelSheet<Item>();
+        uint baseItemId = itemId > 1000000u ? itemId - 1000000u : itemId;
 
-        var activeRetainerId = this.listingProvider.GetActiveRetainerId();
-        if (!activeRetainerId.HasValue) {
+        if (sheet != null && sheet.HasRow(baseItemId)) {
+            return sheet.GetRow(baseItemId).Name.ToString();
+        }
+        return "Unknown Item";
+    }
+
+    private void RecordListings() {
+        var activeRetainerIdOpt = this.listingProvider.GetActiveRetainerId();
+        if (!activeRetainerIdOpt.HasValue) {
             return;
         }
 
         var fetchedListings = this.listingProvider.GetActiveRetainerListings();
-        this.logger.Debug($"[MarketListingTrackerService] Fetched {fetchedListings.Count} listings from provider.");
-
         if (fetchedListings.Count == 0) {
             return;
         }
@@ -69,52 +80,49 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
         var config = this.configService.GetConfig();
 
         lock (config) {
-            config.KnownListings ??= new List<TrackedListing>();
-
-            var existingListings = config.KnownListings
-                .Where(l => l.AssociatedRetainerId == activeRetainerId.Value)
-                .ToList();
-
-            bool isModified = false;
-
-            if (existingListings.Count != fetchedListings.Count) {
-                isModified = true;
-                this.logger.Debug($"[MarketListingTrackerService] Listing count changed from {existingListings.Count} to {fetchedListings.Count}. Marking as modified.");
+            RetainerFinancialData? targetRetainer = null;
+            foreach (var charData in config.FinancialRecords.Values) {
+                if (charData.Retainers.TryGetValue(activeRetainerIdOpt.Value, out var r)) {
+                    targetRetainer = r;
+                    break;
+                }
             }
 
-            config.KnownListings.RemoveAll(l => l.AssociatedRetainerId == activeRetainerId.Value);
+            if (targetRetainer == null) {
+                return;
+            }
+
+            var oldListings = targetRetainer.MarketListings.ToDictionary(k => k.Key, v => v.Value);
+            targetRetainer.MarketListings.Clear();
+            bool isModified = oldListings.Count != fetchedListings.Count;
 
             foreach (var fetched in fetchedListings) {
-                var existing = existingListings.FirstOrDefault(l => l.SlotIndex == fetched.SlotIndex)
-                            ?? existingListings.FirstOrDefault(l => l.ItemId == fetched.ItemId);
+                uint finalPrice = fetched.PricePerUnit;
 
-                if (existing != null) {
-                    if (fetched.PricePerUnit == 0 && existing.PricePerUnit > 0) {
-                        fetched.PricePerUnit = existing.PricePerUnit;
-                        fetched.TotalPrice = fetched.PricePerUnit * fetched.Quantity;
-                        fetched.Tax = (uint)Math.Floor(fetched.TotalPrice * 0.05);
-                        this.logger.Debug($"[MarketListingTrackerService] Restored missing price {fetched.PricePerUnit} for item {fetched.ItemName}.");
-                    }
-
-                    if (existing.PricePerUnit != fetched.PricePerUnit || existing.Quantity != fetched.Quantity || existing.ItemId != fetched.ItemId) {
-                        isModified = true;
-                        this.logger.Debug($"[MarketListingTrackerService] Value modified for {fetched.ItemName}: Price {existing.PricePerUnit} -> {fetched.PricePerUnit}, Qty {existing.Quantity} -> {fetched.Quantity}.");
+                // Fallback mechanism to protect against 0-gil UI network delays
+                if (finalPrice == 0 && oldListings.TryGetValue((int)fetched.SlotIndex, out var oldListing)) {
+                    if (oldListing.ItemId == fetched.ItemId && oldListing.PricePerUnit > 0) {
+                        finalPrice = oldListing.PricePerUnit;
                     }
                 }
-                else {
+
+                if (!oldListings.TryGetValue((int)fetched.SlotIndex, out var existing) ||
+                    existing.ItemId != fetched.ItemId ||
+                    existing.Quantity != fetched.Quantity ||
+                    existing.PricePerUnit != finalPrice) {
                     isModified = true;
-                    this.logger.Debug($"[MarketListingTrackerService] New listing discovered for {fetched.ItemName}. Marking as modified.");
                 }
 
-                config.KnownListings.Add(fetched);
+                targetRetainer.MarketListings[(int)fetched.SlotIndex] = new RetainerMarketListingSaveData {
+                    ItemId = fetched.ItemId,
+                    Quantity = fetched.Quantity,
+                    PricePerUnit = finalPrice
+                };
             }
 
             if (isModified) {
                 this.configService.Save();
-                this.logger.Info($"[MarketListingTrackerService] State modified. Saved {fetchedListings.Count} listings for retainer {activeRetainerId.Value}.");
-            }
-            else {
-                this.logger.Debug("[MarketListingTrackerService] No state changes detected. Save bypassed.");
+                this.logger.Info($"[MarketListingTrackerService] State modified. Saved {fetchedListings.Count} listings for retainer {activeRetainerIdOpt.Value}.");
             }
         }
     }
