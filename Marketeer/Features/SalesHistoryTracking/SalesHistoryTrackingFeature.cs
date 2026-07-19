@@ -12,5 +12,6 @@ public class SalesHistoryTrackingFeature : IFeatureModule {
         services.AddSingleton<ISalesHistoryScraper, SalesHistoryScraper>();
         services.AddSingleton<ISalesRepository, SalesRepository>();
         services.AddSingleton<ISalesDataProvider, SalesDataProvider>();
+        services.AddSingleton<IItemResolverService, ItemResolverService>();
     }
 }
