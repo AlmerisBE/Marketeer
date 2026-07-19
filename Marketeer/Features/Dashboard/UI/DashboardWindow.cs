@@ -31,7 +31,7 @@ public class DashboardWindow : Window {
         };
     }
 
-    public override void Draw() {
+    public override unsafe void Draw() {
         float availableWidth = ImGui.GetWindowContentRegionMax().X;
         float buttonWidth = 110f;
 
@@ -42,9 +42,9 @@ public class DashboardWindow : Window {
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 28f);
 
-        if (ImGui.BeginTabBar("DashboardTabs")) {
+        if (ImGui.BeginTabBar("MarketeerDashboardTabs", ImGuiTabBarFlags.None)) {
             foreach (var tab in this.tabs) {
-                if (ImGui.BeginTabItem(tab.Name)) {
+                if (ImGui.BeginTabItem(tab.Name, ImGuiTabItemFlags.NoReorder)) {
                     tab.Draw();
                     ImGui.EndTabItem();
                 }
