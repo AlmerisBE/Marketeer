@@ -11,6 +11,7 @@ public class FinancialsTab : IDashboardTab {
     private ILocalizationService localizationService;
 
     public string Name => this.localizationService.Translate("Financials_TabName") ?? "Financials";
+    public int Priority => 30;
 
     public FinancialsTab(IFinancialService financialService, ILocalizationService localizationService) {
         this.financialService = financialService;

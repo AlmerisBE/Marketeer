@@ -4,12 +4,13 @@ using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.RetainerAutomation.Contracts;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Marketeer.Features.Dashboard.UI;
 
 public class DashboardWindow : Window {
-    private IEnumerable<IDashboardTab> tabs;
+    private IReadOnlyList<IDashboardTab> tabs;
     private ILocalizationService localizationService;
     private IRetainerAutomationService automationService;
 
@@ -19,7 +20,8 @@ public class DashboardWindow : Window {
         IRetainerAutomationService automationService)
         : base(localizationService.Translate("Dashboard_Title"), ImGuiWindowFlags.None) {
 
-        this.tabs = tabs;
+        this.tabs = tabs.OrderBy(tab => tab.Priority).ToList();
+
         this.localizationService = localizationService;
         this.automationService = automationService;
 

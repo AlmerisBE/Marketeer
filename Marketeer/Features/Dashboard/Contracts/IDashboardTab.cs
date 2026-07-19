@@ -2,5 +2,6 @@
 
 public interface IDashboardTab {
     string Name { get; }
+    int Priority { get; }
     void Draw();
 }

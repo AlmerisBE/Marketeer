@@ -16,6 +16,7 @@ public class CharacterListTab : IDashboardTab {
     private RetainerDetailsWindow retainerDetailsWindow;
 
     public string Name => this.localizationService.Translate("CharacterList_TabName");
+    public int Priority => 10;
 
     public CharacterListTab(
         ICharacterTrackerService trackerService,

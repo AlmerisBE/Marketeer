@@ -21,6 +21,7 @@ public class SalesTab : IDashboardTab {
     private bool isSortAscending = false;
 
     public string Name => this.localization.Translate("SalesTab_Title");
+    public int Priority => 20;
 
     public SalesTab(
         ILocalizationService localization,
