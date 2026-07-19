@@ -1,0 +1,9 @@
+{
+  "SalesTab_Title": "Verkäufe",
+  "SalesTab_SearchPlaceholder": "Gegenstände suchen...",
+  "SalesTab_ColName": "Name",
+  "SalesTab_ColQuantity": "Verkaufte Menge",
+  "SalesTab_ColAvgPrice": "Durchschn. Preis",
+  "SalesTab_ColTotal": "Gesamtumsatz",
+  "SalesTab_ColDate": "Letzter Verkauf"
+}

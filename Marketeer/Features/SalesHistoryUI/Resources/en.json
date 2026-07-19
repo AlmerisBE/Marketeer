@@ -1,0 +1,9 @@
+{
+  "SalesTab_Title": "Sales",
+  "SalesTab_SearchPlaceholder": "Search items...",
+  "SalesTab_ColName": "Name",
+  "SalesTab_ColQuantity": "Quantity Sold",
+  "SalesTab_ColAvgPrice": "Avg. Price",
+  "SalesTab_ColTotal": "Total Revenue",
+  "SalesTab_ColDate": "Last Sale Date"
+}
