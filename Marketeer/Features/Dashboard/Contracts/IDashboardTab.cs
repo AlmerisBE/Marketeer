@@ -1,6 +1,6 @@
 ﻿namespace Marketeer.Features.Dashboard.Contracts;
 
-public interface IDashboardWidget {
+public interface IDashboardTab {
     string Name { get; }
     void Draw();
 }

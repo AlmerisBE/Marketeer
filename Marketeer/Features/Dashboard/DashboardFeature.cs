@@ -13,7 +13,7 @@ namespace Marketeer.Features.Dashboard;
 public class DashboardFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILocalizationProvider, DashboardLocalizationProvider>();
-        services.AddSingleton<IDashboardWidget, CharacterListWidget>();
+        services.AddSingleton<IDashboardTab, CharacterListTab>();
 
         // Main window registration
         services.AddSingleton<DashboardWindow>();

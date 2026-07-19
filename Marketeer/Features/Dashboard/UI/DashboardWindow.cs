@@ -1,7 +1,6 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using Marketeer.Features.Dashboard.Contracts;
-using Marketeer.Features.Financials.UI;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.RetainerAutomation.Contracts;
 using System.Collections.Generic;
@@ -10,20 +9,18 @@ using System.Numerics;
 namespace Marketeer.Features.Dashboard.UI;
 
 public class DashboardWindow : Window {
-    private IEnumerable<IDashboardWidget> widgets;
+    private IEnumerable<IDashboardTab> tabs;
     private ILocalizationService localizationService;
-    private FinancialsTab financialsTab;
     private IRetainerAutomationService automationService;
 
     public DashboardWindow(
-        IEnumerable<IDashboardWidget> widgets,
+        IEnumerable<IDashboardTab> tabs,
         ILocalizationService localizationService,
-        FinancialsTab financialsTab,
         IRetainerAutomationService automationService)
         : base(localizationService.Translate("Dashboard_Title"), ImGuiWindowFlags.None) {
-        this.widgets = widgets;
+
+        this.tabs = tabs;
         this.localizationService = localizationService;
-        this.financialsTab = financialsTab;
         this.automationService = automationService;
 
         this.SizeConstraints = new WindowSizeConstraints {
@@ -33,7 +30,6 @@ public class DashboardWindow : Window {
     }
 
     public override void Draw() {
-        // Right-aligned button positioning beside the layout tab bar
         float availableWidth = ImGui.GetWindowContentRegionMax().X;
         float buttonWidth = 110f;
 
@@ -42,19 +38,14 @@ public class DashboardWindow : Window {
             this.automationService.TriggerScan();
         }
 
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 28f); // Align context line back to tab row bounds
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 28f);
 
         if (ImGui.BeginTabBar("DashboardTabs")) {
-            foreach (var widget in this.widgets) {
-                if (ImGui.BeginTabItem(widget.Name)) {
-                    widget.Draw();
+            foreach (var tab in this.tabs) {
+                if (ImGui.BeginTabItem(tab.Name)) {
+                    tab.Draw();
                     ImGui.EndTabItem();
                 }
-            }
-
-            if (ImGui.BeginTabItem(this.localizationService.Translate("Financials_TabName") ?? "Financials")) {
-                this.financialsTab.Draw();
-                ImGui.EndTabItem();
             }
 
             ImGui.EndTabBar();

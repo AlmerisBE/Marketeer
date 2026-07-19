@@ -22,6 +22,7 @@ public class PluginTests {
         var mockDataManager = Substitute.For<IDataManager>();
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
+        var mockTextureProvider = Substitute.For<ITextureProvider>();
 
         mockObjectTable.LocalPlayer.Returns((IPlayerCharacter?)null);
 
@@ -37,7 +38,8 @@ public class PluginTests {
             mockFramework,
             mockDataManager,
             mockCondition,
-            mockAddonLifecycle));
+            mockAddonLifecycle,
+            mockTextureProvider));
 
         Assert.Null(exception);
     }

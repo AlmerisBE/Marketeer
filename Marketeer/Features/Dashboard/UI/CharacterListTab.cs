@@ -7,7 +7,7 @@ using System.Numerics;
 
 namespace Marketeer.Features.Dashboard.UI;
 
-public class CharacterListWidget : IDashboardWidget {
+public class CharacterListTab : IDashboardTab {
     private ICharacterTrackerService trackerService;
     private IWorldDataPresenter worldDataPresenter;
     private ILocalizationService localizationService;
@@ -17,7 +17,7 @@ public class CharacterListWidget : IDashboardWidget {
 
     public string Name => this.localizationService.Translate("CharacterList_TabName");
 
-    public CharacterListWidget(
+    public CharacterListTab(
         ICharacterTrackerService trackerService,
         IWorldDataPresenter worldDataPresenter,
         ILocalizationService localizationService,

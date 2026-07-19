@@ -1,6 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
+using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.SalesHistoryUI.Contracts;
 using Marketeer.Features.SalesHistoryUI.Models;
@@ -9,7 +10,7 @@ using System.Numerics;
 
 namespace Marketeer.Features.SalesHistoryUI.UI;
 
-public class SalesTab : ISalesTab {
+public class SalesTab : IDashboardTab {
     private ILocalizationService localization;
     private ITextureProvider textureProvider;
     private ISalesDataPresenter presenter;
@@ -19,7 +20,7 @@ public class SalesTab : ISalesTab {
     private SalesSortColumn currentSortColumn = SalesSortColumn.Quantity;
     private bool isSortAscending = false;
 
-    public string TabName => this.localization.Translate("SalesTab_Title");
+    public string Name => this.localization.Translate("SalesTab_Title");
 
     public SalesTab(
         ILocalizationService localization,
@@ -33,10 +34,6 @@ public class SalesTab : ISalesTab {
     }
 
     public void Draw() {
-        if (!ImGui.BeginTabItem(this.TabName)) {
-            return;
-        }
-
         var searchPlaceholder = this.localization.Translate("SalesTab_SearchPlaceholder");
         ImGui.InputText($"##salesSearch", ref this.searchQuery, 256);
 
@@ -50,8 +47,6 @@ public class SalesTab : ISalesTab {
         var processedData = this.presenter.ProcessData(rawData, this.searchQuery, this.currentSortColumn, this.isSortAscending);
 
         this.DrawTable(processedData);
-
-        ImGui.EndTabItem();
     }
 
     private void DrawTable(IReadOnlyList<ISalesViewRecord> data) {

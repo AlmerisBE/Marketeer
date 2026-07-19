@@ -1,4 +1,5 @@
 ﻿using Marketeer.Core;
+using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.SalesHistoryUI.Contracts;
 using Marketeer.Features.SalesHistoryUI.Providers;
@@ -12,6 +13,6 @@ public class SalesHistoryUIFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILocalizationProvider, SalesUiLocalizationProvider>();
         services.AddSingleton<ISalesDataPresenter, SalesDataPresenter>();
-        services.AddSingleton<ISalesTab, SalesTab>();
+        services.AddSingleton<IDashboardTab, SalesTab>();
     }
 }

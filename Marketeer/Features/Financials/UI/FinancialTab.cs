@@ -1,13 +1,16 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Financials.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using System.Numerics;
 
 namespace Marketeer.Features.Financials.UI;
 
-public class FinancialsTab {
+public class FinancialsTab : IDashboardTab {
     private IFinancialService financialService;
     private ILocalizationService localizationService;
+
+    public string Name => this.localizationService.Translate("Financials_TabName") ?? "Financials";
 
     public FinancialsTab(IFinancialService financialService, ILocalizationService localizationService) {
         this.financialService = financialService;
