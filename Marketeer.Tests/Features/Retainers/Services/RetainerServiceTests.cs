@@ -7,20 +7,62 @@ using Xunit;
 namespace Marketeer.Tests.Features.Retainers.Services;
 
 public class RetainerServiceTests {
+
     [Fact]
-    public void SelectRetainer_WhenWindowIsNotVisible_ReturnsFalse() {
+    public void CloseRetainerMenu_WhenWindowIsVisible_SendsCancelCallbackWithUpdateStateTrue() {
+        // Arrange
+        var mockWindowService = Substitute.For<INativeWindowService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+        var mockWindow = Substitute.For<INativeWindow>();
+
+        mockWindow.IsVisible.Returns(true);
+        mockWindowService.GetWindow("SelectString").Returns(mockWindow);
+
+        var service = new RetainerService(mockWindowService, mockLogger);
+
+        // Act
+        var result = service.CloseRetainerMenu();
+
+        // Assert
+        Assert.True(result);
+
+        mockWindow.Received(1).SendCallbackWithUpdateState(true, -1);
+    }
+
+    [Fact]
+    public void CloseMarketListings_WhenWindowIsVisible_SendsCancelCallbackWithUpdateStateTrue() {
+        // Arrange
+        var mockWindowService = Substitute.For<INativeWindowService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+        var mockWindow = Substitute.For<INativeWindow>();
+
+        mockWindow.IsVisible.Returns(true);
+        mockWindowService.GetWindow("RetainerSellList").Returns(mockWindow);
+
+        var service = new RetainerService(mockWindowService, mockLogger);
+
+        // Act
+        var result = service.CloseMarketListings();
+
+        // Assert
+        Assert.True(result);
+        mockWindow.Received(1).SendCallbackWithUpdateState(true, -1);
+    }
+
+    [Fact]
+    public void SelectMenuOption_WhenWindowIsNotVisible_ReturnsFalse() {
         // Arrange
         var mockWindowService = Substitute.For<INativeWindowService>();
         var mockLogger = Substitute.For<ILoggerService>();
         var mockWindow = Substitute.For<INativeWindow>();
 
         mockWindow.IsVisible.Returns(false);
-        mockWindowService.GetWindow("RetainerList").Returns(mockWindow);
+        mockWindowService.GetWindow("SelectString").Returns(mockWindow);
 
         var service = new RetainerService(mockWindowService, mockLogger);
 
         // Act
-        var result = service.SelectRetainer("Adelaide");
+        var result = service.SelectMenuOption("Sell items");
 
         // Assert
         Assert.False(result);
@@ -28,39 +70,43 @@ public class RetainerServiceTests {
     }
 
     [Fact]
-    public void SelectRetainer_WhenRetainerExists_SendsCallbackWithNaturalIndexAndReturnsTrue() {
+    public void SelectMenuOption_WhenOptionExistsWithDynamicSuffix_SendsCallbackWithUpdateStateAndDefersToServer() {
         // Arrange
         var mockWindowService = Substitute.For<INativeWindowService>();
         var mockLogger = Substitute.For<ILoggerService>();
         var mockWindow = Substitute.For<INativeWindow>();
 
-        var mockRetainerAdelaide = Substitute.For<INativeUiElement>();
-        mockRetainerAdelaide.Type.Returns(NativeUiElementType.Button);
-        mockRetainerAdelaide.Text.Returns("Fin dans 36m | 19 objets en vente (12) | 233 890 320 | 172 | 100 | Adelaide");
+        var mockOption0 = Substitute.For<INativeUiElement>();
+        mockOption0.Type.Returns(NativeUiElementType.Button);
+        mockOption0.Text.Returns("Trade items [Retainer: 172 slots occupied]");
 
-        var mockRetainerTyphene = Substitute.For<INativeUiElement>();
-        mockRetainerTyphene.Type.Returns(NativeUiElementType.Button);
-        mockRetainerTyphene.Text.Returns("Fin dans 36m | 19 objets en vente (15) | 79 486 | 118 | 100 | Typhene");
+        var mockOption1 = Substitute.For<INativeUiElement>();
+        mockOption1.Type.Returns(NativeUiElementType.Button);
+        mockOption1.Text.Returns("Sell items in your retainer's inventory");
 
         mockWindow.IsVisible.Returns(true);
-        mockWindow.GetElements().Returns(new List<INativeUiElement> { mockRetainerAdelaide, mockRetainerTyphene });
-        mockWindowService.GetWindow("RetainerList").Returns(mockWindow);
+        mockWindow.GetElements().Returns(new List<INativeUiElement> { mockOption0, mockOption1 });
+        mockWindowService.GetWindow("SelectString").Returns(mockWindow);
 
         var service = new RetainerService(mockWindowService, mockLogger);
 
         // Act
-        var result = service.SelectRetainer("Typhene");
+        var result = service.SelectMenuOption("Sell items in your retainer's inventory");
 
         // Assert
         Assert.True(result);
-        mockWindow.Received(1).SendCallback(Arg.Is<object[]>(args =>
-            args.Length == 2 &&
-            (int)args[0] == 2 &&
-            (int)args[1] == 1));
+
+        // Verify the callback was sent with the UI updateState flag set to TRUE
+        mockWindow.Received(1).SendCallbackWithUpdateState(true, Arg.Is<object[]>(args =>
+            args.Length == 1 &&
+            (int)args[0] == 1));
+
+        // Ensure manual Close() is NOT called, as updateState=true handles it natively
+        mockWindow.DidNotReceive().Close();
     }
 
     [Fact]
-    public void SelectRetainer_WithPartialNameMatch_DoesNotClickAndReturnsFalse() {
+    public void SelectMenuOption_WithPartialInnerMatch_ReturnsFalseAndDoesNotSendCallback() {
         // Arrange
         var mockWindowService = Substitute.For<INativeWindowService>();
         var mockLogger = Substitute.For<ILoggerService>();
@@ -69,21 +115,19 @@ public class RetainerServiceTests {
 
         mockWindow.IsVisible.Returns(true);
         mockElement.Type.Returns(NativeUiElementType.Button);
-        mockElement.Text.Returns("Fin dans 36m | 100 | 172 | Adelaide");
+        mockElement.Text.Returns("Sell items in your retainer's inventory");
 
         mockWindow.GetElements().Returns(new List<INativeUiElement> { mockElement });
-        mockWindowService.GetWindow("RetainerList").Returns(mockWindow);
+        mockWindowService.GetWindow("SelectString").Returns(mockWindow);
 
         var service = new RetainerService(mockWindowService, mockLogger);
 
-        // Act - Attempting to select using partial strings
-        var resultAde = service.SelectRetainer("Ade");
-        var resultA = service.SelectRetainer("A");
+        // Act
+        var result = service.SelectMenuOption("items in your retainer's");
 
-        // Assert - Both should fail due to strict Regex matching
-        Assert.False(resultAde);
-        Assert.False(resultA);
-        mockWindow.DidNotReceiveWithAnyArgs().SendCallback(default!);
-        mockLogger.Received(2).Warning(Arg.Is<string>(s => s.Contains("not found in the active RetainerList")));
+        // Assert
+        Assert.False(result);
+        mockWindow.DidNotReceiveWithAnyArgs().SendCallbackWithUpdateState(default, default!);
+        mockWindow.DidNotReceive().Close();
     }
 }

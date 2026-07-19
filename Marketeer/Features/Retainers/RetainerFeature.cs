@@ -11,5 +11,6 @@ public class RetainerFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IRetainerService, RetainerService>();
         services.AddSingleton<ICommand, RetainerCommandAction>();
+        services.AddSingleton<ICommand, RetainerMenuCommandAction>();
     }
 }

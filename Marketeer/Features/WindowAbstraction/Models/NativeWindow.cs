@@ -51,9 +51,9 @@ public unsafe class NativeWindow : INativeWindow {
         this.logger = logger;
     }
 
-    public void Close(bool closeHierarchy = true) {
-        if (closeHierarchy && this.Parent != null && this.Parent.IsVisible) {
-            this.Parent.Close(true);
+    public void Close() {
+        if (this.Parent != null && this.Parent.IsVisible) {
+            this.Parent.Close(); // Interface call: 0 arguments
         }
 
         var addon = this.GetAtkUnitBase();
@@ -63,16 +63,22 @@ public unsafe class NativeWindow : INativeWindow {
 
         if (this.Type == WindowType.Dialog || this.Type == WindowType.Menu) {
             var values = stackalloc AtkValue[1];
+            values[0] = default;
             values[0].Type = AtkValueType.Int;
             values[0].Int = -1;
             addon->FireCallback(1u, values);
         }
         else {
+            // CS7036 Fix: AtkUnitBase.Close requires the fireCallback boolean
             addon->Close(true);
         }
     }
 
     public void SendCallback(params object[] args) {
+        this.SendCallbackWithUpdateState(false, args);
+    }
+
+    public void SendCallbackWithUpdateState(bool updateState, params object[] args) {
         var addon = this.GetAtkUnitBase();
 
         if (addon == null || !addon->IsVisible) {
@@ -87,6 +93,8 @@ public unsafe class NativeWindow : INativeWindow {
         var values = stackalloc AtkValue[args.Length];
 
         for (int i = 0; i < args.Length; i++) {
+            values[i] = default;
+
             if (args[i] is int intValue) {
                 values[i].Type = AtkValueType.Int;
                 values[i].Int = intValue;
@@ -105,7 +113,7 @@ public unsafe class NativeWindow : INativeWindow {
         }
 
         this.logger.Info($"[NativeWindow] Sending callback to '{this.Name}' with {args.Length} arguments (Event ID: {args[0]}).");
-        addon->FireCallback((uint)args.Length, values);
+        addon->FireCallback((uint)args.Length, values, updateState);
     }
 
     public IEnumerable<INativeUiElement> GetElements() {
@@ -125,10 +133,10 @@ public unsafe class NativeWindow : INativeWindow {
             return;
         }
 
-        // Iterate forward to match the game's internal data structures naturally.
         for (int i = 0; i < uldManager->NodeListCount; i++) {
             var node = uldManager->NodeList[i];
-            if (node == null) {
+
+            if (node == null || !node->IsVisible()) {
                 continue;
             }
 
@@ -167,10 +175,10 @@ public unsafe class NativeWindow : INativeWindow {
 
         var sb = new StringBuilder();
 
-        // Iterate forward to match the game's internal data structures naturally.
         for (int i = 0; i < uldManager->NodeListCount; i++) {
             var node = uldManager->NodeList[i];
-            if (node != null && node->Type == NodeType.Text) {
+
+            if (node != null && node->IsVisible() && node->Type == NodeType.Text) {
                 var textNode = (AtkTextNode*)node;
                 var text = this.ExtractString(textNode->NodeText.StringPtr);
 

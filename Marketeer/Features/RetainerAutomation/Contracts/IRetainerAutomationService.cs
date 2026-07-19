@@ -3,5 +3,5 @@
 public interface IRetainerAutomationService {
     bool IsScanning { get; }
     void TriggerScan();
-    void Reset();
+    void AbortScan();
 }

@@ -1,10 +1,17 @@
 ﻿namespace Marketeer.Features.Retainers.Contracts;
 
 public interface IRetainerService {
-    /// <summary>
-    /// Attempts to select a retainer from the open RetainerList window by their name.
-    /// </summary>
-    /// <param name="retainerName">The exact name of the retainer to select.</param>
-    /// <returns>True if the retainer was found and clicked, false otherwise.</returns>
+    bool IsRetainerAvailable(string retainerName);
     bool SelectRetainer(string retainerName);
+
+    bool IsMenuReadyForRetainer(string retainerName);
+    bool IsMenuOptionAvailable(string optionText);
+    bool SelectMenuOption(string optionText);
+
+    /// <summary>
+    /// Closes the retainer menu safely by sending the universal cancel callback (-1), simulating the ESC key.
+    /// </summary>
+    bool CloseRetainerMenu();
+
+    bool CloseMarketListings();
 }

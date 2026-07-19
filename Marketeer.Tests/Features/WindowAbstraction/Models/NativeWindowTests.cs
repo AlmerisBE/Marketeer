@@ -22,12 +22,18 @@ public class NativeWindowTests {
         mockHierarchyProvider.GetParentWindowName("SocialList").Returns("Social");
         mockWindowService.GetWindow("Social").Returns(mockParentWindow);
 
-        var childWindow = new NativeWindow("SocialList", WindowType.System, mockGameGui, mockWindowService, mockHierarchyProvider, mockLogger);
+        var childWindow = new NativeWindow(
+            "SocialList",
+            WindowType.System,
+            mockGameGui,
+            mockWindowService,
+            mockHierarchyProvider,
+            mockLogger);
 
         // Act
-        childWindow.Close(true);
+        childWindow.Close();
 
         // Assert
-        mockParentWindow.Received(1).Close(true);
+        mockParentWindow.Received(1).Close();
     }
 }
