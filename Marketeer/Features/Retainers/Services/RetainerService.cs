@@ -51,8 +51,10 @@ public class RetainerService : IRetainerService {
         }
 
         var retainerIndex = retainerRows.IndexOf(targetRetainer);
-        this.logger.Info($"Selecting retainer '{retainerName}' at logical index {retainerIndex}.");
-        window.SendCallback(2, retainerIndex);
+        this.logger.Info($"Selecting retainer '{retainerName}' at logical index {retainerIndex} with UI state update.");
+
+        // Applied the conclusion here: updateState = true for the RetainerList selection
+        window.SendCallbackWithUpdateState(true, 2, retainerIndex);
 
         return true;
     }
@@ -103,7 +105,6 @@ public class RetainerService : IRetainerService {
         var optionIndex = menuRows.IndexOf(targetOption);
         this.logger.Info($"Selecting menu option '{targetOption.Text}' at logical index {optionIndex} with UI state update.");
 
-        // Passing 'true' to updateState forces the native engine to visually hide/close the addon, mimicking a physical click
         window.SendCallbackWithUpdateState(true, optionIndex);
 
         return true;

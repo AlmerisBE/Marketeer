@@ -25,8 +25,7 @@ public class RetainerServiceTests {
 
         // Assert
         Assert.True(result);
-
-        mockWindow.Received(1).SendCallbackWithUpdateState(true, -1);
+        mockWindow.Received(1).SendCallbackWithUpdateState(true, new object[] { -1 });
     }
 
     [Fact]
@@ -46,7 +45,7 @@ public class RetainerServiceTests {
 
         // Assert
         Assert.True(result);
-        mockWindow.Received(1).SendCallbackWithUpdateState(true, -1);
+        mockWindow.Received(1).SendCallbackWithUpdateState(true, new object[] { -1 });
     }
 
     [Fact]
@@ -96,12 +95,10 @@ public class RetainerServiceTests {
         // Assert
         Assert.True(result);
 
-        // Verify the callback was sent with the UI updateState flag set to TRUE
         mockWindow.Received(1).SendCallbackWithUpdateState(true, Arg.Is<object[]>(args =>
             args.Length == 1 &&
             (int)args[0] == 1));
 
-        // Ensure manual Close() is NOT called, as updateState=true handles it natively
         mockWindow.DidNotReceive().Close();
     }
 
@@ -129,5 +126,33 @@ public class RetainerServiceTests {
         Assert.False(result);
         mockWindow.DidNotReceiveWithAnyArgs().SendCallbackWithUpdateState(default, default!);
         mockWindow.DidNotReceive().Close();
+    }
+
+    [Fact]
+    public void SelectRetainer_WhenRetainerExists_SendsCallbackWithUpdateState() {
+        // Arrange
+        var mockWindowService = Substitute.For<INativeWindowService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+        var mockWindow = Substitute.For<INativeWindow>();
+
+        var mockElement = Substitute.For<INativeUiElement>();
+        mockElement.Type.Returns(NativeUiElementType.Button);
+
+        mockElement.Text.Returns("Level 90 | Almeris Tester");
+
+        mockWindow.IsVisible.Returns(true);
+        mockWindow.GetElements().Returns(new List<INativeUiElement> { mockElement });
+        mockWindowService.GetWindow("RetainerList").Returns(mockWindow);
+
+        var service = new RetainerService(mockWindowService, mockLogger);
+
+        // Act
+        var result = service.SelectRetainer("Almeris Tester");
+
+        // Assert
+        Assert.True(result);
+
+        // Verify the callback uses the updateState = true signature
+        mockWindow.Received(1).SendCallbackWithUpdateState(true, [2, 0]);
     }
 }
