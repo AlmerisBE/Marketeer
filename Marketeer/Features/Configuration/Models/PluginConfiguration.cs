@@ -1,5 +1,6 @@
 ﻿using Dalamud.Configuration;
 using Marketeer.Features.Financials.Models;
+using Marketeer.Features.SalesHistoryTracking.Models;
 using System;
 using System.Collections.Generic;
 
@@ -11,6 +12,8 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool ExampleCheckbox { get; set; } = false;
 
-    // Uses a composite string key "CharacterName_HomeWorldId" for absolute compatibility
     public Dictionary<string, CharacterFinancialData> FinancialRecords { get; set; } = [];
+
+    // Persistent storage for historical sales
+    public List<SaleRecord> SalesHistory { get; set; } = new();
 }

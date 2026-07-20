@@ -46,16 +46,14 @@ public class RetainerService : IRetainerService {
         var targetRetainer = retainerRows.FirstOrDefault(e => Regex.IsMatch(e.Text, pattern, RegexOptions.IgnoreCase));
 
         if (targetRetainer == null) {
-            this.logger.Warning($"Retainer '{retainerName}' not found in the active RetainerList. Ensure exact name match.");
+            this.logger.Warning($"Retainer '{retainerName}' not found in the active RetainerList.");
             return false;
         }
 
         var retainerIndex = retainerRows.IndexOf(targetRetainer);
-        this.logger.Info($"Selecting retainer '{retainerName}' at logical index {retainerIndex} with UI state update.");
+        this.logger.Info($"Selecting retainer '{retainerName}' at logical index {retainerIndex}.");
 
-        // Applied the conclusion here: updateState = true for the RetainerList selection
         window.SendCallbackWithUpdateState(true, 2, retainerIndex);
-
         return true;
     }
 
@@ -98,15 +96,14 @@ public class RetainerService : IRetainerService {
         var targetOption = menuRows.FirstOrDefault(e => e.Text.StartsWith(optionText, StringComparison.OrdinalIgnoreCase));
 
         if (targetOption == null) {
-            this.logger.Warning($"Menu option starting with '{optionText}' not found in the active SelectString window.");
+            this.logger.Warning($"Menu option starting with '{optionText}' not found.");
             return false;
         }
 
         var optionIndex = menuRows.IndexOf(targetOption);
-        this.logger.Info($"Selecting menu option '{targetOption.Text}' at logical index {optionIndex} with UI state update.");
+        this.logger.Info($"Selecting menu option '{targetOption.Text}' at logical index {optionIndex}.");
 
         window.SendCallbackWithUpdateState(true, optionIndex);
-
         return true;
     }
 
@@ -117,9 +114,8 @@ public class RetainerService : IRetainerService {
             return false;
         }
 
-        this.logger.Info("Closing retainer menu via universal cancel callback (-1) with UI state update.");
+        this.logger.Info("Closing retainer menu via universal cancel callback.");
         window.SendCallbackWithUpdateState(true, -1);
-
         return true;
     }
 
@@ -130,9 +126,20 @@ public class RetainerService : IRetainerService {
             return false;
         }
 
-        this.logger.Info("Closing market listings window via universal cancel callback with UI state update.");
+        this.logger.Info("Closing market listings window via universal cancel callback.");
         window.SendCallbackWithUpdateState(true, -1);
+        return true;
+    }
 
+    public bool CloseSalesHistory() {
+        var window = this.windowService.GetWindow("RetainerHistory");
+
+        if (window == null || !window.IsVisible) {
+            return false;
+        }
+
+        this.logger.Info("Closing sales history window via universal cancel callback.");
+        window.SendCallbackWithUpdateState(true, -1);
         return true;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.RetainerAutomation.Contracts;
@@ -11,21 +12,13 @@ using System.Collections.Generic;
 
 namespace Marketeer.Features.RetainerAutomation.Services;
 
-public enum AutomationStep {
-    Idle,
-    SelectRetainer,
-    OpenMarketListings,
-    WaitAndCloseMarketListings,
-    CloseSelectString,
-    CloseRetainerList
-}
-
 public class RetainerAutomationService : IRetainerAutomationService, IDisposable {
     private IFramework framework;
     private IRetainerService retainerService;
     private IRetainerProvider retainerProvider;
     private INativeWindowService windowService;
     private ILocalizationService localizationService;
+    private IMarketListingTrackerService marketListingTracker;
     private ILoggerService logger;
 
     private IReadOnlyList<TrackedRetainer> activeRetainers;
@@ -33,6 +26,7 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
     private int cooldownTicks;
     private int timeoutTicks;
     private AutomationStep currentStep;
+    private bool isFirstScan;
 
     public bool IsScanning { get; private set; }
 
@@ -42,6 +36,7 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
         IRetainerProvider retainerProvider,
         INativeWindowService windowService,
         ILocalizationService localizationService,
+        IMarketListingTrackerService marketListingTracker,
         ILoggerService logger) {
 
         this.framework = framework;
@@ -49,6 +44,7 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
         this.retainerProvider = retainerProvider;
         this.windowService = windowService;
         this.localizationService = localizationService;
+        this.marketListingTracker = marketListingTracker;
         this.logger = logger;
 
         this.activeRetainers = new List<TrackedRetainer>();
@@ -107,6 +103,9 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
             case AutomationStep.OpenMarketListings:
                 this.ProcessOpenMarketListings();
                 break;
+            case AutomationStep.ScanMarketListings:
+                this.ProcessScanMarketListings();
+                break;
             case AutomationStep.WaitAndCloseMarketListings:
                 this.ProcessCloseMarketListings();
                 break;
@@ -126,6 +125,8 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
             var success = this.retainerService.SelectRetainer(targetName);
 
             if (success) {
+                // Initialize the first scan flag immediately upon summoning the retainer
+                this.isFirstScan = true;
                 this.currentStep = AutomationStep.OpenMarketListings;
                 this.cooldownTicks = 15;
                 this.timeoutTicks = 600;
@@ -141,14 +142,12 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
         var targetName = this.activeRetainers[this.currentRetainerIndex].Name;
         var optionText = this.localizationService.Translate("RetainerMenu_SellItems");
 
-        // We explicitly poll to guarantee the SelectString window belongs to the target retainer 
-        // to prevent ghost-clicking during rapid UI transitions.
         if (this.retainerService.IsMenuReadyForRetainer(targetName) && this.retainerService.IsMenuOptionAvailable(optionText)) {
             var success = this.retainerService.SelectMenuOption(optionText);
 
             if (success) {
-                this.currentStep = AutomationStep.WaitAndCloseMarketListings;
-                this.cooldownTicks = 60;
+                this.currentStep = AutomationStep.ScanMarketListings;
+                this.cooldownTicks = 30; // Wait for UI to load before attempting to scan
                 this.timeoutTicks = 600;
             }
             else {
@@ -158,10 +157,28 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
         }
     }
 
+    private void ProcessScanMarketListings() {
+        var retainerId = this.activeRetainers[this.currentRetainerIndex].RetainerId;
+
+        // Perform the scan, passing down the contextual isFirstScan state
+        bool scanSuccessful = this.marketListingTracker.ScanListings(retainerId, this.isFirstScan);
+
+        if (scanSuccessful) {
+            this.logger.Info($"Market listings scanned for retainer ID {retainerId}. First scan was: {this.isFirstScan}.");
+
+            // Guarantee that any continuous polling while the retainer is summoned flags as subsequent scans
+            this.isFirstScan = false;
+
+            this.currentStep = AutomationStep.WaitAndCloseMarketListings;
+            this.cooldownTicks = 15;
+            this.timeoutTicks = 600;
+        }
+    }
+
     private void ProcessCloseMarketListings() {
         if (this.retainerService.CloseMarketListings()) {
             this.currentStep = AutomationStep.CloseSelectString;
-            this.cooldownTicks = 45; // Delay to allow the server to acknowledge closure
+            this.cooldownTicks = 60; // Allow time for the server to acknowledge closure and SelectString to reopen
             this.timeoutTicks = 600;
         }
     }
@@ -169,11 +186,10 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
     private void ProcessCloseSelectString() {
         var targetName = this.activeRetainers[this.currentRetainerIndex].Name;
 
-        // Ensure the active window belongs to the correct retainer before closing
         if (this.retainerService.IsMenuReadyForRetainer(targetName)) {
             if (this.retainerService.CloseRetainerMenu()) {
                 this.currentRetainerIndex++;
-                this.cooldownTicks = 60; // Allow time for the unsummoning sequence
+                this.cooldownTicks = 60;
                 this.timeoutTicks = 600;
 
                 if (this.currentRetainerIndex >= this.activeRetainers.Count) {

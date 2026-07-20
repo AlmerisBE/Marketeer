@@ -1,19 +1,21 @@
 ﻿using Dalamud.Plugin.Services;
-using Lumina.Excel;
-using Lumina.Excel.Sheets;
 using Marketeer.Features.Configuration.Contracts;
 using Marketeer.Features.Configuration.Models;
 using Marketeer.Features.Financials.Models;
 using Marketeer.Features.GameEvents.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.MarketListingTracking.Contracts;
+using Marketeer.Features.MarketListingTracking.Models;
 using Marketeer.Features.MarketListingTracking.Services;
+using Marketeer.Features.SalesHistoryTracking.Contracts;
+using Marketeer.Features.SalesHistoryTracking.Models;
 using NSubstitute;
 using Xunit;
 
 namespace Marketeer.Tests.Features.MarketListingTracking.Services;
 
 public class MarketListingTrackerServiceTests {
+
     [Fact]
     public void GetListingsForRetainer_ReturnsMappedDisplayDataFromFinancialRecords() {
         // Arrange
@@ -22,32 +24,68 @@ public class MarketListingTrackerServiceTests {
         var mockGameEventService = Substitute.For<IGameEventService>();
         var mockProvider = Substitute.For<IMarketListingProvider>();
         var mockDataManager = Substitute.For<IDataManager>();
+        var mockInferenceService = Substitute.For<ISalesInferenceService>();
 
         var pluginConfig = new PluginConfiguration();
-        var charData = new CharacterFinancialData {
-            CharacterName = "Almeris",
-            HomeWorldId = 33
-        };
+        var charData = new CharacterFinancialData { CharacterName = "Almeris", HomeWorldId = 33 };
+        var retData = new RetainerFinancialData { RetainerId = 100 };
 
-        var retData = new RetainerFinancialData {
-            RetainerId = 100
-        };
         retData.MarketListings.Add(0, new RetainerMarketListingSaveData { ItemId = 5000, Quantity = 1, PricePerUnit = 100 });
         charData.Retainers.Add(100, retData);
-
         pluginConfig.FinancialRecords.Add("Almeris_33", charData);
 
         mockConfigService.GetConfig().Returns(pluginConfig);
-        mockDataManager.GetExcelSheet<Item>().Returns((ExcelSheet<Item>?)null);
 
-        var service = new MarketListingTrackerService(mockConfigService, mockGameEventService, mockProvider, mockDataManager, mockLogger);
+        var service = new MarketListingTrackerService(mockConfigService, mockGameEventService, mockProvider, mockDataManager, mockInferenceService, mockLogger);
 
         // Act
-        var resultForRetainer100 = service.GetListingsForRetainer(100);
+        var result = service.GetListingsForRetainer(100);
 
         // Assert
-        Assert.Single(resultForRetainer100);
-        Assert.Equal(5000u, resultForRetainer100[0].ItemId);
-        Assert.Equal("Unknown Item", resultForRetainer100[0].ItemName);
+        Assert.Single(result);
+        Assert.Equal(5000u, result[0].ItemId);
+        Assert.Equal("Unknown Item", result[0].ItemName);
+    }
+
+    [Fact]
+    public void ScanListings_WhenInvoked_ExecutesInferenceAndSavesConfiguration() {
+        // Arrange
+        var mockConfigService = Substitute.For<IConfigurationService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+        var mockGameEventService = Substitute.For<IGameEventService>();
+        var mockProvider = Substitute.For<IMarketListingProvider>();
+        var mockDataManager = Substitute.For<IDataManager>();
+        var mockInferenceService = Substitute.For<ISalesInferenceService>();
+
+        var pluginConfig = new PluginConfiguration();
+        var charData = new CharacterFinancialData { CharacterName = "Tester", HomeWorldId = 1 };
+        var retData = new RetainerFinancialData { RetainerId = 200 };
+
+        charData.Retainers.Add(200, retData);
+        pluginConfig.FinancialRecords.Add("Tester_1", charData);
+        mockConfigService.GetConfig().Returns(pluginConfig);
+
+        mockProvider.GetActiveRetainerId().Returns(200ul);
+        mockProvider.GetActiveRetainerListings().Returns(new List<TrackedListing> {
+            new TrackedListing { SlotIndex = 1, ItemId = 999, Quantity = 5, PricePerUnit = 1000 }
+        });
+
+        var service = new MarketListingTrackerService(mockConfigService, mockGameEventService, mockProvider, mockDataManager, mockInferenceService, mockLogger);
+
+        // Act
+        var success = service.ScanListings(200ul, true);
+
+        // Assert
+        Assert.True(success);
+
+        mockInferenceService.Received(1).InferSales(
+            200ul,
+            true,
+            Arg.Any<IReadOnlyList<ListingState>>(),
+            Arg.Any<IReadOnlyList<ListingState>>());
+
+        mockConfigService.Received(1).Save();
+        Assert.Single(retData.MarketListings);
+        Assert.Equal(999u, retData.MarketListings[1].ItemId);
     }
 }

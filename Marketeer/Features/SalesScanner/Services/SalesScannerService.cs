@@ -17,10 +17,8 @@ public class SalesScannerService : ISalesScannerService, IDisposable {
     private ILoggerService logger;
 
     private bool isEnabled = false;
-    private bool isScanPending = false;
-    private DateTime scanRequestTime;
-    private int scanAttempts = 0;
-    private const int MaxScanAttempts = 10;
+    private bool isScanActive = false;
+    private DateTime lastScanTime;
 
     private static readonly IEnumerable<string> TargetAddons = new[] { "RetainerHistory" };
 
@@ -44,6 +42,7 @@ public class SalesScannerService : ISalesScannerService, IDisposable {
         }
 
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, TargetAddons, this.OnAddonSetup);
+        this.addonLifecycle.RegisterListener(AddonEvent.PreFinalize, TargetAddons, this.OnAddonFinalize);
         this.framework.Update += this.OnFrameworkUpdate;
 
         this.isEnabled = true;
@@ -56,6 +55,7 @@ public class SalesScannerService : ISalesScannerService, IDisposable {
         }
 
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, TargetAddons, this.OnAddonSetup);
+        this.addonLifecycle.UnregisterListener(AddonEvent.PreFinalize, TargetAddons, this.OnAddonFinalize);
         this.framework.Update -= this.OnFrameworkUpdate;
 
         this.isEnabled = false;
@@ -63,35 +63,33 @@ public class SalesScannerService : ISalesScannerService, IDisposable {
     }
 
     private void OnAddonSetup(AddonEvent type, AddonArgs args) {
-        this.logger.Info("Retainer sales history UI opened. Queuing delayed scan...");
-        this.isScanPending = true;
-        this.scanRequestTime = DateTime.Now;
-        this.scanAttempts = 0;
+        this.logger.Info("Retainer sales history UI opened. Starting continuous scan...");
+        this.isScanActive = true;
+        this.lastScanTime = DateTime.Now;
+    }
+
+    private void OnAddonFinalize(AddonEvent type, AddonArgs args) {
+        this.logger.Info("Retainer sales history UI closed. Stopping continuous scan.");
+        this.isScanActive = false;
     }
 
     private void OnFrameworkUpdate(IFramework frameworkInstance) {
-        if (!this.isScanPending) {
+        if (!this.isScanActive) {
             return;
         }
 
-        // Wait 500ms before attempting to scan to allow the game to fetch data from the server
-        if ((DateTime.Now - this.scanRequestTime).TotalMilliseconds < 500) {
+        // Continuously poll every 500ms to capture new rows as the user scrolls
+        if ((DateTime.Now - this.lastScanTime).TotalMilliseconds < 500) {
             return;
         }
 
-        this.scanRequestTime = DateTime.Now;
-        this.scanAttempts++;
+        this.lastScanTime = DateTime.Now;
 
         var sales = this.scraper.ScrapeSales();
 
         if (sales.Count > 0) {
+            // The repository handles deduplication and saving internally
             this.repository.AddSales(sales);
-            this.logger.Info($"Successfully scanned and saved {sales.Count} sales after {this.scanAttempts} attempt(s).");
-            this.isScanPending = false;
-        }
-        else if (this.scanAttempts >= MaxScanAttempts) {
-            this.logger.Warning("Failed to scan sales history after maximum attempts. The UI might be empty or still loading.");
-            this.isScanPending = false;
         }
     }
 

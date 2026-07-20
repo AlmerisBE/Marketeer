@@ -155,4 +155,24 @@ public class RetainerServiceTests {
         // Verify the callback uses the updateState = true signature
         mockWindow.Received(1).SendCallbackWithUpdateState(true, [2, 0]);
     }
+
+    [Fact]
+    public void CloseSalesHistory_WhenWindowIsVisible_SendsCancelCallbackWithUpdateStateTrue() {
+        // Arrange
+        var mockWindowService = Substitute.For<INativeWindowService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+        var mockWindow = Substitute.For<INativeWindow>();
+
+        mockWindow.IsVisible.Returns(true);
+        mockWindowService.GetWindow("RetainerHistory").Returns(mockWindow);
+
+        var service = new RetainerService(mockWindowService, mockLogger);
+
+        // Act
+        var result = service.CloseSalesHistory();
+
+        // Assert
+        Assert.True(result);
+        mockWindow.Received(1).SendCallbackWithUpdateState(true, new object[] { -1 });
+    }
 }

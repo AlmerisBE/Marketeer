@@ -1,4 +1,6 @@
 ﻿using Marketeer.Core;
+using Marketeer.Features.Command.Contracts;
+using Marketeer.Features.SalesHistoryTracking.Commands;
 using Marketeer.Features.SalesHistoryTracking.Contracts;
 using Marketeer.Features.SalesHistoryTracking.Services;
 using Marketeer.Features.SalesHistoryUI.Contracts;
@@ -13,5 +15,7 @@ public class SalesHistoryTrackingFeature : IFeatureModule {
         services.AddSingleton<ISalesRepository, SalesRepository>();
         services.AddSingleton<ISalesDataProvider, SalesDataProvider>();
         services.AddSingleton<IItemResolverService, ItemResolverService>();
+        services.AddSingleton<ISalesInferenceService, SalesInferenceService>();
+        services.AddSingleton<ICommand, HistoryCommand>();
     }
 }

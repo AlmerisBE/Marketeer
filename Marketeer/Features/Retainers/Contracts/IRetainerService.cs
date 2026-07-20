@@ -8,10 +8,7 @@ public interface IRetainerService {
     bool IsMenuOptionAvailable(string optionText);
     bool SelectMenuOption(string optionText);
 
-    /// <summary>
-    /// Closes the retainer menu safely by sending the universal cancel callback (-1), simulating the ESC key.
-    /// </summary>
     bool CloseRetainerMenu();
-
     bool CloseMarketListings();
+    bool CloseSalesHistory();
 }

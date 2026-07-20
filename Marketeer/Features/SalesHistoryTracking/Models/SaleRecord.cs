@@ -10,4 +10,19 @@ public class SaleRecord {
     public uint UnitPrice { get; set; }
     public string BuyerName { get; set; } = string.Empty;
     public DateTime SaleDate { get; set; }
+
+    public override bool Equals(object? obj) {
+        if (obj is SaleRecord other) {
+            return this.ItemId == other.ItemId &&
+                   this.Quantity == other.Quantity &&
+                   this.UnitPrice == other.UnitPrice &&
+                   this.BuyerName == other.BuyerName &&
+                   this.SaleDate == other.SaleDate;
+        }
+        return false;
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(this.ItemId, this.Quantity, this.UnitPrice, this.BuyerName, this.SaleDate);
+    }
 }
