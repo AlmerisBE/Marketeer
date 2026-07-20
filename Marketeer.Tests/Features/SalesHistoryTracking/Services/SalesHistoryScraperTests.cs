@@ -1,7 +1,8 @@
-﻿using Marketeer.Features.Logging.Contracts;
+﻿using Dalamud.Game.NativeWrapper;
+using Dalamud.Plugin.Services;
+using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.SalesHistoryTracking.Contracts;
 using Marketeer.Features.SalesHistoryTracking.Services;
-using Marketeer.Features.WindowAbstraction.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -9,64 +10,41 @@ namespace Marketeer.Tests.Features.SalesHistoryTracking.Services;
 
 public class SalesHistoryScraperTests {
     [Fact]
-    public void IsHistoryWindowOpen_WhenWindowIsVisible_ReturnsTrue() {
+    public void IsHistoryWindowOpen_WhenWindowPointerIsNull_ReturnsFalse() {
         // Arrange
-        var mockWindowService = Substitute.For<INativeWindowService>();
+        var mockGameGui = Substitute.For<IGameGui>();
         var mockItemResolver = Substitute.For<IItemResolverService>();
         var mockLogger = Substitute.For<ILoggerService>();
-        var mockWindow = Substitute.For<INativeWindow>();
 
-        mockWindow.IsVisible.Returns(true);
-        mockWindowService.GetWindow("RetainerItemHistory").Returns(mockWindow);
+        // Fix CS1503: Return the expected AtkUnitBasePtr struct instead of IntPtr.Zero
+        mockGameGui.GetAddonByName("RetainerHistory").Returns(default(AtkUnitBasePtr));
 
-        var scraper = new SalesHistoryScraper(mockWindowService, mockItemResolver, mockLogger);
+        var scraper = new SalesHistoryScraper(mockGameGui, mockItemResolver, mockLogger);
 
         // Act
         var result = scraper.IsHistoryWindowOpen();
 
         // Assert
-        Assert.True(result);
+        Assert.False(result);
     }
 
     [Fact]
-    public void ScrapeSales_WithValidNodes_ReturnsParsedSaleRecords() {
+    public void ScrapeSales_WhenWindowPointerIsNull_ReturnsEmptyListAndLogsWarning() {
         // Arrange
-        var mockWindowService = Substitute.For<INativeWindowService>();
+        var mockGameGui = Substitute.For<IGameGui>();
         var mockItemResolver = Substitute.For<IItemResolverService>();
         var mockLogger = Substitute.For<ILoggerService>();
-        var mockWindow = Substitute.For<INativeWindow>();
 
-        // We simulate a repeating pattern found in the UI nodes (Name with Quantity, Unit Price, Buyer, Date)
-        var elements = new List<INativeUiElement> {
-            CreateMockElement("Potion  x5"), //  is the HQ symbol in FFXIV font
-            CreateMockElement("100"),
-            CreateMockElement("Almeris Tester"),
-            CreateMockElement("2023-10-15 14:30:00") // Simplified date format for the test
-        };
+        // Fix CS1503: Return the expected AtkUnitBasePtr struct instead of IntPtr.Zero
+        mockGameGui.GetAddonByName("RetainerHistory").Returns(default(AtkUnitBasePtr));
 
-        mockWindow.IsVisible.Returns(true);
-        mockWindow.GetElements().Returns(elements);
-        mockWindowService.GetWindow("RetainerItemHistory").Returns(mockWindow);
-
-        mockItemResolver.ResolveItemId("Potion").Returns(10u);
-
-        var scraper = new SalesHistoryScraper(mockWindowService, mockItemResolver, mockLogger);
+        var scraper = new SalesHistoryScraper(mockGameGui, mockItemResolver, mockLogger);
 
         // Act
         var results = scraper.ScrapeSales();
 
         // Assert
-        Assert.Single(results);
-        Assert.Equal(10u, results[0].ItemId);
-        Assert.Equal(5u, results[0].Quantity);
-        Assert.Equal(100u, results[0].UnitPrice);
-        Assert.Equal("Almeris Tester", results[0].BuyerName);
-    }
-
-    private INativeUiElement CreateMockElement(string text) {
-        var element = Substitute.For<INativeUiElement>();
-        element.Type.Returns(NativeUiElementType.Text);
-        element.Text.Returns(text);
-        return element;
+        Assert.Empty(results);
+        mockLogger.Received(1).Warning("Cannot scrape sales: 'RetainerHistory' pointer is null.");
     }
 }

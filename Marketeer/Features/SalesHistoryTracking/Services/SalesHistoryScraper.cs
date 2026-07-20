@@ -1,69 +1,191 @@
-﻿using Marketeer.Features.Logging.Contracts;
+﻿using Dalamud.Memory;
+using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.SalesHistoryTracking.Contracts;
 using Marketeer.Features.SalesHistoryTracking.Models;
-using Marketeer.Features.WindowAbstraction.Contracts;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Marketeer.Features.SalesHistoryTracking.Services;
 
 public class SalesHistoryScraper : ISalesHistoryScraper {
-    private INativeWindowService windowService;
+    private IGameGui gameGui;
     private IItemResolverService itemResolver;
     private ILoggerService logger;
 
     public SalesHistoryScraper(
-        INativeWindowService windowService,
+        IGameGui gameGui,
         IItemResolverService itemResolver,
         ILoggerService logger) {
-        this.windowService = windowService;
+
+        this.gameGui = gameGui;
         this.itemResolver = itemResolver;
         this.logger = logger;
     }
 
-    public bool IsHistoryWindowOpen() {
-        var window = this.windowService.GetWindow("RetainerItemHistory");
-        return window != null && window.IsVisible;
+    public unsafe bool IsHistoryWindowOpen() {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerHistory");
+
+        if (addonPtr.Address == IntPtr.Zero) {
+            return false;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        return addon->IsVisible;
     }
 
-    public IReadOnlyList<SaleRecord> ScrapeSales() {
+    public unsafe IReadOnlyList<SaleRecord> ScrapeSales() {
         var records = new List<SaleRecord>();
-        var window = this.windowService.GetWindow("RetainerItemHistory");
+        var addonPtr = this.gameGui.GetAddonByName("RetainerHistory");
 
-        if (window == null || !window.IsVisible) {
-            this.logger.Warning("Cannot scrape sales: 'RetainerItemHistory' window is not visible.");
+        if (addonPtr.Address == IntPtr.Zero) {
+            this.logger.Warning("Cannot scrape sales: 'RetainerHistory' pointer is null.");
             return records;
         }
 
-        var textElements = window.GetElements()
-            .Where(e => e.Type == NativeUiElementType.Text)
-            .Select(e => e.Text)
-            .ToList();
+        var addon = (AtkUnitBase*)addonPtr.Address;
 
-        // Depending on FFXIV's exact node layout, we chunk the text elements.
-        // Assuming a sequence: [ItemName + Qty], [UnitPrice], [BuyerName], [Date]
-        int elementsPerRow = 4;
+        if (!addon->IsVisible) {
+            this.logger.Debug("ScrapeSales: Addon is not visible yet.");
+            return records;
+        }
 
-        for (int i = 0; i <= textElements.Count - elementsPerRow; i += elementsPerRow) {
+        AtkComponentNode* listComponentNode = null;
+
+        for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
+            var node = addon->UldManager.NodeList[i];
+            if (node != null && node->NodeId == 10 && (ushort)node->Type >= 1000) {
+                listComponentNode = (AtkComponentNode*)node;
+                break;
+            }
+        }
+
+        if (listComponentNode == null || listComponentNode->Component == null) {
+            this.logger.Debug("ScrapeSales: Could not find ListComponentNode (NodeId: 10) or its Component is null.");
+            return records;
+        }
+
+        var listComponent = listComponentNode->Component;
+        this.logger.Debug($"ScrapeSales: Found List Component. It contains {listComponent->UldManager.NodeListCount} child nodes.");
+
+        for (int i = 0; i < listComponent->UldManager.NodeListCount; i++) {
+            var listItemNode = listComponent->UldManager.NodeList[i];
+
+            if (listItemNode == null) {
+                continue;
+            }
+
+            if ((ushort)listItemNode->Type < 1000) {
+                this.logger.Debug($"Row {i} skipped: Not a component (Type: {(ushort)listItemNode->Type}).");
+                continue;
+            }
+
+            if (!listItemNode->IsVisible()) {
+                this.logger.Debug($"Row {i} skipped: Node is hidden.");
+                continue;
+            }
+
+            var listItemComponent = ((AtkComponentNode*)listItemNode)->Component;
+            if (listItemComponent == null) {
+                this.logger.Debug($"Row {i} skipped: listItemComponent is null.");
+                continue;
+            }
+
             try {
-                var rawNameQty = textElements[i];
-                var rawPrice = textElements[i + 1];
-                var buyerName = textElements[i + 2];
-                var rawDate = textElements[i + 3];
+                var textNodes = new Dictionary<uint, string>();
+                uint quantity = 1;
 
-                var (itemName, quantity) = this.ParseItemNameAndQuantity(rawNameQty);
-                var itemId = this.itemResolver.ResolveItemId(itemName);
+                this.logger.Debug($"Row {i} processing. Child nodes count: {listItemComponent->UldManager.NodeListCount}");
 
-                // Clean formatting (e.g., thousands separators) before parsing
-                var cleanPrice = rawPrice.Replace(",", "").Replace(" ", "");
-                if (!uint.TryParse(cleanPrice, out var unitPrice)) {
+                for (int j = 0; j < listItemComponent->UldManager.NodeListCount; j++) {
+                    var childNode = listItemComponent->UldManager.NodeList[j];
+                    if (childNode == null) {
+                        continue;
+                    }
+
+                    if (childNode->Type == NodeType.Text) {
+                        var text = this.ExtractString(((AtkTextNode*)childNode)->NodeText.StringPtr);
+
+                        this.logger.Debug($"Row {i}, Child {j} (NodeId: {childNode->NodeId}): Found Text='{text}', Visible={childNode->IsVisible()}");
+
+                        if (childNode->IsVisible() && !string.IsNullOrWhiteSpace(text)) {
+                            textNodes[childNode->NodeId] = text;
+                        }
+                    }
+                    else if ((ushort)childNode->Type >= 1000) {
+                        var innerComponent = ((AtkComponentNode*)childNode)->Component;
+
+                        if (innerComponent != null) {
+                            for (int k = 0; k < innerComponent->UldManager.NodeListCount; k++) {
+                                var innerChild = innerComponent->UldManager.NodeList[k];
+
+                                if (innerChild != null && innerChild->Type == NodeType.Text && innerChild->IsVisible()) {
+                                    var qtyTextNode = (AtkTextNode*)innerChild;
+                                    var qtyStr = this.ExtractString(qtyTextNode->NodeText.StringPtr);
+
+                                    var cleanQtyStr = Regex.Replace(qtyStr, @"[^\d]", "");
+                                    if (uint.TryParse(cleanQtyStr, out var parsedQty) && parsedQty > 0) {
+                                        quantity = parsedQty;
+                                        this.logger.Debug($"Row {i}: Found nested quantity '{quantity}' inside component.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                this.logger.Debug($"Row {i} valid text nodes mapped: {textNodes.Count}");
+
+                if (textNodes.Count < 4) {
+                    this.logger.Debug($"Row {i} skipped: Expected >= 4 texts, found {textNodes.Count}. Content: {string.Join(" | ", textNodes.Values)}");
                     continue;
                 }
 
-                if (!DateTime.TryParse(rawDate, out var saleDate)) {
-                    // Fallback to current time if FFXIV specific date string parsing fails
+                string itemNameRaw = textNodes.GetValueOrDefault(3u, string.Empty);
+                string priceStr = textNodes.GetValueOrDefault(6u, string.Empty);
+                string buyerName = textNodes.GetValueOrDefault(7u, string.Empty);
+                string dateStr = textNodes.GetValueOrDefault(8u, string.Empty);
+
+                this.logger.Debug($"Row {i} mapping -> Item: '{itemNameRaw}', Price: '{priceStr}', Buyer: '{buyerName}', Date: '{dateStr}'");
+
+                var (itemName, parsedQtyFromName) = this.ParseItemNameAndQuantity(itemNameRaw);
+                var itemId = this.itemResolver.ResolveItemId(itemName);
+
+                if (itemId == 0) {
+                    this.logger.Debug($"Row {i}: ItemId resolution failed for exact NodeId 3. Attempting fallback mapping...");
+                    foreach (var kvp in textNodes) {
+                        var (fallbackName, fallbackQty) = this.ParseItemNameAndQuantity(kvp.Value);
+                        itemId = this.itemResolver.ResolveItemId(fallbackName);
+
+                        if (itemId != 0) {
+                            itemNameRaw = kvp.Value;
+                            if (fallbackQty > 1) {
+                                parsedQtyFromName = fallbackQty;
+                            }
+                            this.logger.Debug($"Row {i}: Fallback resolved '{fallbackName}' to ItemId {itemId} via NodeId {kvp.Key}.");
+                            break;
+                        }
+                    }
+                }
+
+                if (itemId == 0) {
+                    this.logger.Warning($"Row {i} skipped: Could not resolve ItemID. Texts: {string.Join(" | ", textNodes.Values)}");
+                    continue;
+                }
+
+                if (parsedQtyFromName > 1) {
+                    quantity = parsedQtyFromName;
+                }
+
+                var cleanPrice = Regex.Replace(priceStr, @"[^\d]", "");
+                if (!uint.TryParse(cleanPrice, out var unitPrice)) {
+                    this.logger.Warning($"Row {i} skipped: Could not parse price '{priceStr}'");
+                    continue;
+                }
+
+                if (!DateTime.TryParse(dateStr, out var saleDate)) {
                     saleDate = DateTime.UtcNow;
                 }
 
@@ -74,19 +196,19 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
                     BuyerName = buyerName,
                     SaleDate = saleDate
                 });
+
+                this.logger.Debug($"Row {i} successfully mapped: {quantity}x ItemId {itemId} sold for {unitPrice}g.");
             }
             catch (Exception ex) {
-                this.logger.Error(ex, $"Failed to parse sales history row at index {i}.");
+                this.logger.Error(ex, $"Failed to parse sales history row at logical index {i}.");
             }
         }
 
-        this.logger.Info($"Successfully scraped {records.Count} sale records from RetainerItemHistory.");
+        this.logger.Info($"Successfully scraped {records.Count} sale records from RetainerHistory natively.");
         return records;
     }
 
     private (string Name, uint Quantity) ParseItemNameAndQuantity(string rawText) {
-        // FFXIV usually formats quantities as "ItemName x5" or uses the HQ symbol "".
-        // We strip the HQ symbol and extract the quantity if it exists.
         var name = rawText.Replace("", "").Trim();
         uint quantity = 1;
 
@@ -97,5 +219,14 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
         }
 
         return (name, quantity);
+    }
+
+    private unsafe string ExtractString(byte* stringPtr) {
+        if (stringPtr == null) {
+            return string.Empty;
+        }
+
+        // Use Dalamud's MemoryHelper to automatically strip UI control payloads from the SeString
+        return MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue ?? string.Empty;
     }
 }

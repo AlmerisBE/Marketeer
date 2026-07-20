@@ -4,6 +4,7 @@ using Dalamud.Plugin.Services;
 using Marketeer.Core;
 using Marketeer.Features.Command.Services;
 using Marketeer.Features.Configuration.UI;
+using Marketeer.Features.SalesScanner.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -60,6 +61,10 @@ public sealed class Plugin : IDalamudPlugin {
         // Start Window Tracking
         var windowTracker = this.serviceProvider.GetRequiredService<Marketeer.Features.WindowAbstraction.Contracts.IWindowTrackerService>();
         windowTracker.EnableTracking();
+
+        // Enable the Sales Scanner to listen for RetainerItemHistory
+        var salesScanner = this.serviceProvider.GetRequiredService<ISalesScannerService>();
+        salesScanner.Enable();
 
         // Force instantiation of the GameEventService so it starts listening immediately
         this.serviceProvider.GetRequiredService<Features.GameEvents.Contracts.IGameEventService>();
