@@ -71,4 +71,27 @@ public class RetainerStateServiceTests {
         Assert.Equal("Almeris", retrievedItems[0].RetainerName);
         Assert.Equal(1000u, retrievedItems[0].CurrentPrice);
     }
+
+    [Fact]
+    public void UpdateListings_FiresListingsUpdatedEvent() {
+        // Arrange
+        var mockConfigService = Substitute.For<IConfigurationService>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+
+        var service = new RetainerStateService(mockConfigService, mockObjectTable);
+        var newListings = new List<RetainerListing> {
+            new RetainerListing { ItemId = 42, RetainerName = "Almeris", CurrentPrice = 1000 }
+        };
+
+        var eventFired = false;
+        service.ListingsUpdated += listings => {
+            eventFired = true;
+        };
+
+        // Act
+        service.UpdateListings(newListings);
+
+        // Assert
+        Assert.True(eventFired);
+    }
 }

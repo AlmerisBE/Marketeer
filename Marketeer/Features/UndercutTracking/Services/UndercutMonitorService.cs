@@ -7,12 +7,11 @@ using Marketeer.Features.UndercutTracking.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marketeer.Features.UndercutTracking.Services;
 
-public class UndercutMonitorService : IUndercutMonitorService {
+public class UndercutMonitorService : IDisposable {
     private IRetainerStateService retainerState;
     private IServerPriceProvider priceProvider;
     private ICompetitionStateService competitionState;
@@ -20,13 +19,9 @@ public class UndercutMonitorService : IUndercutMonitorService {
     private IClientState clientState;
     private IObjectTable objectTable;
     private IChatGui chatGui;
-    private ILocalizationService localizationService;
+    private ILocalizationService localization;
     private ILoggerService logger;
     private IFramework framework;
-
-    private CancellationTokenSource? cancellationTokenSource;
-    private Task? monitorTask;
-    private TimeSpan checkInterval = TimeSpan.FromMinutes(10);
 
     public UndercutMonitorService(
         IRetainerStateService retainerState,
@@ -36,10 +31,9 @@ public class UndercutMonitorService : IUndercutMonitorService {
         IClientState clientState,
         IObjectTable objectTable,
         IChatGui chatGui,
-        ILocalizationService localizationService,
+        ILocalizationService localization,
         ILoggerService logger,
         IFramework framework) {
-
         this.retainerState = retainerState;
         this.priceProvider = priceProvider;
         this.competitionState = competitionState;
@@ -47,112 +41,75 @@ public class UndercutMonitorService : IUndercutMonitorService {
         this.clientState = clientState;
         this.objectTable = objectTable;
         this.chatGui = chatGui;
-        this.localizationService = localizationService;
+        this.localization = localization;
         this.logger = logger;
         this.framework = framework;
 
-        this.clientState.Login += this.OnLogin;
+        this.retainerState.ListingsUpdated += this.OnListingsUpdated;
     }
 
-    public void StartMonitoring() {
-        if (this.cancellationTokenSource != null) {
-            return;
-        }
+    private void OnListingsUpdated(IEnumerable<RetainerListing> newListings) {
+        this.logger.Debug("Listings updated. Triggering undercut monitor check.");
 
-        this.logger.Info("Starting undercut monitoring service...");
-        this.cancellationTokenSource = new CancellationTokenSource();
-        this.monitorTask = Task.Run(() => this.MonitorLoopAsync(this.cancellationTokenSource.Token));
-    }
-
-    public void StopMonitoring() {
-        if (this.cancellationTokenSource == null) {
-            return;
-        }
-
-        this.logger.Info("Stopping undercut monitoring service...");
-        this.cancellationTokenSource.Cancel();
-        this.monitorTask?.Wait();
-        this.cancellationTokenSource.Dispose();
-        this.cancellationTokenSource = null;
-    }
-
-    private void OnLogin() {
-        this.logger.Info("Player logged in. Triggering immediate undercut check.");
         Task.Run(async () => await this.CheckUndercutsAsync());
     }
 
-    private async Task MonitorLoopAsync(CancellationToken token) {
-        while (!token.IsCancellationRequested) {
-            try {
-                await this.CheckUndercutsAsync();
-            }
-            catch (Exception ex) {
-                this.logger.Error(ex, "Unexpected error in undercut monitoring loop.");
-            }
-
-            try {
-                await Task.Delay(this.checkInterval, token);
-            }
-            catch (TaskCanceledException) {
-                break;
-            }
-        }
-    }
-
     public async Task CheckUndercutsAsync() {
+        bool isLoggedIn = false;
         uint currentWorldId = 0;
-        bool canProceed = false;
 
         await this.framework.RunOnFrameworkThread(() => {
-            if (this.clientState.IsLoggedIn && this.objectTable.LocalPlayer != null) {
-                currentWorldId = this.objectTable.LocalPlayer.CurrentWorld.RowId;
-                canProceed = true;
+            isLoggedIn = this.clientState.IsLoggedIn;
+            var player = this.objectTable.LocalPlayer;
+
+            if (player != null && player.CurrentWorld.RowId > 0) {
+                currentWorldId = player.CurrentWorld.RowId;
             }
         });
 
-        if (!canProceed || currentWorldId == 0) {
+        if (!isLoggedIn || currentWorldId == 0) {
+            this.logger.Debug("Cannot check undercuts: Player is not logged in or World ID is 0.");
             return;
         }
 
-        IReadOnlyList<RetainerListing> currentListings = System.Array.Empty<RetainerListing>();
-
-        await this.framework.RunOnFrameworkThread(() => {
-            currentListings = this.retainerState.GetCurrentListings();
-        });
-
-        if (currentListings.Count == 0) {
+        var currentListings = this.retainerState.GetCurrentListings();
+        if (!currentListings.Any()) {
+            this.competitionState.UpdateUndercuts(Enumerable.Empty<UndercutItem>());
             return;
         }
 
-        var itemIds = currentListings.Select(l => l.ItemId).Distinct().ToList();
-        var serverPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, currentWorldId);
+        var itemIds = currentListings.Select(listing => listing.ItemId).Distinct();
+        var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, currentWorldId);
 
-        var detectedUndercuts = new List<UndercutItem>();
+        var undercuts = new List<UndercutItem>();
 
         foreach (var listing in currentListings) {
-            var lowestPriceData = serverPrices.FirstOrDefault(p => p.ItemId == listing.ItemId);
+            var marketLowest = lowestPrices.FirstOrDefault(price => price.ItemId == listing.ItemId);
 
-            if (lowestPriceData != null && lowestPriceData.Price < listing.CurrentPrice) {
-                detectedUndercuts.Add(new UndercutItem {
+            if (marketLowest != null && marketLowest.Price < listing.CurrentPrice && marketLowest.RetainerName != listing.RetainerName) {
+
+                var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
+
+                undercuts.Add(new UndercutItem {
                     ItemId = listing.ItemId,
-                    ItemName = this.itemResolver.ResolveItemName(listing.ItemId),
+                    ItemName = resolvedItemName,
                     RetainerName = listing.RetainerName,
                     OurPrice = listing.CurrentPrice,
-                    ServerCheapestPrice = lowestPriceData.Price
+                    ServerCheapestPrice = marketLowest.Price,
+                    CompetitorName = marketLowest.RetainerName
                 });
             }
         }
 
-        this.competitionState.UpdateUndercuts(detectedUndercuts);
+        this.competitionState.UpdateUndercuts(undercuts);
 
-        if (detectedUndercuts.Count > 0) {
-            var message = this.localizationService.Translate("Undercuts_Notification", detectedUndercuts.Count);
-            this.chatGui.Print(message);
+        if (undercuts.Any()) {
+            var notificationMessage = this.localization.Translate("Undercuts_Notification", undercuts.Count);
+            this.chatGui.Print(notificationMessage);
         }
     }
 
     public void Dispose() {
-        this.clientState.Login -= this.OnLogin;
-        this.StopMonitoring();
+        this.retainerState.ListingsUpdated -= this.OnListingsUpdated;
     }
 }
