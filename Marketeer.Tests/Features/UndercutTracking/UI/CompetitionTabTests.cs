@@ -1,4 +1,5 @@
 ﻿using Marketeer.Features.Localization.Contracts;
+using Marketeer.Features.RetainerAutomation.Contracts;
 using Marketeer.Features.UndercutTracking.Contracts;
 using Marketeer.Features.UndercutTracking.UI;
 using NSubstitute;
@@ -12,9 +13,11 @@ public class CompetitionTabTests {
         // Arrange
         var mockCompetitionState = Substitute.For<ICompetitionStateService>();
         var mockLocalization = Substitute.For<ILocalizationService>();
+        var mockAutomation = Substitute.For<IPriceUpdateAutomationService>();
+
         mockLocalization.Translate("Undercuts_TabName").Returns("Concurrence");
 
-        var tab = new CompetitionTab(mockCompetitionState, mockLocalization);
+        var tab = new CompetitionTab(mockCompetitionState, mockLocalization, mockAutomation);
 
         // Act
         var result = tab.Name;

@@ -11,9 +11,13 @@ public class RetainerAutomationFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILocalizationProvider, RetainerAutomationLocalizationProvider>();
 
+        services.AddSingleton<IClientRetainerService, ClientRetainerService>();
+        services.AddSingleton<IUiInteractionService, UiInteractionService>();
+
         services.AddSingleton<RetainerAutomationService>();
         services.AddSingleton<IRetainerAutomationService>(provider => provider.GetRequiredService<RetainerAutomationService>());
 
-        services.AddSingleton<IPriceUpdateAutomationService, PriceUpdateAutomationService>();
+        services.AddSingleton<PriceUpdateAutomationService>();
+        services.AddSingleton<IPriceUpdateAutomationService>(provider => provider.GetRequiredService<PriceUpdateAutomationService>());
     }
 }

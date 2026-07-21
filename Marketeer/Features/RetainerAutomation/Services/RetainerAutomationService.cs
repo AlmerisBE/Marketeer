@@ -1,56 +1,34 @@
-﻿using Dalamud.Plugin.Services;
-using Marketeer.Features.Dashboard.Contracts;
-using Marketeer.Features.Localization.Contracts;
+﻿using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.RetainerAutomation.Contracts;
-using Marketeer.Features.Retainers.Contracts;
+using Marketeer.Features.RetainerOrchestration.Contracts;
+using Marketeer.Features.RetainerOrchestration.Models;
 using Marketeer.Features.RetainerTracking.Contracts;
-using Marketeer.Features.RetainerTracking.Models;
-using Marketeer.Features.WindowAbstraction.Contracts;
-using System;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace Marketeer.Features.RetainerAutomation.Services;
 
-public class RetainerAutomationService : IRetainerAutomationService, IDisposable {
-    private IFramework framework;
-    private IRetainerService retainerService;
+public class RetainerAutomationService : IRetainerAutomationService, IRetainerTask {
+    private IRetainerOrchestratorService orchestrator;
     private IRetainerProvider retainerProvider;
-    private INativeWindowService windowService;
-    private ILocalizationService localizationService;
     private IMarketListingTrackerService marketListingTracker;
     private ILoggerService logger;
 
-    private IReadOnlyList<TrackedRetainer> activeRetainers;
-    private int currentRetainerIndex;
-    private int cooldownTicks;
-    private int timeoutTicks;
-    private AutomationStep currentStep;
-    private bool isFirstScan;
+    private int waitTicks;
+    private ulong currentRetainerId;
 
-    public bool IsScanning { get; private set; }
+    public bool IsScanning => this.orchestrator.IsActive;
 
     public RetainerAutomationService(
-        IFramework framework,
-        IRetainerService retainerService,
+        IRetainerOrchestratorService orchestrator,
         IRetainerProvider retainerProvider,
-        INativeWindowService windowService,
-        ILocalizationService localizationService,
         IMarketListingTrackerService marketListingTracker,
         ILoggerService logger) {
 
-        this.framework = framework;
-        this.retainerService = retainerService;
+        this.orchestrator = orchestrator;
         this.retainerProvider = retainerProvider;
-        this.windowService = windowService;
-        this.localizationService = localizationService;
         this.marketListingTracker = marketListingTracker;
         this.logger = logger;
-
-        this.activeRetainers = new List<TrackedRetainer>();
-        this.currentStep = AutomationStep.Idle;
-
-        this.framework.Update += this.OnFrameworkUpdate;
     }
 
     public void TriggerScan() {
@@ -58,161 +36,47 @@ public class RetainerAutomationService : IRetainerAutomationService, IDisposable
             return;
         }
 
-        this.activeRetainers = this.retainerProvider.GetActiveRetainers();
+        var activeRetainers = this.retainerProvider.GetActiveRetainers();
 
-        if (this.activeRetainers.Count == 0) {
+        if (activeRetainers.Count == 0) {
             this.logger.Warning("No active retainers found to scan.");
             return;
         }
 
-        this.logger.Info($"Starting automated scan for {this.activeRetainers.Count} retainers.");
-        this.currentRetainerIndex = 0;
-        this.cooldownTicks = 15;
-        this.timeoutTicks = 600;
-        this.IsScanning = true;
-        this.currentStep = AutomationStep.SelectRetainer;
+        var names = activeRetainers.Select(r => r.Name).ToList();
+        this.orchestrator.StartOrchestration(names, RetainerTargetMenu.MarketListings, this);
     }
 
     public void AbortScan() {
-        this.IsScanning = false;
-        this.currentStep = AutomationStep.Idle;
-        this.logger.Info("Automated retainer scan sequence concluded.");
+        this.orchestrator.Abort();
     }
 
-    private void OnFrameworkUpdate(IFramework frameworkInstance) {
-        if (!this.IsScanning) {
-            return;
-        }
+    public void OnMenuOpened(string retainerName) {
+        var retainer = this.retainerProvider.GetActiveRetainers().FirstOrDefault(r => r.Name == retainerName);
+        this.currentRetainerId = retainer?.RetainerId ?? 0;
 
-        if (this.cooldownTicks > 0) {
-            this.cooldownTicks--;
-            return;
-        }
-
-        if (this.timeoutTicks <= 0) {
-            this.logger.Error($"Automation step {this.currentStep} timed out. Aborting scan.");
-            this.AbortScan();
-            return;
-        }
-        this.timeoutTicks--;
-
-        switch (this.currentStep) {
-            case AutomationStep.SelectRetainer:
-                this.ProcessSelectRetainer();
-                break;
-            case AutomationStep.OpenMarketListings:
-                this.ProcessOpenMarketListings();
-                break;
-            case AutomationStep.ScanMarketListings:
-                this.ProcessScanMarketListings();
-                break;
-            case AutomationStep.WaitAndCloseMarketListings:
-                this.ProcessCloseMarketListings();
-                break;
-            case AutomationStep.CloseSelectString:
-                this.ProcessCloseSelectString();
-                break;
-            case AutomationStep.CloseRetainerList:
-                this.ProcessCloseRetainerList();
-                break;
-        }
+        // Attendre que l'interface se stabilise avant de scanner
+        this.waitTicks = 15;
     }
 
-    private void ProcessSelectRetainer() {
-        var targetName = this.activeRetainers[this.currentRetainerIndex].Name;
-
-        if (this.retainerService.IsRetainerAvailable(targetName)) {
-            var success = this.retainerService.SelectRetainer(targetName);
-
-            if (success) {
-                // Initialize the first scan flag immediately upon summoning the retainer
-                this.isFirstScan = true;
-                this.currentStep = AutomationStep.OpenMarketListings;
-                this.cooldownTicks = 15;
-                this.timeoutTicks = 600;
-            }
-            else {
-                this.logger.Error($"Failed to select retainer {targetName}. Aborting scan.");
-                this.AbortScan();
-            }
+    public bool OnTick() {
+        if (this.waitTicks > 0) {
+            this.waitTicks--;
+            return false;
         }
+
+        if (this.currentRetainerId != 0) {
+            this.marketListingTracker.ScanListings(this.currentRetainerId, true);
+        }
+
+        return true; // Tâche terminée pour ce servant
     }
 
-    private void ProcessOpenMarketListings() {
-        var targetName = this.activeRetainers[this.currentRetainerIndex].Name;
-        var optionText = this.localizationService.Translate("RetainerMenu_SellItems");
-
-        if (this.retainerService.IsMenuReadyForRetainer(targetName) && this.retainerService.IsMenuOptionAvailable(optionText)) {
-            var success = this.retainerService.SelectMenuOption(optionText);
-
-            if (success) {
-                this.currentStep = AutomationStep.ScanMarketListings;
-                this.cooldownTicks = 30; // Wait for UI to load before attempting to scan
-                this.timeoutTicks = 600;
-            }
-            else {
-                this.logger.Error($"Failed to find menu option '{optionText}'. Aborting scan.");
-                this.AbortScan();
-            }
-        }
+    public void OnMenuClosed(string retainerName) {
+        // Aucune action nécessaire
     }
 
-    private void ProcessScanMarketListings() {
-        var retainerId = this.activeRetainers[this.currentRetainerIndex].RetainerId;
-
-        // Perform the scan, passing down the contextual isFirstScan state
-        bool scanSuccessful = this.marketListingTracker.ScanListings(retainerId, this.isFirstScan);
-
-        if (scanSuccessful) {
-            this.logger.Info($"Market listings scanned for retainer ID {retainerId}. First scan was: {this.isFirstScan}.");
-
-            // Guarantee that any continuous polling while the retainer is summoned flags as subsequent scans
-            this.isFirstScan = false;
-
-            this.currentStep = AutomationStep.WaitAndCloseMarketListings;
-            this.cooldownTicks = 15;
-            this.timeoutTicks = 600;
-        }
-    }
-
-    private void ProcessCloseMarketListings() {
-        if (this.retainerService.CloseMarketListings()) {
-            this.currentStep = AutomationStep.CloseSelectString;
-            this.cooldownTicks = 60; // Allow time for the server to acknowledge closure and SelectString to reopen
-            this.timeoutTicks = 600;
-        }
-    }
-
-    private void ProcessCloseSelectString() {
-        var targetName = this.activeRetainers[this.currentRetainerIndex].Name;
-
-        if (this.retainerService.IsMenuReadyForRetainer(targetName)) {
-            if (this.retainerService.CloseRetainerMenu()) {
-                this.currentRetainerIndex++;
-                this.cooldownTicks = 60;
-                this.timeoutTicks = 600;
-
-                if (this.currentRetainerIndex >= this.activeRetainers.Count) {
-                    this.currentStep = AutomationStep.CloseRetainerList;
-                }
-                else {
-                    this.currentStep = AutomationStep.SelectRetainer;
-                }
-            }
-        }
-    }
-
-    private void ProcessCloseRetainerList() {
-        var window = this.windowService.GetWindow("RetainerList");
-
-        if (window != null && window.IsVisible) {
-            window.SendCallback(-1);
-            this.logger.Info("Retainer scan complete. Closed RetainerList.");
-            this.AbortScan();
-        }
-    }
-
-    public void Dispose() {
-        this.framework.Update -= this.OnFrameworkUpdate;
+    public void OnAbort() {
+        // Aucune action nécessaire
     }
 }
