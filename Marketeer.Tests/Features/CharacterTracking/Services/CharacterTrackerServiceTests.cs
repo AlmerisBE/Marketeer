@@ -25,15 +25,26 @@ public class CharacterTrackerServiceTests {
         mockConfigService.GetConfig().Returns(pluginConfig);
 
         var mockPlayer = Substitute.For<IPlayerCharacter>();
+
         mockPlayer.Name.Returns(new Dalamud.Game.Text.SeStringHandling.SeString(
             new List<Dalamud.Game.Text.SeStringHandling.Payload> {
                 new Dalamud.Game.Text.SeStringHandling.Payloads.TextPayload("Almeris Tester")
             }));
+
+        // Mock the CompanyTag to prevent NullReferenceException during character recording
+        mockPlayer.CompanyTag.Returns(new Dalamud.Game.Text.SeStringHandling.SeString(
+            new List<Dalamud.Game.Text.SeStringHandling.Payload> {
+                new Dalamud.Game.Text.SeStringHandling.Payloads.TextPayload("FC")
+            }));
+
         mockPlayer.HomeWorld.Returns(_ => default);
 
         mockObjectTable.LocalPlayer.Returns(mockPlayer);
 
         var service = new CharacterTrackerService(mockClientState, mockObjectTable, mockConfigService, mockLogger, mockFramework);
+
+        // Clear invocations triggered during constructor initialization to isolate the Act phase
+        mockConfigService.ClearReceivedCalls();
 
         // Act
         service.RecordCurrentCharacter();
