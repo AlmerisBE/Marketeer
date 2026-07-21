@@ -61,4 +61,30 @@ public class RetainerStateService : IRetainerStateService {
         this.currentListings = listings.ToList();
         this.ListingsUpdated?.Invoke(this.currentListings);
     }
+
+    public IReadOnlyList<CharacterMarketData> GetAllCharactersListings() {
+        var config = this.configurationService.GetConfig();
+        var result = new List<CharacterMarketData>();
+
+        foreach (var charData in config.FinancialRecords.Values) {
+            var marketData = new CharacterMarketData {
+                CharacterName = charData.CharacterName,
+                HomeWorldId = charData.HomeWorldId
+            };
+
+            foreach (var retainer in charData.Retainers.Values) {
+                foreach (var listing in retainer.MarketListings.Values) {
+                    marketData.Listings.Add(new RetainerListing {
+                        ItemId = listing.ItemId,
+                        RetainerName = retainer.Name,
+                        CurrentPrice = listing.PricePerUnit
+                    });
+                }
+            }
+
+            result.Add(marketData);
+        }
+
+        return result;
+    }
 }

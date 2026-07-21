@@ -7,4 +7,5 @@ public interface IUndercutMonitorService : IDisposable {
     void StartMonitoring();
     void StopMonitoring();
     Task CheckUndercutsAsync();
+    Task CheckUndercutForItemAsync(uint itemId);
 }

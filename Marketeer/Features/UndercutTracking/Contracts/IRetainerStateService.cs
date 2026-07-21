@@ -7,5 +7,6 @@ public interface IRetainerStateService {
     event System.Action<IEnumerable<RetainerListing>> ListingsUpdated;
 
     IReadOnlyList<RetainerListing> GetCurrentListings();
+    IReadOnlyList<CharacterMarketData> GetAllCharactersListings();
     void UpdateListings(IEnumerable<RetainerListing> listings);
 }

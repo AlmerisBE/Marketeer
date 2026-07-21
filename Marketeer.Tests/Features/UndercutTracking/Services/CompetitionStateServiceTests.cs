@@ -36,4 +36,28 @@ public class CompetitionStateServiceTests {
         Assert.Equal("Potion", retrievedItems[0].ItemName);
         Assert.Equal(100u, retrievedItems[0].OurPrice);
     }
+
+    // Ajoute ce test à la suite existante
+    [Fact]
+    public void UpdateItemUndercuts_ModifiesOnlySpecificItemAndPreservesOthers() {
+        // Arrange
+        var service = new CompetitionStateService();
+        service.UpdateUndercuts(new List<UndercutItem> {
+            new() { ItemId = 10, ItemName = "Potion" },
+            new() { ItemId = 20, ItemName = "Ether" }
+        });
+
+        var newPotionUndercuts = new List<UndercutItem> {
+            new() { ItemId = 10, ItemName = "Potion (Updated)" }
+        };
+
+        // Act
+        service.UpdateItemUndercuts(10, newPotionUndercuts);
+        var retrievedItems = service.GetUndercutItems();
+
+        // Assert
+        Assert.Equal(2, retrievedItems.Count);
+        Assert.Contains(retrievedItems, i => i.ItemId == 10 && i.ItemName == "Potion (Updated)");
+        Assert.Contains(retrievedItems, i => i.ItemId == 20 && i.ItemName == "Ether");
+    }
 }

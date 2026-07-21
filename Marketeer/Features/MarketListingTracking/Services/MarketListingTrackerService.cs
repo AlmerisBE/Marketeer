@@ -16,6 +16,9 @@ using System.Linq;
 namespace Marketeer.Features.MarketListingTracking.Services;
 
 public class MarketListingTrackerService : IMarketListingTrackerService, IDisposable {
+
+    public event Action<uint>? LocalListingModified;
+
     private IConfigurationService configService;
     private IGameEventService gameEventService;
     private IMarketListingProvider listingProvider;
@@ -103,18 +106,17 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
                 UnitPrice = f.PricePerUnit
             }).ToList();
 
-            // 1. Run the inference engine to securely deduce manual cancellations and completed sales
             this.inferenceService.InferSales(retainerId, isFirstScan, previousListings, currentListings);
 
-            // 2. Refresh the locally tracked state map
             var oldListings = targetRetainer.MarketListings.ToDictionary(k => k.Key, v => v.Value);
             targetRetainer.MarketListings.Clear();
+
             bool isModified = oldListings.Count != fetchedListings.Count;
+            var modifiedItems = new HashSet<uint>();
 
             foreach (var fetched in fetchedListings) {
                 uint finalPrice = fetched.PricePerUnit;
 
-                // Fallback mechanism to protect against 0-gil UI network delays
                 if (finalPrice == 0 && oldListings.TryGetValue((int)fetched.SlotIndex, out var oldListing)) {
                     if (oldListing.ItemId == fetched.ItemId && oldListing.PricePerUnit > 0) {
                         finalPrice = oldListing.PricePerUnit;
@@ -125,7 +127,13 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
                     existing.ItemId != fetched.ItemId ||
                     existing.Quantity != fetched.Quantity ||
                     existing.PricePerUnit != finalPrice) {
+
                     isModified = true;
+
+                    // Track explicitly if the item itself changed or its price changed
+                    if (existing == null || existing.ItemId != fetched.ItemId || existing.PricePerUnit != finalPrice) {
+                        modifiedItems.Add(fetched.ItemId);
+                    }
                 }
 
                 targetRetainer.MarketListings[(int)fetched.SlotIndex] = new RetainerMarketListingSaveData {
@@ -138,6 +146,10 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
             if (isModified || isFirstScan) {
                 this.configService.Save();
                 this.logger.Info($"[MarketListingTrackerService] State modified. Saved {fetchedListings.Count} listings for retainer {retainerId}.");
+
+                foreach (var itemId in modifiedItems) {
+                    this.LocalListingModified?.Invoke(itemId);
+                }
             }
         }
 

@@ -2,6 +2,7 @@
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.UndercutTracking.Contracts;
+using System.Linq;
 using System.Numerics;
 
 namespace Marketeer.Features.UndercutTracking.UI;
@@ -12,7 +13,6 @@ public class CompetitionTab : IDashboardTab {
 
     public string Name => this.localizationService.Translate("Undercuts_TabName");
 
-    // Positioned after Financials (Priority 30)
     public int Priority => 40;
 
     public CompetitionTab(ICompetitionStateService competitionState, ILocalizationService localizationService) {
@@ -28,32 +28,42 @@ public class CompetitionTab : IDashboardTab {
             return;
         }
 
-        if (ImGui.BeginTable("CompetitionTable", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp)) {
-            ImGui.TableSetupColumn("Item Name");
-            ImGui.TableSetupColumn("Retainer");
-            ImGui.TableSetupColumn("Our Price");
-            ImGui.TableSetupColumn("Server Lowest");
-            ImGui.TableHeadersRow();
+        var groupedByCharacter = items.GroupBy(u => u.CharacterName);
 
-            foreach (var item in items) {
-                ImGui.TableNextRow();
+        foreach (var group in groupedByCharacter) {
+            var charName = string.IsNullOrWhiteSpace(group.Key) ? "Unknown" : group.Key;
 
-                ImGui.TableNextColumn();
-                ImGui.Text(item.ItemName);
+            if (ImGui.CollapsingHeader(charName, ImGuiTreeNodeFlags.DefaultOpen)) {
+                if (ImGui.BeginTable($"CompetitionTable_{charName}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp)) {
+                    ImGui.TableSetupColumn("Item Name");
+                    ImGui.TableSetupColumn("Retainer");
+                    ImGui.TableSetupColumn("Our Price");
+                    ImGui.TableSetupColumn("Server Lowest");
+                    ImGui.TableSetupColumn("Competitor");
+                    ImGui.TableHeadersRow();
 
-                ImGui.TableNextColumn();
-                ImGui.Text(item.RetainerName);
+                    foreach (var item in group) {
+                        ImGui.TableNextRow();
 
-                ImGui.TableNextColumn();
-                // Draw our price in red to indicate it is higher
-                ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), item.OurPrice.ToString("N0"));
+                        ImGui.TableNextColumn();
+                        ImGui.Text(item.ItemName);
 
-                ImGui.TableNextColumn();
-                // Draw the server lowest in green
-                ImGui.TextColored(new Vector4(0.4f, 1.0f, 0.4f, 1.0f), item.ServerCheapestPrice.ToString("N0"));
+                        ImGui.TableNextColumn();
+                        ImGui.Text(item.RetainerName);
+
+                        ImGui.TableNextColumn();
+                        ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), item.OurPrice.ToString("N0"));
+
+                        ImGui.TableNextColumn();
+                        ImGui.TextColored(new Vector4(0.4f, 1.0f, 0.4f, 1.0f), item.ServerCheapestPrice.ToString("N0"));
+
+                        ImGui.TableNextColumn();
+                        ImGui.Text(item.CompetitorName);
+                    }
+
+                    ImGui.EndTable();
+                }
             }
-
-            ImGui.EndTable();
         }
     }
 }

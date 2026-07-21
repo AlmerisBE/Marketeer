@@ -13,7 +13,12 @@ public class CompetitionStateService : ICompetitionStateService {
     }
 
     public void UpdateUndercuts(IEnumerable<UndercutItem> undercuts) {
-        // Reassigning the reference ensures atomic updates for the UI thread
         this.undercuts = undercuts.ToList().AsReadOnly();
+    }
+
+    public void UpdateItemUndercuts(uint itemId, IEnumerable<UndercutItem> undercutsForItem) {
+        var currentList = this.undercuts.Where(u => u.ItemId != itemId).ToList();
+        currentList.AddRange(undercutsForItem);
+        this.undercuts = currentList.AsReadOnly();
     }
 }
