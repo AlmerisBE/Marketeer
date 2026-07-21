@@ -49,7 +49,7 @@ public class DashboardWindow : Window {
                 ImGui.EndChild();
             }
 
-            if (ImGui.Button("Scan Retainers", new Vector2(-1, 24f))) {
+            if (ImGui.Button(this.localizationService.Translate("Dashboard_ScanRetainers"), new Vector2(-1, 24f))) {
                 this.automationService.TriggerScan();
             }
 

@@ -8,5 +8,10 @@
   "RetainerDetails_ColUnitPrice": "Unit Price",
   "RetainerDetails_ColQuantity": "Qty",
   "RetainerDetails_ColTotalPrice": "Total Price",
-  "RetainerDetails_ColTax": "Tax (5%)"
+  "RetainerDetails_ColTax": "Tax (5%)",
+  "Dashboard_ScanRetainers": "Scan Retainers",
+  "Dashboard_WelcomeTab": "Home",
+  "Dashboard_WelcomeText1": "Welcome to Marketeer! This plugin allows you to manage and track your market board sales across all your characters and retainers.",
+  "Dashboard_WelcomeText2": "Use the sidebar menu to navigate between your characters, monitor your financial statistics, analyze your sales history, and track market competition in real-time.",
+  "Dashboard_NoData": "No data available."
 }

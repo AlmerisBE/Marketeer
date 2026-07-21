@@ -8,5 +8,10 @@
   "RetainerDetails_ColUnitPrice": "Stückpreis",
   "RetainerDetails_ColQuantity": "Menge",
   "RetainerDetails_ColTotalPrice": "Gesamtpreis",
-  "RetainerDetails_ColTax": "Steuer (5%)"
+  "RetainerDetails_ColTax": "Steuer (5%)",
+  "Dashboard_ScanRetainers": "Gehilfen scannen",
+  "Dashboard_WelcomeTab": "Startseite",
+  "Dashboard_WelcomeText1": "Willkommen bei Marketeer! Mit diesem Plugin kannst du deine Marktbrett-Verkäufe über alle Charaktere und Gehilfen hinweg verwalten und verfolgen.",
+  "Dashboard_WelcomeText2": "Nutze das Seitenmenü, um zwischen deinen Charakteren zu navigieren, deine Finanzstatistiken zu überwachen, deinen Verkaufsverlauf zu analysieren und den Marktwettbewerb in Echtzeit zu verfolgen.",
+  "Dashboard_NoData": "Keine Daten verfügbar."
 }

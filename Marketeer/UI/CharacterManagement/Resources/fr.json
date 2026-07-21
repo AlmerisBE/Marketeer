@@ -11,5 +11,12 @@
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "En vente",
   "CharacterList_ColTotalValue": "Valeur totale",
-  "CharacterList_ColGil":  "Gils"
+  "CharacterList_ColGil": "Gils",
+  "CharacterOverview_TabName": "Aperçu",
+  "CharacterOverview_Header": "Aperçu de vos personnages",
+  "CharacterOverview_FC": "Compagnie Libre :",
+  "CharacterOverview_None": "Aucune",
+  "CharacterOverview_ActiveRetainers": "Servants actifs :",
+  "CharacterOverview_LastScan": "Dernier scan :",
+  "CharacterOverview_OpenButton": "Ouvrir"
 }

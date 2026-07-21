@@ -11,5 +11,12 @@
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "Angebote",
   "CharacterList_ColTotalValue": "Gesamtwert",
-  "CharacterList_ColGil": "Gil"
+  "CharacterList_ColGil": "Gil",
+  "CharacterOverview_TabName": "Übersicht",
+  "CharacterOverview_Header": "Charakterübersicht",
+  "CharacterOverview_FC": "Freie Gesellschaft:",
+  "CharacterOverview_None": "Keine",
+  "CharacterOverview_ActiveRetainers": "Aktive Gehilfen:",
+  "CharacterOverview_LastScan": "Letzter Scan:",
+  "CharacterOverview_OpenButton": "Öffnen"
 }

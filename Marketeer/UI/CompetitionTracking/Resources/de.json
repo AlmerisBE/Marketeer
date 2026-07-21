@@ -6,5 +6,15 @@
   "Command_Price_Fetching": "Niedrigster Preis für {0} wird abgerufen...",
   "Command_Price_Result": "Niedrigster Preis für {0}: {1} Gil (Gehilfe: {2})",
   "Command_Price_Error": "Preisdaten für {0} konnten nicht abgerufen werden. Der Service ist möglicherweise nicht verfügbar.",
-  "Undercuts_Notification": "[Marketeer] {0} deiner Gegenstände wurden unterboten! Überprüfe den Reiter Unterbietungen."
+  "Undercuts_Notification": "[Marketeer] {0} deiner Gegenstände wurden unterboten! Überprüfe den Reiter Unterbietungen.",
+  "Competition_NoUndercuts": "Alle deine Angebote sind derzeit die günstigsten auf dem Server!",
+  "Competition_ColItemName": "Gegenstandsname",
+  "Competition_ColRetainer": "Gehilfe",
+  "Competition_ColOurPrice": "Unser Preis",
+  "Competition_ColServerLowest": "Server Tiefstpreis",
+  "Competition_ColCompetitor": "Konkurrent",
+  "Competition_UnknownCharacter": "Unbekannt",
+  "Undercuts_UpdatePricesDescription": "Klicke auf die Schaltfläche unten, um die Krämerklingel zu öffnen und Marketeer deine Preise automatisch 1 Gil unter die der Konkurrenz für den aktuellen Charakter anpassen zu lassen.",
+  "Undercuts_UpdatePricesButton": "Preise anpassen",
+  "Undercuts_UpdatePricesActive": "Wird aktualisiert..."
 }

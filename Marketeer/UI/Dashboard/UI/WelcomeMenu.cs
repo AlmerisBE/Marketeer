@@ -1,6 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Plugin;
 using Marketeer.API.Dashboard.Contracts;
+using Marketeer.API.Localization.Contracts;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -8,14 +9,16 @@ namespace Marketeer.UI.Dashboard.UI;
 
 public class WelcomeMenu : INavigationNode {
     private IDalamudPluginInterface pluginInterface;
+    private ILocalizationService localizationService;
 
-    public string Name => "Accueil";
-    public int Priority => 0; // Ensures it's at the top
+    public string Name => this.localizationService.Translate("Dashboard_WelcomeTab");
+    public int Priority => 0;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
-    public WelcomeMenu(IDalamudPluginInterface pluginInterface) {
+    public WelcomeMenu(IDalamudPluginInterface pluginInterface, ILocalizationService localizationService) {
         this.pluginInterface = pluginInterface;
+        this.localizationService = localizationService;
     }
 
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -27,8 +30,8 @@ public class WelcomeMenu : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
-        ImGui.TextWrapped("Bienvenue sur Marketeer ! Ce plugin vous permet de gérer et de suivre vos ventes au marché pour tous vos personnages et servants.");
+        ImGui.TextWrapped(this.localizationService.Translate("Dashboard_WelcomeText1"));
         ImGui.Spacing();
-        ImGui.TextWrapped("Utilisez le menu latéral pour naviguer entre vos personnages, surveiller vos statistiques financières, analyser l'historique de vos ventes, et suivre la concurrence en temps réel.");
+        ImGui.TextWrapped(this.localizationService.Translate("Dashboard_WelcomeText2"));
     }
 }

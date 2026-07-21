@@ -8,5 +8,10 @@
   "RetainerDetails_ColUnitPrice": "単価",
   "RetainerDetails_ColQuantity": "数量",
   "RetainerDetails_ColTotalPrice": "合計価格",
-  "RetainerDetails_ColTax": "税金 (5%)"
+  "RetainerDetails_ColTax": "税金 (5%)",
+  "Dashboard_ScanRetainers": "リテイナーをスキャン",
+  "Dashboard_WelcomeTab": "ホーム",
+  "Dashboard_WelcomeText1": "Marketeerへようこそ！このプラグインを使用すると、すべてのキャラクターとリテイナーのマーケットボードの売上を管理および追跡できます。",
+  "Dashboard_WelcomeText2": "サイドバーメニューを使用して、キャラクター間の移動、財務統計の監視、販売履歴の分析、市場競争のリアルタイムな追跡を行ってください。",
+  "Dashboard_NoData": "利用可能なデータがありません。"
 }

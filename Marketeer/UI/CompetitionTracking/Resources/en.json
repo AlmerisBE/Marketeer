@@ -6,5 +6,15 @@
   "Command_Price_Fetching": "Fetching lowest price for {0}...",
   "Command_Price_Result": "Lowest price for {0}: {1} Gil (Retainer: {2})",
   "Command_Price_Error": "Could not fetch price data for {0}. The service might be unavailable.",
-  "Undercuts_Notification": "[Marketeer] {0} of your items have been undercut! Check the Competition tab."
+  "Undercuts_Notification": "[Marketeer] {0} of your items have been undercut! Check the Competition tab.",
+  "Competition_NoUndercuts": "All your listings are currently the cheapest on the server!",
+  "Competition_ColItemName": "Item Name",
+  "Competition_ColRetainer": "Retainer",
+  "Competition_ColOurPrice": "Our Price",
+  "Competition_ColServerLowest": "Server Lowest",
+  "Competition_ColCompetitor": "Competitor",
+  "Competition_UnknownCharacter": "Unknown",
+  "Undercuts_UpdatePricesDescription": "Click the button below to open the summoning bell and let Marketeer automatically adjust your prices to 1 Gil below the competition for the current character.",
+  "Undercuts_UpdatePricesButton": "Adjust Prices",
+  "Undercuts_UpdatePricesActive": "Updating..."
 }

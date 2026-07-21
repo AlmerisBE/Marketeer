@@ -1,8 +1,8 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
-using Marketeer.API.CompetitionTracking.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -17,7 +17,6 @@ public class CompetitionMenu : INavigationNode {
     public string Name => this.localizationService.Translate("Undercuts_TabName");
     public int Priority => 40;
 
-    // INavigationNode implementation for a leaf node
     public bool HasContent => true;
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -36,7 +35,7 @@ public class CompetitionMenu : INavigationNode {
         var items = this.competitionState.GetUndercutItems();
 
         if (items.Count == 0) {
-            ImGui.Text("All your listings are currently the cheapest on the server!");
+            ImGui.TextUnformatted(this.localizationService.Translate("Competition_NoUndercuts"));
             return;
         }
 
@@ -66,15 +65,15 @@ public class CompetitionMenu : INavigationNode {
         var groupedByCharacter = items.GroupBy(u => u.CharacterName);
 
         foreach (var group in groupedByCharacter) {
-            var charName = string.IsNullOrWhiteSpace(group.Key) ? "Unknown" : group.Key;
+            var charName = string.IsNullOrWhiteSpace(group.Key) ? this.localizationService.Translate("Competition_UnknownCharacter") : group.Key;
 
             if (ImGui.CollapsingHeader(charName, ImGuiTreeNodeFlags.DefaultOpen)) {
                 if (ImGui.BeginTable($"CompetitionTable_{charName}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp)) {
-                    ImGui.TableSetupColumn("Item Name");
-                    ImGui.TableSetupColumn("Retainer");
-                    ImGui.TableSetupColumn("Our Price");
-                    ImGui.TableSetupColumn("Server Lowest");
-                    ImGui.TableSetupColumn("Competitor");
+                    ImGui.TableSetupColumn(this.localizationService.Translate("Competition_ColItemName"));
+                    ImGui.TableSetupColumn(this.localizationService.Translate("Competition_ColRetainer"));
+                    ImGui.TableSetupColumn(this.localizationService.Translate("Competition_ColOurPrice"));
+                    ImGui.TableSetupColumn(this.localizationService.Translate("Competition_ColServerLowest"));
+                    ImGui.TableSetupColumn(this.localizationService.Translate("Competition_ColCompetitor"));
                     ImGui.TableHeadersRow();
 
                     foreach (var item in group) {

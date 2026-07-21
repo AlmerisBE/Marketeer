@@ -8,5 +8,10 @@
   "RetainerDetails_ColUnitPrice": "Prix unitaire",
   "RetainerDetails_ColQuantity": "Qté",
   "RetainerDetails_ColTotalPrice": "Prix total",
-  "RetainerDetails_ColTax": "Taxe (5%)"
+  "RetainerDetails_ColTax": "Taxe (5%)",
+  "Dashboard_ScanRetainers": "Scanner les servants",
+  "Dashboard_WelcomeTab": "Accueil",
+  "Dashboard_WelcomeText1": "Bienvenue sur Marketeer ! Ce plugin vous permet de gérer et de suivre vos ventes au marché pour tous vos personnages et servants.",
+  "Dashboard_WelcomeText2": "Utilisez le menu latéral pour naviguer entre vos personnages, surveiller vos statistiques financières, analyser l'historique de vos ventes, et suivre la concurrence en temps réel.",
+  "Dashboard_NoData": "Aucune donnée disponible."
 }

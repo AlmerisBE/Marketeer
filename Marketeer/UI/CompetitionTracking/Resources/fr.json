@@ -9,5 +9,12 @@
   "Undercuts_Notification": "[Marketeer] {0} de vos objets sont en concurrence ! Consultez l'onglet Concurrence.",
   "Undercuts_UpdatePricesDescription": "Cliquez sur le bouton ci-dessous pour ouvrir la sonnette et laisser Marketeer ajuster automatiquement vos prix de vente 1 Gil en-dessous de la concurrence pour le personnage actuel.",
   "Undercuts_UpdatePricesButton": "Ajuster les prix",
-  "Undercuts_UpdatePricesActive": "Mise à jour en cours..."
+  "Undercuts_UpdatePricesActive": "Mise à jour en cours...",
+  "Competition_NoUndercuts": "Toutes vos ventes sont actuellement les moins chères du serveur !",
+  "Competition_ColItemName": "Nom de l'objet",
+  "Competition_ColRetainer": "Servant",
+  "Competition_ColOurPrice": "Notre prix",
+  "Competition_ColServerLowest": "Le moins cher",
+  "Competition_ColCompetitor": "Concurrent",
+  "Competition_UnknownCharacter": "Inconnu"
 }

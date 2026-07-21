@@ -11,5 +11,12 @@
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "Listings",
   "CharacterList_ColTotalValue": "Total Value",
-  "CharacterList_ColGil": "Gil"
+  "CharacterList_ColGil": "Gil",
+  "CharacterOverview_TabName": "Overview",
+  "CharacterOverview_Header": "Characters Overview",
+  "CharacterOverview_FC": "Free Company:",
+  "CharacterOverview_None": "None",
+  "CharacterOverview_ActiveRetainers": "Active Retainers:",
+  "CharacterOverview_LastScan": "Last Scan:",
+  "CharacterOverview_OpenButton": "Open"
 }

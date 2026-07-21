@@ -2,6 +2,7 @@
 using Marketeer.API.CharacterManagement.Contracts;
 using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.GameData.Contracts;
+using Marketeer.API.Localization.Contracts;
 using Marketeer.API.MarketListings.Contracts;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,8 +18,9 @@ public class CharacterOverviewMenu : INavigationNode {
     private IRetainerDataPresenter retainerDataPresenter;
     private IRetainerDetailsView retainerDetailsView;
     private IMarketListingTrackerService marketListingTrackerService;
+    private ILocalizationService localizationService;
 
-    public string Name => "Personnages";
+    public string Name => this.localizationService.Translate("CharacterOverview_TabName");
     public int Priority => 10;
     public bool HasContent => true;
     public bool DefaultExpanded => true;
@@ -30,7 +32,8 @@ public class CharacterOverviewMenu : INavigationNode {
         ICharacterSummaryView characterSummaryView,
         IRetainerDataPresenter retainerDataPresenter,
         IRetainerDetailsView retainerDetailsView,
-        IMarketListingTrackerService marketListingTrackerService) {
+        IMarketListingTrackerService marketListingTrackerService,
+        ILocalizationService localizationService) {
 
         this.trackerService = trackerService;
         this.worldDataPresenter = worldDataPresenter;
@@ -39,6 +42,7 @@ public class CharacterOverviewMenu : INavigationNode {
         this.retainerDataPresenter = retainerDataPresenter;
         this.retainerDetailsView = retainerDetailsView;
         this.marketListingTrackerService = marketListingTrackerService;
+        this.localizationService = localizationService;
     }
 
     public IEnumerable<INavigationNode> GetChildren() {
@@ -57,15 +61,20 @@ public class CharacterOverviewMenu : INavigationNode {
         var characters = this.trackerService.GetKnownCharacters().ToList();
 
         if (characters.Count == 0) {
-            ImGui.TextDisabled("Aucun personnage suivi pour le moment.");
+            ImGui.TextDisabled(this.localizationService.Translate("CharacterList_NoCharacters"));
             return;
         }
 
-        ImGui.TextUnformatted("Aperçu de vos personnages");
+        ImGui.TextUnformatted(this.localizationService.Translate("CharacterOverview_Header"));
         ImGui.Separator();
         ImGui.Spacing();
 
         var nodes = this.GetChildren().ToList();
+        var fcLabel = this.localizationService.Translate("CharacterOverview_FC");
+        var noneLabel = this.localizationService.Translate("CharacterOverview_None");
+        var activeLabel = this.localizationService.Translate("CharacterOverview_ActiveRetainers");
+        var scanLabel = this.localizationService.Translate("CharacterOverview_LastScan");
+        var openLabel = this.localizationService.Translate("CharacterOverview_OpenButton");
 
         foreach (CharacterNode node in nodes) {
             var charData = node.Character;
@@ -75,12 +84,13 @@ public class CharacterOverviewMenu : INavigationNode {
                 ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"{charData.Name} ({worldName})");
                 ImGui.Separator();
 
-                ImGui.TextUnformatted($"Compagnie Libre : {(string.IsNullOrWhiteSpace(charData.CompanyTag) ? "Aucune" : $"<{charData.CompanyTag}>")}");
-                ImGui.TextUnformatted($"Servants actifs : {charData.RetainerCount}");
-                ImGui.TextUnformatted($"Dernier scan : {charData.LastScanDate:g}");
+                var fcText = string.IsNullOrWhiteSpace(charData.CompanyTag) ? noneLabel : $"<{charData.CompanyTag}>";
+                ImGui.TextUnformatted($"{fcLabel} {fcText}");
+                ImGui.TextUnformatted($"{activeLabel} {charData.RetainerCount}");
+                ImGui.TextUnformatted($"{scanLabel} {charData.LastScanDate:g}");
 
                 ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() - 100, ImGui.GetWindowHeight() - 35));
-                if (ImGui.Button("Ouvrir", new Vector2(90, 24))) {
+                if (ImGui.Button(openLabel, new Vector2(90, 24))) {
                     this.navigationService.NavigateTo(node);
                 }
 

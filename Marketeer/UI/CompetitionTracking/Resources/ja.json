@@ -6,5 +6,15 @@
   "Command_Price_Fetching": "{0} の最安値を取得中...",
   "Command_Price_Result": "{0} の最安値: {1} ギル (リテイナー: {2})",
   "Command_Price_Error": "{0} の価格データを取得できませんでした。サービスが利用できない可能性があります。",
-  "Undercuts_Notification": "[Marketeer] {0}個のアイテムが値下げ競争に巻き込まれています！「価格競争」タブを確認してください。"
+  "Undercuts_Notification": "[Marketeer] {0}個のアイテムが値下げ競争に巻き込まれています！「価格競争」タブを確認してください。",
+  "Competition_NoUndercuts": "現在、あなたのすべての出品がサーバー内で最安値です！",
+  "Competition_ColItemName": "アイテム名",
+  "Competition_ColRetainer": "リテイナー",
+  "Competition_ColOurPrice": "自分の価格",
+  "Competition_ColServerLowest": "サーバー最安値",
+  "Competition_ColCompetitor": "競合相手",
+  "Competition_UnknownCharacter": "不明",
+  "Undercuts_UpdatePricesDescription": "下のボタンをクリックして呼び鈴を開き、Marketeerに現在のキャラクターの価格を競合他社より1ギル低く自動調整させます。",
+  "Undercuts_UpdatePricesButton": "価格を調整する",
+  "Undercuts_UpdatePricesActive": "更新中..."
 }

@@ -11,5 +11,12 @@
   "Command_Characters_Line": "- {0} ({1})",
   "CharacterList_ColListingsCount": "出品数",
   "CharacterList_ColTotalValue": "合計額",
-  "CharacterList_ColGil": "ギル"
+  "CharacterList_ColGil": "ギル",
+  "CharacterOverview_TabName": "概要",
+  "CharacterOverview_Header": "キャラクター概要",
+  "CharacterOverview_FC": "フリーカンパニー:",
+  "CharacterOverview_None": "なし",
+  "CharacterOverview_ActiveRetainers": "アクティブなリテイナー:",
+  "CharacterOverview_LastScan": "最終スキャン:",
+  "CharacterOverview_OpenButton": "開く"
 }
