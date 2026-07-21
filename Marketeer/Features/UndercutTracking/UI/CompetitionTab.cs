@@ -34,11 +34,9 @@ public class CompetitionTab : IDashboardTab {
             return;
         }
 
-        // Section descriptive
         ImGui.TextWrapped(this.localizationService.Translate("Undercuts_UpdatePricesDescription"));
         ImGui.Spacing();
 
-        // Bouton d'automatisation aligné à droite
         var updateBtnText = this.localizationService.Translate("Undercuts_UpdatePricesButton");
         var buttonWidth = ImGui.CalcTextSize(updateBtnText).X + (ImGui.GetStyle().FramePadding.X * 2);
 

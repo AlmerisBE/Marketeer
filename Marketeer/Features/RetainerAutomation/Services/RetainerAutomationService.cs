@@ -55,7 +55,6 @@ public class RetainerAutomationService : IRetainerAutomationService, IRetainerTa
         var retainer = this.retainerProvider.GetActiveRetainers().FirstOrDefault(r => r.Name == retainerName);
         this.currentRetainerId = retainer?.RetainerId ?? 0;
 
-        // Attendre que l'interface se stabilise avant de scanner
         this.waitTicks = 15;
     }
 
@@ -69,7 +68,7 @@ public class RetainerAutomationService : IRetainerAutomationService, IRetainerTa
             this.marketListingTracker.ScanListings(this.currentRetainerId, true);
         }
 
-        return true; // Tâche terminée pour ce servant
+        return true;
     }
 
     public void OnMenuClosed(string retainerName) {

@@ -4,6 +4,7 @@ public class UndercutItem {
     public int SlotIndex { get; set; }
     public uint ItemId { get; set; }
     public string ItemName { get; set; } = string.Empty;
+    public uint Quantity { get; set; }
     public string RetainerName { get; set; } = string.Empty;
     public uint OurPrice { get; set; }
     public uint ServerCheapestPrice { get; set; }

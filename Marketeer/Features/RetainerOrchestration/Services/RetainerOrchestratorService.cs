@@ -178,7 +178,6 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (window != null && window.IsVisible) {
             this.currentTask?.OnMenuOpened(this.currentRetainerName);
             this.SetState(OrchestrationStep.ExecutingTask, 15);
-            // We disable timeout during task execution so the task can take as long as it needs
             this.timeoutTicks = int.MaxValue;
         }
     }

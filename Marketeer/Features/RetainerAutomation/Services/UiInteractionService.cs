@@ -32,15 +32,13 @@ public unsafe class UiInteractionService : IUiInteractionService {
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        this.logger.Debug($"UiInteractionService: Firing callback to select retainer at index {index}.");
-
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
         values[0].Int = 2;
         values[1].Type = AtkValueType.Int;
         values[1].Int = index;
 
-        addon->FireCallback(2, values);
+        addon->FireCallback(2, values, true);
     }
 
     public void OpenRetainerMarket() {
@@ -50,18 +48,13 @@ public unsafe class UiInteractionService : IUiInteractionService {
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        this.logger.Debug("UiInteractionService: Firing callback to open market listings.");
-
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
-
-        // Target index 5: "Sell items in retainer's inventory on the market" (when ventures are active).
-        // Note: Change this to 3 if you test on low-level retainers without venture options.
         values[1].Type = AtkValueType.Int;
         values[1].Int = 5;
 
-        addon->FireCallback(2, values);
+        addon->FireCallback(2, values, true);
     }
 
     public void CloseRetainerMarket() {
@@ -71,13 +64,11 @@ public unsafe class UiInteractionService : IUiInteractionService {
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        this.logger.Debug("UiInteractionService: Firing cancel callback to close RetainerSell window.");
-
         var values = stackalloc AtkValue[1];
         values[0].Type = AtkValueType.Int;
-        values[0].Int = -1; // -1 represents the universal Close/Cancel event for AtkUnitBase
+        values[0].Int = -1;
 
-        addon->FireCallback(1, values);
+        addon->FireCallback(1, values, true);
     }
 
     public void CloseSelectString() {
@@ -87,31 +78,55 @@ public unsafe class UiInteractionService : IUiInteractionService {
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        this.logger.Debug("UiInteractionService: Firing cancel callback to close SelectString menu.");
-
         var values = stackalloc AtkValue[1];
         values[0].Type = AtkValueType.Int;
         values[0].Int = -1;
 
-        addon->FireCallback(1, values);
+        addon->FireCallback(1, values, true);
     }
 
-    public void SelectItemInSellList(int slotIndex) {
+    public void SelectItemInSellList(int uiIndex) {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
         if (addonPtr.Address == IntPtr.Zero) {
             return;
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        this.logger.Debug($"UiInteractionService: Firing callback to select item at slot {slotIndex}.");
+        this.logger.Debug($"UiInteractionService: Firing callback to select UI index {uiIndex}.");
 
-        var values = stackalloc AtkValue[2];
+        var values = stackalloc AtkValue[3];
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 0; // Select item event
+        values[0].Int = 0;
         values[1].Type = AtkValueType.Int;
-        values[1].Int = slotIndex;
+        values[1].Int = uiIndex;
+        values[2].Type = AtkValueType.Int;
+        values[2].Int = 0;
 
-        addon->FireCallback(2, values);
+        addon->FireCallback(3, values, true);
+    }
+
+    public void SelectContextMenuItem(int index) {
+        var addonPtr = this.gameGui.GetAddonByName("ContextMenu");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        this.logger.Debug($"UiInteractionService: Firing callback to select ContextMenu index {index}.");
+
+        var values = stackalloc AtkValue[5];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0;
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = index;
+        values[2].Type = AtkValueType.Int;
+        values[2].Int = 0;
+        values[3].Type = AtkValueType.Int;
+        values[3].Int = 0;
+        values[4].Type = AtkValueType.Int;
+        values[4].Int = 0;
+
+        addon->FireCallback(5, values, true);
     }
 
     public void ConfirmPriceUpdate(uint newPrice) {
@@ -125,10 +140,10 @@ public unsafe class UiInteractionService : IUiInteractionService {
 
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 0; // Confirm event
+        values[0].Int = 0;
         values[1].Type = AtkValueType.UInt;
         values[1].UInt = newPrice;
 
-        addon->FireCallback(2, values);
+        addon->FireCallback(2, values, true);
     }
 }

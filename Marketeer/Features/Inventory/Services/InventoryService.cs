@@ -2,6 +2,7 @@
 using Marketeer.Features.Inventory.Contracts;
 using Marketeer.Features.Inventory.Models;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Marketeer.Features.Inventory.Services;
 
@@ -23,7 +24,6 @@ public class InventoryService : IInventoryService {
             return 0u;
         }
 
-        // Explicitly cast the ulong returned by the native API down to uint
         return (uint)inventoryManager->GetRetainerMarketPrice((short)slotIndex);
     }
 
@@ -56,7 +56,6 @@ public class InventoryService : IInventoryService {
             else {
                 uint price = 0u;
                 if (inventoryType == InventoryType.RetainerMarket) {
-                    // Explicitly cast the returned ulong to uint
                     price = (uint)inventoryManager->GetRetainerMarketPrice((short)i);
                 }
 
@@ -71,5 +70,19 @@ public class InventoryService : IInventoryService {
         }
 
         return slots;
+    }
+
+    public int GetUiIndexForRetainerMarketItem(int slotIndex) {
+        var slots = this.GetInventorySlots(InventoryType.RetainerMarket);
+
+        var occupiedSlots = slots.Where(s => s.IsOccupied).OrderBy(s => s.SlotIndex).ToList();
+
+        for (int i = 0; i < occupiedSlots.Count; i++) {
+            if (occupiedSlots[i].SlotIndex == slotIndex) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

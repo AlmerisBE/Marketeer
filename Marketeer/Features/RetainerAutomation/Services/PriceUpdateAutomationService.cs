@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Marketeer.Features.Inventory.Contracts;
 using Marketeer.Features.Logging.Contracts;
 using Marketeer.Features.RetainerAutomation.Contracts;
 using Marketeer.Features.RetainerOrchestration.Contracts;
@@ -13,6 +14,8 @@ namespace Marketeer.Features.RetainerAutomation.Services;
 
 public enum PriceUpdateInternalStep {
     ProcessNextItem,
+    WaitContextMenu,
+    SelectAdjustPrice,
     WaitItemMenu,
     ChangePrice,
     WaitPriceApplied
@@ -22,6 +25,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     private IRetainerOrchestratorService orchestrator;
     private IUiInteractionService uiInteraction;
     private ICompetitionStateService competitionState;
+    private IInventoryService inventoryService;
     private IObjectTable objectTable;
     private ILoggerService logger;
 
@@ -30,6 +34,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
     private PriceUpdateInternalStep internalStep;
     private int waitTicks;
+    private int internalTimeout;
     private string currentRetainerName;
 
     public bool IsUpdating => this.orchestrator.IsActive;
@@ -38,12 +43,14 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         IRetainerOrchestratorService orchestrator,
         IUiInteractionService uiInteraction,
         ICompetitionStateService competitionState,
+        IInventoryService inventoryService,
         IObjectTable objectTable,
         ILoggerService logger) {
 
         this.orchestrator = orchestrator;
         this.uiInteraction = uiInteraction;
         this.competitionState = competitionState;
+        this.inventoryService = inventoryService;
         this.objectTable = objectTable;
         this.logger = logger;
 
@@ -85,8 +92,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
     public void OnMenuOpened(string retainerName) {
         this.currentRetainerName = retainerName;
-        this.internalStep = PriceUpdateInternalStep.ProcessNextItem;
-        this.waitTicks = 15;
+        this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 15);
     }
 
     public bool OnTick() {
@@ -95,9 +101,19 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             return false;
         }
 
+        if (this.internalTimeout > 0) {
+            this.internalTimeout--;
+        }
+
         switch (this.internalStep) {
             case PriceUpdateInternalStep.ProcessNextItem:
                 return this.ProcessNextItem();
+            case PriceUpdateInternalStep.WaitContextMenu:
+                this.ProcessWaitContextMenu();
+                return false;
+            case PriceUpdateInternalStep.SelectAdjustPrice:
+                this.ProcessSelectAdjustPrice();
+                return false;
             case PriceUpdateInternalStep.WaitItemMenu:
                 this.ProcessWaitItemMenu();
                 return false;
@@ -114,21 +130,45 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
     private bool ProcessNextItem() {
         if (!this.tasksByRetainer.TryGetValue(this.currentRetainerName, out var queue) || queue.Count == 0) {
-            return true; // Finished all items for this retainer
+            return true;
         }
 
         this.currentItemTask = queue.Dequeue();
-        this.uiInteraction.SelectItemInSellList(this.currentItemTask.SlotIndex);
 
-        this.internalStep = PriceUpdateInternalStep.WaitItemMenu;
-        this.waitTicks = 15;
+        var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
+
+        if (uiIndex == -1) {
+            this.logger.Warning($"[Marketeer] Cannot find UI index for slot {this.currentItemTask.SlotIndex} (Item: {this.currentItemTask.ItemName}). Skipping.");
+            return this.ProcessNextItem();
+        }
+
+        this.uiInteraction.SelectItemInSellList(uiIndex);
+        this.SetInternalStep(PriceUpdateInternalStep.WaitContextMenu, 5, 120);
         return false;
+    }
+
+    private void ProcessWaitContextMenu() {
+        if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+            this.SetInternalStep(PriceUpdateInternalStep.SelectAdjustPrice, 2);
+        }
+        else if (this.internalTimeout <= 0) {
+            this.logger.Warning($"[Marketeer] Failed to open ContextMenu for item '{this.currentItemTask?.ItemName}'. Skipping to next item.");
+            this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 5);
+        }
+    }
+
+    private void ProcessSelectAdjustPrice() {
+        this.uiInteraction.SelectContextMenuItem(0);
+        this.SetInternalStep(PriceUpdateInternalStep.WaitItemMenu, 5, 120);
     }
 
     private void ProcessWaitItemMenu() {
         if (this.uiInteraction.IsAddonReady("RetainerSell")) {
-            this.internalStep = PriceUpdateInternalStep.ChangePrice;
-            this.waitTicks = 10;
+            this.SetInternalStep(PriceUpdateInternalStep.ChangePrice, 10);
+        }
+        else if (this.internalTimeout <= 0) {
+            this.logger.Warning($"[Marketeer] Failed to open RetainerSell window for item '{this.currentItemTask?.ItemName}'. Skipping to next item.");
+            this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 5);
         }
     }
 
@@ -136,18 +176,27 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         if (this.currentItemTask != null) {
             uint newPrice = Math.Max(1u, this.currentItemTask.ServerCheapestPrice - 1);
             this.uiInteraction.ConfirmPriceUpdate(newPrice);
-            this.logger.Info($"Updated item '{this.currentItemTask.ItemName}' at slot {this.currentItemTask.SlotIndex} to {newPrice} Gil.");
+            this.logger.Info($"Updated item '{this.currentItemTask.ItemName}' to {newPrice} Gil.");
 
-            this.internalStep = PriceUpdateInternalStep.WaitPriceApplied;
-            this.waitTicks = 30;
+            this.SetInternalStep(PriceUpdateInternalStep.WaitPriceApplied, 15, 120);
         }
     }
 
     private void ProcessWaitPriceApplied() {
         if (!this.uiInteraction.IsAddonReady("RetainerSell")) {
-            this.internalStep = PriceUpdateInternalStep.ProcessNextItem;
-            this.waitTicks = 15;
+            this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 15);
         }
+        else if (this.internalTimeout <= 0) {
+            this.logger.Warning($"[Marketeer] RetainerSell window got stuck after price update for '{this.currentItemTask?.ItemName}'. Forcing closure.");
+            this.uiInteraction.CloseRetainerMarket();
+            this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 15);
+        }
+    }
+
+    private void SetInternalStep(PriceUpdateInternalStep step, int wait, int timeout = 0) {
+        this.internalStep = step;
+        this.waitTicks = wait;
+        this.internalTimeout = timeout;
     }
 
     public void OnMenuClosed(string retainerName) {

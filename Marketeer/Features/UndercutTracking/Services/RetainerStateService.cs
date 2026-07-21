@@ -21,7 +21,6 @@ public class RetainerStateService : IRetainerStateService {
     }
 
     public IReadOnlyList<RetainerListing> GetCurrentListings() {
-        // Returns the active session listings if they have been updated recently
         if (this.currentListings.Any()) {
             return this.currentListings;
         }
@@ -31,7 +30,6 @@ public class RetainerStateService : IRetainerStateService {
             return new List<RetainerListing>();
         }
 
-        // Reconstruct the configuration key based on the local player
         var playerName = localPlayer.Name.TextValue;
         var worldId = localPlayer.HomeWorld.RowId;
         var characterKey = $"{playerName}_{worldId}";
@@ -43,12 +41,12 @@ public class RetainerStateService : IRetainerStateService {
 
         var extractedListings = new List<RetainerListing>();
 
-        // Extract all current listings from the configuration data
         foreach (var retainer in characterData.Retainers.Values) {
             foreach (var listingKvp in retainer.MarketListings) {
                 extractedListings.Add(new RetainerListing {
                     SlotIndex = listingKvp.Key,
                     ItemId = listingKvp.Value.ItemId,
+                    Quantity = listingKvp.Value.Quantity,
                     RetainerName = retainer.Name,
                     CurrentPrice = listingKvp.Value.PricePerUnit
                 });
@@ -77,6 +75,7 @@ public class RetainerStateService : IRetainerStateService {
                     marketData.Listings.Add(new RetainerListing {
                         SlotIndex = listingKvp.Key,
                         ItemId = listingKvp.Value.ItemId,
+                        Quantity = listingKvp.Value.Quantity,
                         RetainerName = retainer.Name,
                         CurrentPrice = listingKvp.Value.PricePerUnit
                     });

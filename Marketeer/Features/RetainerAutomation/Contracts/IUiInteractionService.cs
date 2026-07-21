@@ -7,6 +7,7 @@ public interface IUiInteractionService {
     void CloseRetainerMarket();
     void CloseSelectString();
 
-    void SelectItemInSellList(int slotIndex);
+    void SelectItemInSellList(int uiIndex);
+    void SelectContextMenuItem(int index);
     void ConfirmPriceUpdate(uint newPrice);
 }
