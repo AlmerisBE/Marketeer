@@ -95,4 +95,40 @@ public unsafe class UiInteractionService : IUiInteractionService {
 
         addon->FireCallback(1, values);
     }
+
+    public void SelectItemInSellList(int slotIndex) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        this.logger.Debug($"UiInteractionService: Firing callback to select item at slot {slotIndex}.");
+
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0; // Select item event
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = slotIndex;
+
+        addon->FireCallback(2, values);
+    }
+
+    public void ConfirmPriceUpdate(uint newPrice) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        this.logger.Debug($"UiInteractionService: Firing callback to update price to {newPrice}.");
+
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0; // Confirm event
+        values[1].Type = AtkValueType.UInt;
+        values[1].UInt = newPrice;
+
+        addon->FireCallback(2, values);
+    }
 }

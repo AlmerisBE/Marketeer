@@ -1,6 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
+using Marketeer.Features.RetainerAutomation.Contracts;
 using Marketeer.Features.UndercutTracking.Contracts;
 using System.Linq;
 using System.Numerics;
@@ -10,14 +11,19 @@ namespace Marketeer.Features.UndercutTracking.UI;
 public class CompetitionTab : IDashboardTab {
     private ICompetitionStateService competitionState;
     private ILocalizationService localizationService;
+    private IPriceUpdateAutomationService priceUpdateService;
 
     public string Name => this.localizationService.Translate("Undercuts_TabName");
-
     public int Priority => 40;
 
-    public CompetitionTab(ICompetitionStateService competitionState, ILocalizationService localizationService) {
+    public CompetitionTab(
+        ICompetitionStateService competitionState,
+        ILocalizationService localizationService,
+        IPriceUpdateAutomationService priceUpdateService) {
+
         this.competitionState = competitionState;
         this.localizationService = localizationService;
+        this.priceUpdateService = priceUpdateService;
     }
 
     public void Draw() {
@@ -27,6 +33,31 @@ public class CompetitionTab : IDashboardTab {
             ImGui.Text("All your listings are currently the cheapest on the server!");
             return;
         }
+
+        // Section descriptive
+        ImGui.TextWrapped(this.localizationService.Translate("Undercuts_UpdatePricesDescription"));
+        ImGui.Spacing();
+
+        // Bouton d'automatisation aligné à droite
+        var updateBtnText = this.localizationService.Translate("Undercuts_UpdatePricesButton");
+        var buttonWidth = ImGui.CalcTextSize(updateBtnText).X + (ImGui.GetStyle().FramePadding.X * 2);
+
+        ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - buttonWidth);
+
+        if (this.priceUpdateService.IsUpdating) {
+            ImGui.BeginDisabled();
+            ImGui.Button(this.localizationService.Translate("Undercuts_UpdatePricesActive"), new Vector2(buttonWidth, 24f));
+            ImGui.EndDisabled();
+        }
+        else {
+            if (ImGui.Button(updateBtnText, new Vector2(buttonWidth, 24f))) {
+                this.priceUpdateService.TriggerPriceUpdate();
+            }
+        }
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
 
         var groupedByCharacter = items.GroupBy(u => u.CharacterName);
 

@@ -45,15 +45,15 @@ public class RetainerStateService : IRetainerStateService {
 
         // Extract all current listings from the configuration data
         foreach (var retainer in characterData.Retainers.Values) {
-            foreach (var listing in retainer.MarketListings.Values) {
+            foreach (var listingKvp in retainer.MarketListings) {
                 extractedListings.Add(new RetainerListing {
-                    ItemId = listing.ItemId,
+                    SlotIndex = listingKvp.Key,
+                    ItemId = listingKvp.Value.ItemId,
                     RetainerName = retainer.Name,
-                    CurrentPrice = listing.PricePerUnit
+                    CurrentPrice = listingKvp.Value.PricePerUnit
                 });
             }
         }
-
         return extractedListings;
     }
 
@@ -73,11 +73,12 @@ public class RetainerStateService : IRetainerStateService {
             };
 
             foreach (var retainer in charData.Retainers.Values) {
-                foreach (var listing in retainer.MarketListings.Values) {
+                foreach (var listingKvp in retainer.MarketListings) {
                     marketData.Listings.Add(new RetainerListing {
-                        ItemId = listing.ItemId,
+                        SlotIndex = listingKvp.Key,
+                        ItemId = listingKvp.Value.ItemId,
                         RetainerName = retainer.Name,
-                        CurrentPrice = listing.PricePerUnit
+                        CurrentPrice = listingKvp.Value.PricePerUnit
                     });
                 }
             }

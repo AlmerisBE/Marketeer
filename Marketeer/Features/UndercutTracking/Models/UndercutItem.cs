@@ -1,6 +1,7 @@
 ﻿namespace Marketeer.Features.UndercutTracking.Models;
 
 public class UndercutItem {
+    public int SlotIndex { get; set; }
     public uint ItemId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public string RetainerName { get; set; } = string.Empty;

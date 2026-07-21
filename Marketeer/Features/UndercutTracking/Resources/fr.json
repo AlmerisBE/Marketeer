@@ -6,5 +6,8 @@
   "Command_Price_Fetching": "Recherche du prix le plus bas pour {0}...",
   "Command_Price_Result": "Prix le plus bas pour {0} : {1} Gils (Servant : {2})",
   "Command_Price_Error": "Impossible de récupérer les données pour {0}. Le service est peut-être indisponible.",
-  "Undercuts_Notification": "[Marketeer] {0} de vos objets sont en concurrence ! Consultez l'onglet Concurrence."
+  "Undercuts_Notification": "[Marketeer] {0} de vos objets sont en concurrence ! Consultez l'onglet Concurrence.",
+  "Undercuts_UpdatePricesDescription": "Cliquez sur le bouton ci-dessous pour ouvrir la sonnette et laisser Marketeer ajuster automatiquement vos prix de vente 1 Gil en-dessous de la concurrence pour le personnage actuel.",
+  "Undercuts_UpdatePricesButton": "Ajuster les prix",
+  "Undercuts_UpdatePricesActive": "Mise à jour en cours..."
 }

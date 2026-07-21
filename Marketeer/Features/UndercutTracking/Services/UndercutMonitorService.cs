@@ -116,6 +116,7 @@ public class UndercutMonitorService : IUndercutMonitorService, IDisposable {
                         var resolvedItemName = this.itemResolver.ResolveItemName(itemId) ?? "Unknown Item";
 
                         newUndercuts.Add(new UndercutItem {
+                            SlotIndex = listing.SlotIndex,
                             ItemId = itemId,
                             ItemName = resolvedItemName,
                             RetainerName = listing.RetainerName,
@@ -161,6 +162,7 @@ public class UndercutMonitorService : IUndercutMonitorService, IDisposable {
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
                         undercuts.Add(new UndercutItem {
+                            SlotIndex = listing.SlotIndex,
                             ItemId = listing.ItemId,
                             ItemName = resolvedItemName,
                             RetainerName = listing.RetainerName,
