@@ -23,5 +23,6 @@
 	  <Folder Include="Features\Financials\Resources\" />
 	  <Folder Include="Features\RetainerAutomation\Resources\" />
 	  <Folder Include="Features\SalesHistoryUI\Resources\" />
+	  <Folder Include="Features\UndercutTracking\Resources\" />
 	</ItemGroup>
 </Project>
