@@ -45,7 +45,10 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
         var config = this.configService.GetConfig();
         return config.FinancialRecords.Values.Select(c => new TrackedCharacter {
             Name = c.CharacterName,
-            HomeWorldId = c.HomeWorldId
+            HomeWorldId = c.HomeWorldId,
+            CompanyTag = c.CompanyTag,
+            LastScanDate = c.LastScanDate,
+            RetainerCount = c.Retainers.Count
         }).ToList();
     }
 
@@ -63,17 +66,22 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
             var characterName = localPlayer.Name.TextValue;
             var worldId = localPlayer.HomeWorld.RowId;
             var storageKey = $"{characterName}_{worldId}";
+            var companyTag = localPlayer.CompanyTag.TextValue ?? string.Empty;
 
             var config = this.configService.GetConfig();
 
-            if (!config.FinancialRecords.ContainsKey(storageKey)) {
-                config.FinancialRecords[storageKey] = new CharacterFinancialData {
+            if (!config.FinancialRecords.TryGetValue(storageKey, out var charData)) {
+                charData = new CharacterFinancialData {
                     CharacterName = characterName,
-                    HomeWorldId = worldId
+                    HomeWorldId = worldId,
                 };
-                this.configService.Save();
-                this.logger.Info($"New character recorded: {characterName} ({worldId})");
+                config.FinancialRecords[storageKey] = charData;
             }
+
+            charData.CompanyTag = companyTag;
+            charData.LastScanDate = DateTime.UtcNow;
+
+            this.configService.Save();
         }
         catch (Exception ex) {
             this.logger?.Error(ex, "Failed to record current character safely.");

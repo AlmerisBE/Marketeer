@@ -6,6 +6,9 @@ namespace Marketeer.Features.CharacterTracking.Models;
 public class TrackedCharacter {
     public string Name { get; set; } = string.Empty;
     public uint HomeWorldId { get; set; }
+    public string CompanyTag { get; set; } = string.Empty;
+    public DateTime LastScanDate { get; set; }
+    public int RetainerCount { get; set; }
 
     public override bool Equals(object? obj) {
         if (obj is TrackedCharacter other) {

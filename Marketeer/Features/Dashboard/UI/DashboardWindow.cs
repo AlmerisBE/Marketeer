@@ -10,23 +10,30 @@ using System.Numerics;
 namespace Marketeer.Features.Dashboard.UI;
 
 public class DashboardWindow : Window {
-    private IReadOnlyList<INavigationNode> navigationNodes;
+    private IReadOnlyList<INavigationNode> rootNodes;
     private ILocalizationService localizationService;
     private IRetainerAutomationService automationService;
-
-    private INavigationNode? selectedNode;
+    private IDashboardNavigationService navigationService;
 
     public DashboardWindow(
         IEnumerable<INavigationNode> navigationNodes,
         ILocalizationService localizationService,
-        IRetainerAutomationService automationService)
+        IRetainerAutomationService automationService,
+        IDashboardNavigationService navigationService)
         : base(localizationService.Translate("Dashboard_Title"), ImGuiWindowFlags.None) {
 
-        this.navigationNodes = navigationNodes.OrderBy(node => node.Priority).ToList();
-        this.selectedNode = this.navigationNodes.FirstOrDefault();
-
+        this.rootNodes = navigationNodes.OrderBy(node => node.Priority).ToList();
         this.localizationService = localizationService;
         this.automationService = automationService;
+        this.navigationService = navigationService;
+
+        // Default home page selection, checking for null to avoid CS8604
+        if (this.navigationService.SelectedNode == null) {
+            var defaultNode = this.rootNodes.FirstOrDefault();
+            if (defaultNode != null) {
+                this.navigationService.NavigateTo(defaultNode);
+            }
+        }
 
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(800, 500),
@@ -35,16 +42,13 @@ public class DashboardWindow : Window {
     }
 
     public override void Draw() {
-        // Left Sidebar (Tree Menu)
         if (ImGui.BeginChild("Sidebar", new Vector2(220, 0), true)) {
 
-            // Reserve 30 pixels at the bottom for the scan button
             if (ImGui.BeginChild("TreeArea", new Vector2(0, -30), false)) {
-                this.DrawNodeTree(this.navigationNodes);
+                this.DrawNodeTree(this.rootNodes);
                 ImGui.EndChild();
             }
 
-            // Draw the scan button at the very bottom, taking full width
             if (ImGui.Button("Scan Retainers", new Vector2(-1, 24f))) {
                 this.automationService.TriggerScan();
             }
@@ -54,13 +58,10 @@ public class DashboardWindow : Window {
 
         ImGui.SameLine();
 
-        // Right Main Content Area
         if (ImGui.BeginChild("MainContent", new Vector2(0, 0), false)) {
-
-            if (this.selectedNode != null && this.selectedNode.HasContent) {
-                this.selectedNode.DrawContent();
+            if (this.navigationService.SelectedNode != null && this.navigationService.SelectedNode.HasContent) {
+                this.navigationService.SelectedNode.DrawContent();
             }
-
             ImGui.EndChild();
         }
     }
@@ -77,14 +78,14 @@ public class DashboardWindow : Window {
             if (node.DefaultExpanded) {
                 flags |= ImGuiTreeNodeFlags.DefaultOpen;
             }
-            if (this.selectedNode == node) {
+            if (this.navigationService.SelectedNode == node) {
                 flags |= ImGuiTreeNodeFlags.Selected;
             }
 
             bool isOpen = ImGui.TreeNodeEx(node.Name, flags);
 
             if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) {
-                this.selectedNode = node;
+                this.navigationService.NavigateTo(node);
             }
 
             if (isOpen && !isLeaf) {

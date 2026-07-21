@@ -22,6 +22,8 @@ public class RetainerFinancialData {
 public class CharacterFinancialData {
     public string CharacterName { get; set; } = string.Empty;
     public uint HomeWorldId { get; set; }
+    public string CompanyTag { get; set; } = string.Empty;
+    public DateTime LastScanDate { get; set; }
     public Dictionary<ulong, RetainerFinancialData> Retainers { get; set; } = new();
 }
 

@@ -3,6 +3,7 @@ using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.CharacterTracking.Models;
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
+using System;
 using System.Linq;
 
 namespace Marketeer.Features.Dashboard.UI;
@@ -28,7 +29,7 @@ public class CharacterSummaryView : ICharacterSummaryView {
         this.marketListingTrackerService = marketListingTrackerService;
     }
 
-    public void Draw(TrackedCharacter character) {
+    public void Draw(TrackedCharacter character, Action<ulong> onRetainerSelected) {
         var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
         ImGui.TextUnformatted($"{character.Name} ({worldName})");
         ImGui.Separator();
@@ -66,14 +67,16 @@ public class CharacterSummaryView : ICharacterSummaryView {
         var gilColName = this.localizationService.Translate("CharacterList_ColGil");
         var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
         var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
+        var detailsButtonLabel = this.localizationService.Translate("Dashboard_DetailsButton");
         var updateRequiredTooltip = this.localizationService.Translate("Dashboard_PriceUpdateRequired");
         var syncRequiredTooltip = this.localizationService.Translate("Dashboard_SyncRequired");
 
-        if (ImGui.BeginTable($"RetainersTable_{character.Name}", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+        if (ImGui.BeginTable($"RetainersTable_{character.Name}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
             ImGui.TableSetupColumn(gilColName, ImGuiTableColumnFlags.WidthFixed, 100f);
             ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 60f);
             ImGui.TableSetupColumn(totalColName, ImGuiTableColumnFlags.WidthFixed, 100f);
+            ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize(detailsButtonLabel).X + 16f);
             ImGui.TableHeadersRow();
 
             foreach (var retainer in retainers) {
@@ -104,6 +107,12 @@ public class CharacterSummaryView : ICharacterSummaryView {
                 }
                 else {
                     ImGui.TextUnformatted($"{totalValue:N0}");
+                }
+
+                // Call the injected routing delegate when clicked
+                ImGui.TableNextColumn();
+                if (ImGui.Button($"{detailsButtonLabel}##det_{retainer.RetainerId}")) {
+                    onRetainerSelected(retainer.RetainerId);
                 }
             }
 

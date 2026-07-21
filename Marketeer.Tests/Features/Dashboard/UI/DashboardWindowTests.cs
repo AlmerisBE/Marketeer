@@ -13,6 +13,7 @@ public class DashboardWindowTests {
         // Arrange
         var mockLocalization = Substitute.For<ILocalizationService>();
         var mockAutomationService = Substitute.For<IRetainerAutomationService>();
+        var mockNavigationService = Substitute.For<IDashboardNavigationService>();
 
         mockLocalization.Translate("Dashboard_Title").Returns("Marketeer - Dashboard");
 
@@ -25,7 +26,7 @@ public class DashboardWindowTests {
         var nodes = new List<INavigationNode> { lowPriorityNode, highPriorityNode };
 
         // Act
-        var exception = Record.Exception(() => new DashboardWindow(nodes, mockLocalization, mockAutomationService));
+        var exception = Record.Exception(() => new DashboardWindow(nodes, mockLocalization, mockAutomationService, mockNavigationService));
 
         // Assert
         Assert.Null(exception);
