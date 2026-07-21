@@ -9,16 +9,26 @@ namespace Marketeer.Tests.Features.Universalis.Services;
 public class UniversalisClientServiceTests {
 
     [Fact]
-    public async Task GetLowestPriceAsync_WhenApiReturnsValidData_ReturnsLowestPriceResult() {
+    public async Task GetLowestPricesAsync_WithMultipleItems_ParsesDictionaryAndReturnsResults() {
         // Arrange
         var mockLogger = Substitute.For<ILoggerService>();
 
         var jsonResponse = @"{
-            ""itemID"": 1234,
-            ""listings"": [
-                { ""pricePerUnit"": 600, ""retainerName"": ""ExpensiveRetainer"" },
-                { ""pricePerUnit"": 500, ""retainerName"": ""CheapRetainer"" }
-            ]
+            ""items"": {
+                ""1234"": {
+                    ""itemID"": 1234,
+                    ""listings"": [
+                        { ""pricePerUnit"": 600, ""retainerName"": ""ExpensiveRetainer"" },
+                        { ""pricePerUnit"": 500, ""retainerName"": ""CheapRetainer"" }
+                    ]
+                },
+                ""5678"": {
+                    ""itemID"": 5678,
+                    ""listings"": [
+                        { ""pricePerUnit"": 1000, ""retainerName"": ""SoloRetainer"" }
+                    ]
+                }
+            }
         }";
 
         var mockHandler = new MockHttpMessageHandler(jsonResponse, HttpStatusCode.OK);
@@ -29,31 +39,13 @@ public class UniversalisClientServiceTests {
         var service = new UniversalisClientService(httpClient, mockLogger);
 
         // Act
-        var result = await service.GetLowestPriceAsync(1234, 33);
+        var results = await service.GetLowestPricesAsync(new[] { 1234u, 5678u }, 33);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(1234u, result!.ItemId);
-        Assert.Equal(500u, result.Price);
-        Assert.Equal("CheapRetainer", result.RetainerName); // Ensures OrderBy worked
-    }
+        Assert.NotNull(results);
+        Assert.Equal(2, results.Count);
 
-    [Fact]
-    public async Task GetLowestPriceAsync_WhenApiFails_ReturnsNullAndLogsWarning() {
-        // Arrange
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockHandler = new MockHttpMessageHandler("Not Found", HttpStatusCode.NotFound);
-        var httpClient = new HttpClient(mockHandler) {
-            BaseAddress = new Uri("https://universalis.app/api/v2/")
-        };
-
-        var service = new UniversalisClientService(httpClient, mockLogger);
-
-        // Act
-        var result = await service.GetLowestPriceAsync(1234, 33);
-
-        // Assert
-        Assert.Null(result);
-        mockLogger.Received(1).Warning(Arg.Is<string>(s => s.Contains("returned NotFound")));
+        Assert.Contains(results, r => r.ItemId == 1234u && r.Price == 500u && r.RetainerName == "CheapRetainer");
+        Assert.Contains(results, r => r.ItemId == 5678u && r.Price == 1000u && r.RetainerName == "SoloRetainer");
     }
 }

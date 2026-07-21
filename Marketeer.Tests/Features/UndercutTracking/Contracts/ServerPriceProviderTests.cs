@@ -6,25 +6,25 @@ using Xunit;
 namespace Marketeer.Tests.Features.UndercutTracking.Contracts;
 
 public class ServerPriceProviderTests {
+
     [Fact]
-    public async Task GetLowestPriceAsync_ReturnsLowestPriceResult() {
+    public async Task GetLowestPricesAsync_ReturnsListOfResults() {
         // Arrange
         var mockProvider = Substitute.For<IServerPriceProvider>();
-        var expectedResult = new LowestPriceResult {
-            ItemId = 1234,
-            Price = 500,
-            RetainerName = "Almeris"
+
+        var expectedResults = new List<LowestPriceResult> {
+            new LowestPriceResult { ItemId = 1234, Price = 500, RetainerName = "Almeris" },
+            new LowestPriceResult { ItemId = 5678, Price = 1000, RetainerName = "Tester" }
         };
 
-        mockProvider.GetLowestPriceAsync(1234, 33).Returns(Task.FromResult<LowestPriceResult?>(expectedResult));
+        mockProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), 33).Returns(Task.FromResult<IReadOnlyList<LowestPriceResult>>(expectedResults));
 
         // Act
-        var result = await mockProvider.GetLowestPriceAsync(1234, 33);
+        var results = await mockProvider.GetLowestPricesAsync(new[] { 1234u, 5678u }, 33);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(1234u, result!.ItemId);
-        Assert.Equal(500u, result.Price);
-        Assert.Equal("Almeris", result.RetainerName);
+        Assert.NotNull(results);
+        Assert.Equal(2, results.Count);
+        Assert.Equal(500u, results[0].Price);
     }
 }

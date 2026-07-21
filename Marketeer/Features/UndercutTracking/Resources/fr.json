@@ -1,4 +1,10 @@
 {
   "Undercuts_TabName": "Concurrence",
-  "Undercuts_WorkInProgress": "L'intégration Universalis est en cours de développement."
+  "Undercuts_WorkInProgress": "L'intégration Universalis est en cours de développement.",
+  "Command_Price_Description": "Vérifie le prix le plus bas pour un objet. Utilisation : /marketeer price lowest <nom de l'objet>",
+  "Command_Price_InvalidArgs": "Arguments invalides. Utilisation : /marketeer price lowest <nom de l'objet>",
+  "Command_Price_ItemNotFound": "L'objet '{0}' est introuvable.",
+  "Command_Price_Fetching": "Recherche du prix le plus bas pour {0}...",
+  "Command_Price_Result": "Prix le plus bas pour {0} : {1} Gils (Servant : {2})",
+  "Command_Price_Error": "Impossible de récupérer les données pour {0}. Le service est peut-être indisponible."
 }

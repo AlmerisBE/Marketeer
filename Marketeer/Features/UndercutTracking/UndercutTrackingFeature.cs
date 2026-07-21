@@ -1,6 +1,8 @@
 ﻿using Marketeer.Core;
+using Marketeer.Features.Command.Contracts;
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
+using Marketeer.Features.UndercutTracking.Commands;
 using Marketeer.Features.UndercutTracking.Providers;
 using Marketeer.Features.UndercutTracking.UI;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,5 +15,8 @@ public class UndercutTrackingFeature : IFeatureModule {
 
         services.AddSingleton<UndercutsTab>();
         services.AddSingleton<IDashboardTab>(provider => provider.GetRequiredService<UndercutsTab>());
+
+        // Register the new command
+        services.AddSingleton<ICommand, PriceCommand>();
     }
 }
