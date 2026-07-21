@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Marketeer.Features.Financials.Models;
 
@@ -16,6 +17,9 @@ public class RetainerFinancialData {
     public string Name { get; set; } = string.Empty;
     public ulong GilHeld { get; set; }
     public Dictionary<int, RetainerMarketListingSaveData> MarketListings { get; set; } = new();
+
+    // Centralized calculation
+    public ulong TotalMarketValue => this.MarketListings.Values.Aggregate(0ul, (acc, listing) => acc + ((ulong)listing.PricePerUnit * listing.Quantity));
 }
 
 [Serializable]
@@ -25,6 +29,13 @@ public class CharacterFinancialData {
     public string CompanyTag { get; set; } = string.Empty;
     public DateTime LastScanDate { get; set; }
     public Dictionary<ulong, RetainerFinancialData> Retainers { get; set; } = new();
+
+    // Centralized calculations and key generation
+    public string StorageKey => $"{this.CharacterName}_{this.HomeWorldId}";
+
+    public ulong TotalGil => this.Retainers.Values.Aggregate(0ul, (acc, ret) => acc + ret.GilHeld);
+
+    public ulong TotalMarketValue => this.Retainers.Values.Aggregate(0ul, (acc, ret) => acc + ret.TotalMarketValue);
 }
 
 public class GlobalFinancialSummary {

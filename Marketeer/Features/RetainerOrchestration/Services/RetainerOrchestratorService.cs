@@ -1,9 +1,9 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.Logging.Contracts;
+using Marketeer.Features.RetainerAutomation.Contracts;
 using Marketeer.Features.RetainerOrchestration.Contracts;
 using Marketeer.Features.RetainerOrchestration.Models;
-using Marketeer.Features.Retainers.Contracts;
 using Marketeer.Features.WindowAbstraction.Contracts;
 using System;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ public enum OrchestrationStep {
 
 public class RetainerOrchestratorService : IRetainerOrchestratorService, IDisposable {
     private IFramework framework;
-    private IRetainerService retainerService;
+    private IRetainerUiInteractionService uiInteractionService;
     private INativeWindowService windowService;
     private ILocalizationService localizationService;
     private ILoggerService logger;
@@ -42,13 +42,13 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
     public RetainerOrchestratorService(
         IFramework framework,
-        IRetainerService retainerService,
+        IRetainerUiInteractionService uiInteractionService,
         INativeWindowService windowService,
         ILocalizationService localizationService,
         ILoggerService logger) {
 
         this.framework = framework;
-        this.retainerService = retainerService;
+        this.uiInteractionService = uiInteractionService;
         this.windowService = windowService;
         this.localizationService = localizationService;
         this.logger = logger;
@@ -144,8 +144,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessSelectRetainer() {
-        if (this.retainerService.IsRetainerAvailable(this.currentRetainerName)) {
-            if (this.retainerService.SelectRetainer(this.currentRetainerName)) {
+        if (this.uiInteractionService.IsRetainerAvailable(this.currentRetainerName)) {
+            if (this.uiInteractionService.SelectRetainer(this.currentRetainerName)) {
                 this.SetState(OrchestrationStep.OpenMenu, 15);
             }
             else {
@@ -155,13 +155,13 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessOpenMenu() {
-        if (this.retainerService.IsMenuReadyForRetainer(this.currentRetainerName)) {
+        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
             var optionText = this.currentTargetMenu == RetainerTargetMenu.MarketListings
                 ? this.localizationService.Translate("RetainerMenu_SellItems")
                 : this.localizationService.Translate("RetainerMenu_SalesHistory");
 
-            if (this.retainerService.IsMenuOptionAvailable(optionText)) {
-                if (this.retainerService.SelectMenuOption(optionText)) {
+            if (this.uiInteractionService.IsMenuOptionAvailable(optionText)) {
+                if (this.uiInteractionService.SelectMenuOption(optionText)) {
                     this.SetState(OrchestrationStep.WaitMenu, 30);
                 }
                 else {
@@ -196,8 +196,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
     private void ProcessCloseMenu() {
         bool success = this.currentTargetMenu == RetainerTargetMenu.MarketListings
-            ? this.retainerService.CloseMarketListings()
-            : this.retainerService.CloseSalesHistory();
+            ? this.uiInteractionService.CloseRetainerMarket()
+            : this.uiInteractionService.CloseSalesHistory();
 
         if (success) {
             this.currentTask?.OnMenuClosed(this.currentRetainerName);
@@ -215,8 +215,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessCloseSelectString() {
-        if (this.retainerService.IsMenuReadyForRetainer(this.currentRetainerName)) {
-            if (this.retainerService.CloseRetainerMenu()) {
+        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
+            if (this.uiInteractionService.CloseSelectString()) {
                 this.AdvanceToNextRetainerOrFinish();
             }
         }

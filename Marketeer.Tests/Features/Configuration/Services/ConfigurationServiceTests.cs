@@ -13,9 +13,9 @@ public class ConfigurationServiceTests {
         // Arrange
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
         var existingConfig = new PluginConfiguration {
-            Version = 1,
-            ExampleCheckbox = true
+            Version = 1
         };
+        existingConfig.FinancialRecords.Add("Test_0", new Marketeer.Features.Financials.Models.CharacterFinancialData { CharacterName = "Test" });
 
         mockPluginInterface.GetPluginConfig().Returns(existingConfig);
 
@@ -25,8 +25,8 @@ public class ConfigurationServiceTests {
 
         // Assert
         Assert.NotNull(config);
-        Assert.True(config.ExampleCheckbox);
         Assert.Equal(1, config.Version);
+        Assert.Single(config.FinancialRecords);
     }
 
     [Fact]
@@ -41,8 +41,9 @@ public class ConfigurationServiceTests {
 
         // Assert
         Assert.NotNull(config);
-        Assert.False(config.ExampleCheckbox);
         Assert.Equal(0, config.Version);
+        Assert.NotNull(config.FinancialRecords);
+        Assert.Empty(config.FinancialRecords);
     }
 
     [Fact]
@@ -52,7 +53,7 @@ public class ConfigurationServiceTests {
         var service = new ConfigurationService(mockPluginInterface);
         var config = service.GetConfig();
 
-        config.ExampleCheckbox = true;
+        config.Version = 2;
 
         // Act
         service.Save();

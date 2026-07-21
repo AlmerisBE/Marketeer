@@ -10,8 +10,6 @@ namespace Marketeer.Features.Configuration.Models;
 public class PluginConfiguration : IPluginConfiguration {
     public int Version { get; set; } = 0;
 
-    public bool ExampleCheckbox { get; set; } = false;
-
     public Dictionary<string, CharacterFinancialData> FinancialRecords { get; set; } = [];
 
     // Persistent storage for historical sales

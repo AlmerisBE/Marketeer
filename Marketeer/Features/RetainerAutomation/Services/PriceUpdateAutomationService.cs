@@ -23,7 +23,7 @@ public enum PriceUpdateInternalStep {
 
 public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IRetainerTask {
     private IRetainerOrchestratorService orchestrator;
-    private IUiInteractionService uiInteraction;
+    private IRetainerUiInteractionService uiInteraction;
     private ICompetitionStateService competitionState;
     private IInventoryService inventoryService;
     private IObjectTable objectTable;
@@ -41,7 +41,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
     public PriceUpdateAutomationService(
         IRetainerOrchestratorService orchestrator,
-        IUiInteractionService uiInteraction,
+        IRetainerUiInteractionService uiInteraction,
         ICompetitionStateService competitionState,
         IInventoryService inventoryService,
         IObjectTable objectTable,

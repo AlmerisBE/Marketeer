@@ -18,7 +18,7 @@ public class PriceUpdateAutomationServiceTests {
     public void TriggerPriceUpdate_WithUndercuts_StartsOrchestration() {
         // Arrange
         var mockOrchestrator = Substitute.For<IRetainerOrchestratorService>();
-        var mockUiInteraction = Substitute.For<IUiInteractionService>();
+        var mockUiInteraction = Substitute.For<IRetainerUiInteractionService>();
         var mockCompetitionState = Substitute.For<ICompetitionStateService>();
         var mockInventoryService = Substitute.For<IInventoryService>();
         var mockObjectTable = Substitute.For<IObjectTable>();

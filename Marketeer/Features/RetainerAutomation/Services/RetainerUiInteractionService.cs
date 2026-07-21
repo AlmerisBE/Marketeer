@@ -1,0 +1,239 @@
+﻿using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using Marketeer.Features.Logging.Contracts;
+using Marketeer.Features.RetainerAutomation.Contracts;
+using Marketeer.Features.WindowAbstraction.Contracts;
+using System;
+using System.Linq;
+using System.Text.RegularExpressions;
+
+namespace Marketeer.Features.RetainerAutomation.Services;
+
+public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService {
+    private IGameGui gameGui;
+    private INativeWindowService windowService;
+    private ILoggerService logger;
+
+    public RetainerUiInteractionService(IGameGui gameGui, INativeWindowService windowService, ILoggerService logger) {
+        this.gameGui = gameGui;
+        this.windowService = windowService;
+        this.logger = logger;
+    }
+
+    public bool IsAddonReady(string addonName) {
+        var addonPtr = this.gameGui.GetAddonByName(addonName);
+        if (addonPtr.Address == IntPtr.Zero) {
+            return false;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        return addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded;
+    }
+
+    public bool IsRetainerAvailable(string retainerName) {
+        var window = this.windowService.GetWindow("RetainerList");
+        if (window == null || !window.IsVisible) {
+            return false;
+        }
+
+        var pattern = $@"(?:^|\|\s*){Regex.Escape(retainerName)}$";
+        return window.GetElements()
+            .Where(e => e.Type == NativeUiElementType.Button && e.Text.Contains(" | "))
+            .Any(e => Regex.IsMatch(e.Text, pattern, RegexOptions.IgnoreCase));
+    }
+
+    public bool SelectRetainer(string retainerName) {
+        var window = this.windowService.GetWindow("RetainerList");
+        if (window == null || !window.IsVisible) {
+            this.logger.Warning("Cannot select retainer: 'RetainerList' window is not visible.");
+            return false;
+        }
+
+        var elements = window.GetElements().ToList();
+        var retainerRows = elements
+            .Where(e => e.Type == NativeUiElementType.Button && e.Text.Contains(" | "))
+            .ToList();
+
+        var pattern = $@"(?:^|\|\s*){Regex.Escape(retainerName)}$";
+        var targetRetainer = retainerRows.FirstOrDefault(e => Regex.IsMatch(e.Text, pattern, RegexOptions.IgnoreCase));
+
+        if (targetRetainer == null) {
+            this.logger.Warning($"Retainer '{retainerName}' not found in the active RetainerList.");
+            return false;
+        }
+
+        var retainerIndex = retainerRows.IndexOf(targetRetainer);
+        this.SelectRetainer(retainerIndex);
+        return true;
+    }
+
+    public void SelectRetainer(int index) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerList");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 2;
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = index;
+
+        addon->FireCallback(2, values, true);
+    }
+
+    public bool IsMenuReadyForRetainer(string retainerName) {
+        var window = this.windowService.GetWindow("SelectString");
+        if (window == null || !window.IsVisible) {
+            return false;
+        }
+
+        return window.GetElements()
+            .Where(e => e.Type == NativeUiElementType.Text)
+            .Any(e => e.Text.Contains(retainerName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsMenuOptionAvailable(string optionText) {
+        var window = this.windowService.GetWindow("SelectString");
+        if (window == null || !window.IsVisible) {
+            return false;
+        }
+
+        return window.GetElements()
+            .Where(e => e.Type == NativeUiElementType.Button)
+            .Any(e => e.Text.StartsWith(optionText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool SelectMenuOption(string optionText) {
+        var window = this.windowService.GetWindow("SelectString");
+        if (window == null || !window.IsVisible) {
+            return false;
+        }
+
+        var elements = window.GetElements().ToList();
+        var menuRows = elements.Where(e => e.Type == NativeUiElementType.Button).ToList();
+
+        var targetOption = menuRows.FirstOrDefault(e => e.Text.StartsWith(optionText, StringComparison.OrdinalIgnoreCase));
+
+        if (targetOption == null) {
+            return false;
+        }
+
+        var optionIndex = menuRows.IndexOf(targetOption);
+        window.SendCallbackWithUpdateState(true, optionIndex);
+        return true;
+    }
+
+    public void OpenRetainerMarket() {
+        var addonPtr = this.gameGui.GetAddonByName("SelectString");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0;
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = 5;
+
+        addon->FireCallback(2, values, true);
+    }
+
+    public bool CloseRetainerMarket() {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return false;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[1];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = -1;
+
+        addon->FireCallback(1, values, true);
+        return true;
+    }
+
+    public bool CloseSelectString() {
+        var addonPtr = this.gameGui.GetAddonByName("SelectString");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return false;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[1];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = -1;
+
+        addon->FireCallback(1, values, true);
+        return true;
+    }
+
+    public bool CloseSalesHistory() {
+        var window = this.windowService.GetWindow("RetainerHistory");
+        if (window == null || !window.IsVisible) {
+            return false;
+        }
+
+        window.SendCallbackWithUpdateState(true, -1);
+        return true;
+    }
+
+    public void SelectItemInSellList(int uiIndex) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[3];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0;
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = uiIndex;
+        values[2].Type = AtkValueType.Int;
+        values[2].Int = 0;
+
+        addon->FireCallback(3, values, true);
+    }
+
+    public void SelectContextMenuItem(int index) {
+        var addonPtr = this.gameGui.GetAddonByName("ContextMenu");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[5];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0;
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = index;
+        values[2].Type = AtkValueType.Int;
+        values[2].Int = 0;
+        values[3].Type = AtkValueType.Int;
+        values[3].Int = 0;
+        values[4].Type = AtkValueType.Int;
+        values[4].Int = 0;
+
+        addon->FireCallback(5, values, true);
+    }
+
+    public void ConfirmPriceUpdate(uint newPrice) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0;
+        values[1].Type = AtkValueType.UInt;
+        values[1].UInt = newPrice;
+
+        addon->FireCallback(2, values, true);
+    }
+}

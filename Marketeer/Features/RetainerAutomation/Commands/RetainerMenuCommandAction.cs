@@ -1,18 +1,18 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Features.Command.Contracts;
-using Marketeer.Features.Retainers.Contracts;
+using Marketeer.Features.RetainerAutomation.Contracts;
 
-namespace Marketeer.Features.Retainers.Commands;
+namespace Marketeer.Features.RetainerAutomation.Commands;
 
 public class RetainerMenuCommandAction : ICommand {
-    private IRetainerService retainerService;
+    private IRetainerUiInteractionService uiInteractionService;
     private IChatGui chatGui;
 
     public string CommandTrigger => "retainermenu";
     public string Description => "Selects an option in the retainer menu. Usage: /marketeer retainermenu <option text>";
 
-    public RetainerMenuCommandAction(IRetainerService retainerService, IChatGui chatGui) {
-        this.retainerService = retainerService;
+    public RetainerMenuCommandAction(IRetainerUiInteractionService uiInteractionService, IChatGui chatGui) {
+        this.uiInteractionService = uiInteractionService;
         this.chatGui = chatGui;
     }
 
@@ -22,7 +22,7 @@ public class RetainerMenuCommandAction : ICommand {
             return;
         }
 
-        var success = this.retainerService.SelectMenuOption(arguments);
+        var success = this.uiInteractionService.SelectMenuOption(arguments);
 
         if (success) {
             this.chatGui.Print($"[Marketeer] Selected menu option containing: {arguments}");

@@ -1,6 +1,6 @@
 ﻿using Marketeer.Core;
 using Marketeer.Features.Command.Contracts;
-using Marketeer.Features.Retainers.Commands;
+using Marketeer.Features.RetainerAutomation.Commands;
 using Marketeer.Features.Retainers.Contracts;
 using Marketeer.Features.Retainers.Services;
 using Microsoft.Extensions.DependencyInjection;

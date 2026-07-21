@@ -14,7 +14,6 @@ public class FinancialsMenu : INavigationNode {
     public string Name => this.localizationService.Translate("Financials_TabName") ?? "Financials";
     public int Priority => 30;
 
-    // INavigationNode implementation for a leaf node
     public bool HasContent => true;
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -47,41 +46,26 @@ public class FinancialsMenu : INavigationNode {
             ImGui.TableHeadersRow();
 
             foreach (var character in summary.Characters) {
-                ulong charTotalGil = 0;
-                ulong charTotalMarket = 0;
-
-                foreach (var ret in character.Retainers.Values) {
-                    charTotalGil += ret.GilHeld;
-                    foreach (var listing in ret.MarketListings.Values) {
-                        charTotalMarket += (ulong)listing.PricePerUnit * listing.Quantity;
-                    }
-                }
-
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"[+] {character.CharacterName}");
                 ImGui.TableNextColumn();
-                ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"{charTotalGil:N0}");
+                ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"{character.TotalGil:N0}");
                 ImGui.TableNextColumn();
-                ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"{charTotalMarket:N0}");
+                ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"{character.TotalMarketValue:N0}");
                 ImGui.TableNextColumn();
-                ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"{(charTotalGil + charTotalMarket):N0}");
+                ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), $"{(character.TotalGil + character.TotalMarketValue):N0}");
 
                 foreach (var retainer in character.Retainers.Values) {
-                    ulong retainerMarketValue = 0;
-                    foreach (var listing in retainer.MarketListings.Values) {
-                        retainerMarketValue += (ulong)listing.PricePerUnit * listing.Quantity;
-                    }
-
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     ImGui.Text($"      {retainer.Name}");
                     ImGui.TableNextColumn();
                     ImGui.Text($"{retainer.GilHeld:N0}");
                     ImGui.TableNextColumn();
-                    ImGui.Text($"{retainerMarketValue:N0}");
+                    ImGui.Text($"{retainer.TotalMarketValue:N0}");
                     ImGui.TableNextColumn();
-                    ImGui.Text($"{(retainer.GilHeld + retainerMarketValue):N0}");
+                    ImGui.Text($"{(retainer.GilHeld + retainer.TotalMarketValue):N0}");
                 }
             }
             ImGui.EndTable();

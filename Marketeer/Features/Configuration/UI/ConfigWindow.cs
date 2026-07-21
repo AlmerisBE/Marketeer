@@ -25,13 +25,7 @@ public class ConfigWindow : Window {
         if (ImGui.BeginTabBar("MarketeerTabs")) {
 
             if (ImGui.BeginTabItem("General")) {
-                var config = this.configurationService.GetConfig();
-                var exampleValue = config.ExampleCheckbox;
-
-                if (ImGui.Checkbox("Example Checkbox", ref exampleValue)) {
-                    config.ExampleCheckbox = exampleValue;
-                    this.configurationService.Save();
-                }
+                ImGui.TextUnformatted("General configuration settings will be added here.");
                 ImGui.EndTabItem();
             }
 

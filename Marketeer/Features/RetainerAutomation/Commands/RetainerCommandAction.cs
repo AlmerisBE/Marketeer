@@ -1,17 +1,17 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Features.Command.Contracts;
-using Marketeer.Features.Retainers.Contracts;
+using Marketeer.Features.RetainerAutomation.Contracts;
 
-namespace Marketeer.Features.Retainers.Commands;
+namespace Marketeer.Features.RetainerAutomation.Commands;
 
 public class RetainerCommandAction : ICommand {
-    private IRetainerService retainerService;
+    private IRetainerUiInteractionService retainerService;
     private IChatGui chatGui;
 
     public string CommandTrigger => "retainer";
     public string Description => "Selects a retainer by name. Usage: /marketeer retainer <name>";
 
-    public RetainerCommandAction(IRetainerService retainerService, IChatGui chatGui) {
+    public RetainerCommandAction(IRetainerUiInteractionService retainerService, IChatGui chatGui) {
         this.retainerService = retainerService;
         this.chatGui = chatGui;
     }

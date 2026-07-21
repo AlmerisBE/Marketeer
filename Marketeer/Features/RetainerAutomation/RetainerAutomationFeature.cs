@@ -1,5 +1,7 @@
 ﻿using Marketeer.Core;
+using Marketeer.Features.Command.Contracts;
 using Marketeer.Features.Localization.Contracts;
+using Marketeer.Features.RetainerAutomation.Commands;
 using Marketeer.Features.RetainerAutomation.Contracts;
 using Marketeer.Features.RetainerAutomation.Providers;
 using Marketeer.Features.RetainerAutomation.Services;
@@ -12,12 +14,16 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<ILocalizationProvider, RetainerAutomationLocalizationProvider>();
 
         services.AddSingleton<IClientRetainerService, ClientRetainerService>();
-        services.AddSingleton<IUiInteractionService, UiInteractionService>();
+        services.AddSingleton<IRetainerUiInteractionService, RetainerUiInteractionService>();
 
         services.AddSingleton<RetainerAutomationService>();
         services.AddSingleton<IRetainerAutomationService>(provider => provider.GetRequiredService<RetainerAutomationService>());
 
         services.AddSingleton<PriceUpdateAutomationService>();
         services.AddSingleton<IPriceUpdateAutomationService>(provider => provider.GetRequiredService<PriceUpdateAutomationService>());
+
+        // Imported commands from the deleted Retainers feature
+        services.AddSingleton<ICommand, RetainerCommandAction>();
+        services.AddSingleton<ICommand, RetainerMenuCommandAction>();
     }
 }

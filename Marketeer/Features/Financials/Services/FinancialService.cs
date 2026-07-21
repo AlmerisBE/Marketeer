@@ -18,14 +18,8 @@ public class FinancialService : IFinancialService {
 
         foreach (var charRecord in config.FinancialRecords.Values) {
             summary.Characters.Add(charRecord);
-
-            foreach (var retainer in charRecord.Retainers.Values) {
-                summary.GrandTotalGil += retainer.GilHeld;
-
-                foreach (var listing in retainer.MarketListings.Values) {
-                    summary.GrandTotalMarketValue += (ulong)listing.PricePerUnit * listing.Quantity;
-                }
-            }
+            summary.GrandTotalGil += charRecord.TotalGil;
+            summary.GrandTotalMarketValue += charRecord.TotalMarketValue;
         }
 
         // Sort characters alphabetically for consistent UI display
