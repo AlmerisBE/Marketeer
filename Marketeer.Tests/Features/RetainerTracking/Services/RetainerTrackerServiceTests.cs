@@ -1,14 +1,13 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
-using Marketeer.Features.CharacterTracking.Contracts;
-using Marketeer.Features.Configuration.Contracts;
-using Marketeer.Features.Configuration.Models;
-using Marketeer.Features.Financials.Models;
-using Marketeer.Features.GameEvents.Contracts;
-using Marketeer.Features.Logging.Contracts;
-using Marketeer.Features.RetainerTracking.Contracts;
-using Marketeer.Features.RetainerTracking.Models;
-using Marketeer.Features.RetainerTracking.Services;
+using Marketeer.API.CharacterManagement.Contracts;
+using Marketeer.API.CharacterManagement.Models;
+using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Configuration.Models;
+using Marketeer.API.Financials.Models;
+using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.Logging.Contracts;
+using Marketeer.Core.CharacterManagement.Services;
 using NSubstitute;
 using Xunit;
 

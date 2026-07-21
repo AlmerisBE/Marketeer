@@ -1,9 +1,0 @@
-﻿namespace Marketeer.Features.WindowAbstraction.Contracts;
-
-public interface INativeUiElement {
-    string Text { get; }
-    NativeUiElementType Type { get; }
-    uint NodeId { get; }
-
-    void Click();
-}

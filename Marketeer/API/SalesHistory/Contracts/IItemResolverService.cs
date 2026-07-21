@@ -1,0 +1,7 @@
+﻿namespace Marketeer.API.SalesHistory.Contracts;
+
+public interface IItemResolverService {
+    uint ResolveItemId(string itemName);
+    string ResolveItemName(uint itemId);
+    uint ResolveIconId(uint itemId);
+}

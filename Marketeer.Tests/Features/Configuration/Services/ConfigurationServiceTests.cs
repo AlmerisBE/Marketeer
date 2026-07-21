@@ -1,7 +1,8 @@
 ﻿using Dalamud.Configuration;
 using Dalamud.Plugin;
-using Marketeer.Features.Configuration.Models;
-using Marketeer.Features.Configuration.Services;
+using Marketeer.API.Configuration.Models;
+using Marketeer.API.Financials.Models;
+using Marketeer.Core.Configuration.Services;
 using NSubstitute;
 using Xunit;
 
@@ -15,7 +16,7 @@ public class ConfigurationServiceTests {
         var existingConfig = new PluginConfiguration {
             Version = 1
         };
-        existingConfig.FinancialRecords.Add("Test_0", new Marketeer.Features.Financials.Models.CharacterFinancialData { CharacterName = "Test" });
+        existingConfig.FinancialRecords.Add("Test_0", new CharacterFinancialData { CharacterName = "Test" });
 
         mockPluginInterface.GetPluginConfig().Returns(existingConfig);
 

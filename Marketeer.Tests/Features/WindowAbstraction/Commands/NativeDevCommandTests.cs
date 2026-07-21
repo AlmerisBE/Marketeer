@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.Features.Logging.Contracts;
-using Marketeer.Features.WindowAbstraction.Commands;
-using Marketeer.Features.WindowAbstraction.Contracts;
+using Marketeer.API.Logging.Contracts;
+using Marketeer.API.UiInterop.Contracts;
+using Marketeer.UI.UiInterop.Commands;
 using NSubstitute;
 using Xunit;
 

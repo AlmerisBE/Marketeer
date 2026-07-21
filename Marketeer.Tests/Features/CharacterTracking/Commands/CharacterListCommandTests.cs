@@ -1,9 +1,9 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.Features.CharacterTracking.Commands;
-using Marketeer.Features.CharacterTracking.Contracts;
-using Marketeer.Features.CharacterTracking.Models;
-using Marketeer.Features.Dashboard.Contracts;
-using Marketeer.Features.Localization.Contracts;
+using Marketeer.API.CharacterManagement.Contracts;
+using Marketeer.API.CharacterManagement.Models;
+using Marketeer.API.GameData.Contracts;
+using Marketeer.API.Localization.Contracts;
+using Marketeer.UI.CharacterManagement.Commands;
 using NSubstitute;
 using Xunit;
 

@@ -1,12 +1,11 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.Features.Inventory.Contracts;
-using Marketeer.Features.Logging.Contracts;
-using Marketeer.Features.RetainerAutomation.Contracts;
-using Marketeer.Features.RetainerAutomation.Services;
-using Marketeer.Features.RetainerOrchestration.Contracts;
-using Marketeer.Features.RetainerOrchestration.Models;
-using Marketeer.Features.UndercutTracking.Contracts;
-using Marketeer.Features.UndercutTracking.Models;
+using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.Logging.Contracts;
+using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.API.RetainerAutomation.Models;
+using Marketeer.API.CompetitionTracking.Contracts;
+using Marketeer.API.CompetitionTracking.Models;
+using Marketeer.Core.RetainerAutomation.Services;
 using NSubstitute;
 using Xunit;
 

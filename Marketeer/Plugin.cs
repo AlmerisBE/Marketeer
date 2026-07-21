@@ -1,11 +1,13 @@
 ﻿using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Marketeer.Core;
-using Marketeer.Features.Command.Services;
-using Marketeer.Features.Configuration.UI;
-using Marketeer.Features.SalesScanner.Contracts;
-using Marketeer.Features.UndercutTracking.Contracts;
+using Marketeer.API.CompetitionTracking.Contracts;
+using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.SalesHistory.Contracts;
+using Marketeer.API.UiInterop.Contracts;
+using Marketeer.Core.Command.Services;
+using Marketeer.Core.Dependencies;
+using Marketeer.UI.Configuration.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -60,18 +62,18 @@ public sealed class Plugin : IDalamudPlugin {
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
 
         // Start Window Tracking
-        var windowTracker = this.serviceProvider.GetRequiredService<Marketeer.Features.WindowAbstraction.Contracts.IWindowTrackerService>();
+        var windowTracker = this.serviceProvider.GetRequiredService<IWindowTrackerService>();
         windowTracker.EnableTracking();
 
         // Enable the Sales Scanner to listen for RetainerItemHistory
         var salesScanner = this.serviceProvider.GetRequiredService<ISalesScannerService>();
         salesScanner.Enable();
 
-        var monitorService = this.serviceProvider.GetRequiredService<IUndercutMonitorService>();
+        var monitorService = this.serviceProvider.GetRequiredService<ICompetitionMonitorService>();
         monitorService.StartMonitoring();
 
         // Force instantiation of the GameEventService so it starts listening immediately
-        this.serviceProvider.GetRequiredService<Features.GameEvents.Contracts.IGameEventService>();
+        this.serviceProvider.GetRequiredService<IGameEventService>();
 
         // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();
@@ -95,7 +97,7 @@ public sealed class Plugin : IDalamudPlugin {
         this.pluginInterface.UiBuilder.Draw -= this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi -= this.OnOpenConfigUi;
 
-        var monitorService = this.serviceProvider.GetService<IUndercutMonitorService>();
+        var monitorService = this.serviceProvider.GetService<ICompetitionMonitorService>();
         monitorService?.StopMonitoring();
 
         this.windowSystem.RemoveAllWindows();

@@ -1,5 +1,5 @@
-﻿using Marketeer.Features.Logging.Contracts;
-using Marketeer.Features.Universalis.Services;
+﻿using Marketeer.API.Logging.Contracts;
+using Marketeer.Core.Universalis.Services;
 using NSubstitute;
 using System.Net;
 using Xunit;

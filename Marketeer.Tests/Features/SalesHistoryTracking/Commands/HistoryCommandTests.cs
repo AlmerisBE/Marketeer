@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.Features.SalesHistoryTracking.Commands;
-using Marketeer.Features.SalesHistoryTracking.Contracts;
+using Marketeer.API.SalesHistory.Contracts;
+using Marketeer.UI.SalesHistory.Commands;
 using NSubstitute;
 using Xunit;
 

@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using Marketeer.Features.GameData.Services;
+using Marketeer.Core.GameData.Services;
 using NSubstitute;
 using Xunit;
 

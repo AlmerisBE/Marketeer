@@ -1,6 +1,6 @@
-﻿using Marketeer.Features.RetainerTracking.Contracts;
-using Marketeer.Features.RetainerTracking.Models;
-using Marketeer.Features.RetainerTracking.Presenters;
+﻿using Marketeer.API.CharacterManagement.Contracts;
+using Marketeer.API.CharacterManagement.Models;
+using Marketeer.UI.CharacterManagement.UI;
 using NSubstitute;
 using Xunit;
 

@@ -1,5 +1,5 @@
-﻿using Marketeer.Features.Logging.Services;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
+using Marketeer.Core.Logging.Services;
 using NSubstitute;
 using Xunit;
 

@@ -1,5 +1,5 @@
-﻿using Marketeer.Features.SalesHistoryTracking.Models;
-using Marketeer.Features.SalesHistoryTracking.Services;
+﻿using Marketeer.API.SalesHistory.Models;
+using Marketeer.Core.SalesHistory.Services;
 using Xunit;
 
 namespace Marketeer.Tests.Features.SalesHistoryTracking.Services;

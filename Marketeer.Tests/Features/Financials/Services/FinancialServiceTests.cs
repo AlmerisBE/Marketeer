@@ -1,7 +1,7 @@
-﻿using Marketeer.Features.Configuration.Contracts;
-using Marketeer.Features.Configuration.Models;
-using Marketeer.Features.Financials.Models;
-using Marketeer.Features.Financials.Services;
+﻿using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Configuration.Models;
+using Marketeer.API.Financials.Models;
+using Marketeer.Core.Financials.Services;
 using NSubstitute;
 using Xunit;
 

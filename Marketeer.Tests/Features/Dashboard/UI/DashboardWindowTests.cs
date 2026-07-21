@@ -1,7 +1,7 @@
-﻿using Marketeer.Features.Dashboard.Contracts;
-using Marketeer.Features.Dashboard.UI;
-using Marketeer.Features.Localization.Contracts;
-using Marketeer.Features.RetainerAutomation.Contracts;
+﻿using Marketeer.API.Dashboard.Contracts;
+using Marketeer.API.Localization.Contracts;
+using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.UI.Dashboard.UI;
 using NSubstitute;
 using Xunit;
 

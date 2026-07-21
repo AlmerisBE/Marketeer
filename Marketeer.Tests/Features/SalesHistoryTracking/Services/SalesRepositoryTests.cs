@@ -1,7 +1,7 @@
-﻿using Marketeer.Features.Configuration.Contracts;
-using Marketeer.Features.Configuration.Models;
-using Marketeer.Features.SalesHistoryTracking.Models;
-using Marketeer.Features.SalesHistoryTracking.Services;
+﻿using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Configuration.Models;
+using Marketeer.API.SalesHistory.Models;
+using Marketeer.Core.SalesHistory.Services;
 using NSubstitute;
 using Xunit;
 

@@ -1,6 +1,6 @@
-﻿using Marketeer.Features.Financials.Contracts;
-using Marketeer.Features.Financials.UI;
-using Marketeer.Features.Localization.Contracts;
+﻿using Marketeer.API.Financials.Contracts;
+using Marketeer.API.Localization.Contracts;
+using Marketeer.UI.Financials.UI;
 using NSubstitute;
 using Xunit;
 

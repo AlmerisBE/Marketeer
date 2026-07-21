@@ -1,6 +1,5 @@
-﻿using Marketeer.Features.SalesHistoryUI.Contracts;
-using Marketeer.Features.SalesHistoryUI.Models;
-using Marketeer.Features.SalesHistoryUI.Services;
+﻿using Marketeer.API.SalesHistory.Models;
+using Marketeer.UI.SalesHistory.Services;
 using NSubstitute;
 using Xunit;
 

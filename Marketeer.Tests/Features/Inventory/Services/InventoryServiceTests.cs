@@ -1,6 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
-using Marketeer.Features.Inventory.Contracts;
-using Marketeer.Features.Inventory.Models;
+using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.GameInterop.Models;
 using NSubstitute;
 using Xunit;
 

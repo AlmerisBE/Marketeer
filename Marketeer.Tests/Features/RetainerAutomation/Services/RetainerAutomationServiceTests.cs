@@ -1,10 +1,10 @@
-﻿using Marketeer.Features.Dashboard.Contracts;
-using Marketeer.Features.Logging.Contracts;
-using Marketeer.Features.RetainerAutomation.Services;
-using Marketeer.Features.RetainerOrchestration.Contracts;
-using Marketeer.Features.RetainerOrchestration.Models;
-using Marketeer.Features.RetainerTracking.Contracts;
-using Marketeer.Features.RetainerTracking.Models;
+﻿using Marketeer.API.CharacterManagement.Models;
+using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.Logging.Contracts;
+using Marketeer.API.MarketListings.Contracts;
+using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.API.RetainerAutomation.Models;
+using Marketeer.Core.RetainerAutomation.Services;
 using NSubstitute;
 using Xunit;
 

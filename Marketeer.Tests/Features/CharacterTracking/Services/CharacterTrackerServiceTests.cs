@@ -1,8 +1,9 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
-using Marketeer.Features.CharacterTracking.Services;
-using Marketeer.Features.Configuration.Contracts;
-using Marketeer.Features.Configuration.Models;
+using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Configuration.Models;
+using Marketeer.API.Logging.Contracts;
+using Marketeer.Core.CharacterManagement.Services;
 using NSubstitute;
 using Xunit;
 
@@ -15,7 +16,7 @@ public class CharacterTrackerServiceTests {
         var mockClientState = Substitute.For<IClientState>();
         var mockObjectTable = Substitute.For<IObjectTable>();
         var mockConfigService = Substitute.For<IConfigurationService>();
-        var mockLogger = Substitute.For<Marketeer.Features.Logging.Contracts.ILoggerService>();
+        var mockLogger = Substitute.For<ILoggerService>();
         var mockFramework = Substitute.For<IFramework>();
 
         mockFramework.When(x => x.RunOnFrameworkThread(Arg.Any<Action>())).Do(cb => cb.Arg<Action>()());
