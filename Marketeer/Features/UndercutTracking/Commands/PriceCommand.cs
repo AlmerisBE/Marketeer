@@ -18,7 +18,7 @@ public class PriceCommand : ICommand {
     private ILoggerService logger;
 
     public string CommandTrigger => "price";
-    public string Description => this.localization.Translate("Command_Price_Description");
+    public string Description => "Fetches current market price for a given item by name.";
 
     public PriceCommand(
         IServerPriceProvider priceProvider,
@@ -27,7 +27,6 @@ public class PriceCommand : ICommand {
         IChatGui chatGui,
         ILocalizationService localization,
         ILoggerService logger) {
-
         this.priceProvider = priceProvider;
         this.objectTable = objectTable;
         this.itemResolver = itemResolver;
@@ -37,51 +36,49 @@ public class PriceCommand : ICommand {
     }
 
     public void Execute(string arguments) {
-        if (string.IsNullOrWhiteSpace(arguments) || !arguments.StartsWith("lowest ", StringComparison.OrdinalIgnoreCase)) {
-            this.chatGui.PrintError(this.localization.Translate("Command_Price_InvalidArgs"));
+        if (string.IsNullOrWhiteSpace(arguments)) {
             return;
         }
 
-        var itemName = arguments.Substring("lowest ".Length).Trim();
-        if (string.IsNullOrWhiteSpace(itemName)) {
-            this.chatGui.PrintError(this.localization.Translate("Command_Price_InvalidArgs"));
+        var args = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+        var subCommand = args.Length > 0 ? args[0].ToLowerInvariant() : string.Empty;
+
+        if (subCommand != "lowest" || args.Length < 2) {
             return;
         }
 
-        var itemId = this.itemResolver.ResolveItemId(itemName);
+        var rawItemName = args[1].Trim();
+        var itemId = this.itemResolver.ResolveItemId(rawItemName);
+
         if (itemId == 0) {
-            this.chatGui.PrintError(this.localization.Translate("Command_Price_ItemNotFound", itemName));
+            this.chatGui.Print(this.localization.Translate("Command_Price_ItemNotFound", rawItemName));
             return;
         }
 
         var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null) {
-            this.logger.Warning("Local player is not available to determine current world.");
+        if (localPlayer == null || localPlayer.CurrentWorld.RowId == 0) {
             return;
         }
 
-        // Retrieves the world ID using Lumina's native Excel struct definition
         var worldId = localPlayer.CurrentWorld.RowId;
-        var resolvedItemName = this.itemResolver.ResolveItemName(itemId);
 
-        this.chatGui.Print(this.localization.Translate("Command_Price_Fetching", resolvedItemName));
-
-        // Offload the network request to a background thread to prevent blocking the game's main thread
         Task.Run(async () => {
             try {
-                var result = await this.priceProvider.GetLowestPriceAsync(itemId, worldId);
+                var itemName = this.itemResolver.ResolveItemName(itemId) ?? rawItemName;
+                this.chatGui.Print(this.localization.Translate("Command_Price_Fetching", itemName));
 
-                if (result != null) {
-                    var formattedPrice = result.Price.ToString("N0");
-                    this.chatGui.Print(this.localization.Translate("Command_Price_Result", resolvedItemName, formattedPrice, result.RetainerName));
+                var result = await this.priceProvider.GetLowestPriceAsync(itemId, worldId);
+                if (result == null) {
+                    this.chatGui.Print(this.localization.Translate("Command_Price_NoData", itemName));
+                    return;
                 }
-                else {
-                    this.chatGui.PrintError(this.localization.Translate("Command_Price_Error", resolvedItemName));
-                }
+
+                var formattedPrice = result.Price.ToString("N0");
+                var message = this.localization.Translate("Command_Price_Result", itemName, formattedPrice, result.RetainerName);
+                this.chatGui.Print(message);
             }
             catch (Exception ex) {
-                this.logger.Error(ex, $"Exception thrown while fetching price for {resolvedItemName} (ID: {itemId})");
-                this.chatGui.PrintError(this.localization.Translate("Command_Price_Error", resolvedItemName));
+                this.logger.Error(ex, $"Failed to fetch price for item ID {itemId}");
             }
         });
     }

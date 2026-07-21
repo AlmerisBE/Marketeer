@@ -1,0 +1,39 @@
+﻿using Marketeer.Features.UndercutTracking.Models;
+using Marketeer.Features.UndercutTracking.Services;
+using Xunit;
+
+namespace Marketeer.Tests.Features.UndercutTracking.Services;
+
+public class CompetitionStateServiceTests {
+
+    [Fact]
+    public void GetUndercutItems_InitialState_ReturnsEmptyList() {
+        // Arrange
+        var service = new CompetitionStateService();
+
+        // Act
+        var items = service.GetUndercutItems();
+
+        // Assert
+        Assert.NotNull(items);
+        Assert.Empty(items);
+    }
+
+    [Fact]
+    public void UpdateUndercuts_WithNewData_UpdatesStateSuccessfully() {
+        // Arrange
+        var service = new CompetitionStateService();
+        var undercuts = new List<UndercutItem> {
+            new UndercutItem { ItemId = 1, ItemName = "Potion", OurPrice = 100, ServerCheapestPrice = 90 }
+        };
+
+        // Act
+        service.UpdateUndercuts(undercuts);
+        var retrievedItems = service.GetUndercutItems();
+
+        // Assert
+        Assert.Single(retrievedItems);
+        Assert.Equal("Potion", retrievedItems[0].ItemName);
+        Assert.Equal(100u, retrievedItems[0].OurPrice);
+    }
+}

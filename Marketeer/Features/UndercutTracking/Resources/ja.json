@@ -1,4 +1,10 @@
 {
   "Undercuts_TabName": "価格競争",
-  "Undercuts_WorkInProgress": "Universalisの統合は現在開発中です。"
+  "Command_Price_Description": "アイテムの最安値を確認します。使用方法: /marketeer price lowest <アイテム名>",
+  "Command_Price_InvalidArgs": "無効な引数です。使用方法: /marketeer price lowest <アイテム名>",
+  "Command_Price_ItemNotFound": "アイテム '{0}' が見つかりませんでした。",
+  "Command_Price_Fetching": "{0} の最安値を取得中...",
+  "Command_Price_Result": "{0} の最安値: {1} ギル (リテイナー: {2})",
+  "Command_Price_Error": "{0} の価格データを取得できませんでした。サービスが利用できない可能性があります。",
+  "Undercuts_Notification": "[Marketeer] {0}個のアイテムが値下げ競争に巻き込まれています！「価格競争」タブを確認してください。"
 }

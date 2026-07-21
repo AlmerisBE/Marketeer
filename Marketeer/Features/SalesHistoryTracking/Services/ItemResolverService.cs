@@ -12,7 +12,7 @@ public class ItemResolverService : IItemResolverService {
 
     public ItemResolverService(IDataManager dataManager) {
         this.dataManager = dataManager;
-        this.nameToIdCache = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
+        this.nameToIdCache = new Dictionary<string, uint>(StringComparer.InvariantCultureIgnoreCase);
     }
 
     public uint ResolveItemId(string itemName) {
@@ -38,7 +38,6 @@ public class ItemResolverService : IItemResolverService {
                 searchName = itemName.Substring(0, itemName.Length - 3).Trim();
             }
             else {
-                // Handle the single unicode ellipsis character
                 searchName = itemName.Substring(0, itemName.Length - 1).Trim();
             }
         }
@@ -47,15 +46,14 @@ public class ItemResolverService : IItemResolverService {
             var name = item.Name.ToString();
 
             if (isTruncated) {
-                // If truncated, match the beginning of the string
-                if (name.StartsWith(searchName, StringComparison.OrdinalIgnoreCase)) {
+                // InvariantCultureIgnoreCase safely handles accented characters
+                if (name.StartsWith(searchName, StringComparison.InvariantCultureIgnoreCase)) {
                     this.nameToIdCache[itemName] = item.RowId;
                     return item.RowId;
                 }
             }
             else {
-                // If not truncated, require an exact match to avoid false positives
-                if (name.Equals(itemName, StringComparison.OrdinalIgnoreCase)) {
+                if (name.Equals(itemName, StringComparison.InvariantCultureIgnoreCase)) {
                     this.nameToIdCache[itemName] = item.RowId;
                     return item.RowId;
                 }

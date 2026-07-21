@@ -1,4 +1,10 @@
 {
   "Undercuts_TabName": "Unterbietungen",
-  "Undercuts_WorkInProgress": "Die Universalis-Integration befindet sich derzeit in der Entwicklung."
+  "Command_Price_Description": "Überprüft den niedrigsten Preis für einen Gegenstand. Verwendung: /marketeer price lowest <Gegenstandsname>",
+  "Command_Price_InvalidArgs": "Ungültige Argumente. Verwendung: /marketeer price lowest <Gegenstandsname>",
+  "Command_Price_ItemNotFound": "Gegenstand '{0}' konnte nicht gefunden werden.",
+  "Command_Price_Fetching": "Niedrigster Preis für {0} wird abgerufen...",
+  "Command_Price_Result": "Niedrigster Preis für {0}: {1} Gil (Gehilfe: {2})",
+  "Command_Price_Error": "Preisdaten für {0} konnten nicht abgerufen werden. Der Service ist möglicherweise nicht verfügbar.",
+  "Undercuts_Notification": "[Marketeer] {0} deiner Gegenstände wurden unterboten! Überprüfe den Reiter Unterbietungen."
 }

@@ -1,10 +1,10 @@
 {
-  "Undercuts_TabName": "Undercuts",
-  "Undercuts_WorkInProgress": "Universalis integration is currently under development.",
+  "Undercuts_TabName": "Competition",
   "Command_Price_Description": "Checks the lowest price for an item. Usage: /marketeer price lowest <item name>",
   "Command_Price_InvalidArgs": "Invalid arguments. Usage: /marketeer price lowest <item name>",
   "Command_Price_ItemNotFound": "Item '{0}' could not be found.",
   "Command_Price_Fetching": "Fetching lowest price for {0}...",
   "Command_Price_Result": "Lowest price for {0}: {1} Gil (Retainer: {2})",
-  "Command_Price_Error": "Could not fetch price data for {0}. The service might be unavailable."
+  "Command_Price_Error": "Could not fetch price data for {0}. The service might be unavailable.",
+  "Undercuts_Notification": "[Marketeer] {0} of your items have been undercut! Check the Competition tab."
 }

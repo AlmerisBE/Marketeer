@@ -5,6 +5,7 @@ using Marketeer.Core;
 using Marketeer.Features.Command.Services;
 using Marketeer.Features.Configuration.UI;
 using Marketeer.Features.SalesScanner.Contracts;
+using Marketeer.Features.UndercutTracking.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -66,6 +67,9 @@ public sealed class Plugin : IDalamudPlugin {
         var salesScanner = this.serviceProvider.GetRequiredService<ISalesScannerService>();
         salesScanner.Enable();
 
+        var monitorService = this.serviceProvider.GetRequiredService<IUndercutMonitorService>();
+        monitorService.StartMonitoring();
+
         // Force instantiation of the GameEventService so it starts listening immediately
         this.serviceProvider.GetRequiredService<Features.GameEvents.Contracts.IGameEventService>();
 
@@ -90,6 +94,9 @@ public sealed class Plugin : IDalamudPlugin {
     public void Dispose() {
         this.pluginInterface.UiBuilder.Draw -= this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi -= this.OnOpenConfigUi;
+
+        var monitorService = this.serviceProvider.GetService<IUndercutMonitorService>();
+        monitorService?.StopMonitoring();
 
         this.windowSystem.RemoveAllWindows();
         this.serviceProvider.Dispose();

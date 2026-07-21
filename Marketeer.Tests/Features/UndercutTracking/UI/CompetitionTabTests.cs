@@ -1,24 +1,26 @@
 ﻿using Marketeer.Features.Localization.Contracts;
+using Marketeer.Features.UndercutTracking.Contracts;
 using Marketeer.Features.UndercutTracking.UI;
 using NSubstitute;
 using Xunit;
 
 namespace Marketeer.Tests.Features.UndercutTracking.UI;
 
-public class UndercutsTabTests {
+public class CompetitionTabTests {
     [Fact]
     public void Name_ReturnsTranslatedTabName() {
         // Arrange
+        var mockCompetitionState = Substitute.For<ICompetitionStateService>();
         var mockLocalization = Substitute.For<ILocalizationService>();
-        mockLocalization.Translate("Undercuts_TabName").Returns("Undercuts");
+        mockLocalization.Translate("Undercuts_TabName").Returns("Concurrence");
 
-        var tab = new UndercutsTab(mockLocalization);
+        var tab = new CompetitionTab(mockCompetitionState, mockLocalization);
 
         // Act
         var result = tab.Name;
 
         // Assert
-        Assert.Equal("Undercuts", result);
+        Assert.Equal("Concurrence", result);
         Assert.Equal(40, tab.Priority);
     }
 }
