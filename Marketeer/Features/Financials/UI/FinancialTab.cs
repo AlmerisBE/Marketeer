@@ -2,23 +2,29 @@
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Financials.Contracts;
 using Marketeer.Features.Localization.Contracts;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Marketeer.Features.Financials.UI;
 
-public class FinancialsTab : IDashboardTab {
+public class FinancialsTab : INavigationNode {
     private IFinancialService financialService;
     private ILocalizationService localizationService;
 
     public string Name => this.localizationService.Translate("Financials_TabName") ?? "Financials";
     public int Priority => 30;
 
+    // INavigationNode implementation for a leaf node
+    public bool HasContent => true;
+    public bool DefaultExpanded => false;
+    public IEnumerable<INavigationNode> GetChildren() => [];
+
     public FinancialsTab(IFinancialService financialService, ILocalizationService localizationService) {
         this.financialService = financialService;
         this.localizationService = localizationService;
     }
 
-    public void Draw() {
+    public void DrawContent() {
         var summary = this.financialService.GetFinancialSummary();
 
         ImGui.TextColored(new Vector4(0.2f, 0.8f, 0.2f, 1.0f), this.localizationService.Translate("Financials_LiquidGil"));

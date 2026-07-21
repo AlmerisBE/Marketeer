@@ -35,11 +35,6 @@ public class ConfigWindow : Window {
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Financials")) {
-                this.financialsTab.Draw();
-                ImGui.EndTabItem();
-            }
-
             ImGui.EndTabBar();
         }
     }

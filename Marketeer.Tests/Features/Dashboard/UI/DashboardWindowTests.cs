@@ -9,31 +9,29 @@ namespace Marketeer.Tests.Features.Dashboard.UI;
 
 public class DashboardWindowTests {
     [Fact]
-    public void DashboardWindow_OnInitialization_SortsInjectedTabsByPriority() {
+    public void DashboardWindow_OnInitialization_SortsInjectedNodesByPriority() {
         // Arrange
         var mockLocalization = Substitute.For<ILocalizationService>();
         var mockAutomationService = Substitute.For<IRetainerAutomationService>();
 
         mockLocalization.Translate("Dashboard_Title").Returns("Marketeer - Dashboard");
 
-        var lowPriorityTab = Substitute.For<IDashboardTab>();
-        lowPriorityTab.Priority.Returns(100);
+        var lowPriorityNode = Substitute.For<INavigationNode>();
+        lowPriorityNode.Priority.Returns(100);
 
-        var highPriorityTab = Substitute.For<IDashboardTab>();
-        highPriorityTab.Priority.Returns(10);
+        var highPriorityNode = Substitute.For<INavigationNode>();
+        highPriorityNode.Priority.Returns(10);
 
-        // Inject them in the wrong order intentionally
-        var tabs = new List<IDashboardTab> { lowPriorityTab, highPriorityTab };
+        var nodes = new List<INavigationNode> { lowPriorityNode, highPriorityNode };
 
         // Act
-        var exception = Record.Exception(() => new DashboardWindow(tabs, mockLocalization, mockAutomationService));
+        var exception = Record.Exception(() => new DashboardWindow(nodes, mockLocalization, mockAutomationService));
 
         // Assert
         Assert.Null(exception);
 
-        // At this point, no exception ensures LINQ OrderBy executed successfully on the mocked properties.
-        // We verify the Priority property was accessed during instantiation.
-        var _ = lowPriorityTab.Received().Priority;
-        var __ = highPriorityTab.Received().Priority;
+        // Verify the Priority property was accessed to perform the sorting
+        var _ = lowPriorityNode.Received().Priority;
+        var __ = highPriorityNode.Received().Priority;
     }
 }

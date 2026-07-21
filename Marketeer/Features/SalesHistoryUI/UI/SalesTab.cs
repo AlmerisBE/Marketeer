@@ -10,7 +10,7 @@ using System.Numerics;
 
 namespace Marketeer.Features.SalesHistoryUI.UI;
 
-public class SalesTab : IDashboardTab {
+public class SalesTab : INavigationNode {
     private ILocalizationService localization;
     private ITextureProvider textureProvider;
     private ISalesDataPresenter presenter;
@@ -23,18 +23,24 @@ public class SalesTab : IDashboardTab {
     public string Name => this.localization.Translate("SalesTab_Title");
     public int Priority => 20;
 
+    // INavigationNode implementation for a leaf node
+    public bool HasContent => true;
+    public bool DefaultExpanded => false;
+    public IEnumerable<INavigationNode> GetChildren() => [];
+
     public SalesTab(
         ILocalizationService localization,
         ITextureProvider textureProvider,
         ISalesDataPresenter presenter,
         ISalesDataProvider dataProvider) {
+
         this.localization = localization;
         this.textureProvider = textureProvider;
         this.presenter = presenter;
         this.dataProvider = dataProvider;
     }
 
-    public void Draw() {
+    public void DrawContent() {
         var searchPlaceholder = this.localization.Translate("SalesTab_SearchPlaceholder");
         ImGui.InputText($"##salesSearch", ref this.searchQuery, 256);
 

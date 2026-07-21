@@ -13,6 +13,8 @@ public class SalesHistoryUIFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILocalizationProvider, SalesUiLocalizationProvider>();
         services.AddSingleton<ISalesDataPresenter, SalesDataPresenter>();
-        services.AddSingleton<IDashboardTab, SalesTab>();
+
+        // Forward to INavigationNode instead of IDashboardTab
+        services.AddSingleton<INavigationNode, SalesTab>();
     }
 }

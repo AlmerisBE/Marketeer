@@ -3,18 +3,24 @@ using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
 using Marketeer.Features.RetainerAutomation.Contracts;
 using Marketeer.Features.UndercutTracking.Contracts;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
 namespace Marketeer.Features.UndercutTracking.UI;
 
-public class CompetitionTab : IDashboardTab {
+public class CompetitionTab : INavigationNode {
     private ICompetitionStateService competitionState;
     private ILocalizationService localizationService;
     private IPriceUpdateAutomationService priceUpdateService;
 
     public string Name => this.localizationService.Translate("Undercuts_TabName");
     public int Priority => 40;
+
+    // INavigationNode implementation for a leaf node
+    public bool HasContent => true;
+    public bool DefaultExpanded => false;
+    public IEnumerable<INavigationNode> GetChildren() => [];
 
     public CompetitionTab(
         ICompetitionStateService competitionState,
@@ -26,7 +32,7 @@ public class CompetitionTab : IDashboardTab {
         this.priceUpdateService = priceUpdateService;
     }
 
-    public void Draw() {
+    public void DrawContent() {
         var items = this.competitionState.GetUndercutItems();
 
         if (items.Count == 0) {
@@ -75,10 +81,10 @@ public class CompetitionTab : IDashboardTab {
                         ImGui.TableNextRow();
 
                         ImGui.TableNextColumn();
-                        ImGui.Text(item.ItemName);
+                        ImGui.TextUnformatted(item.ItemName);
 
                         ImGui.TableNextColumn();
-                        ImGui.Text(item.RetainerName);
+                        ImGui.TextUnformatted(item.RetainerName);
 
                         ImGui.TableNextColumn();
                         ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), item.OurPrice.ToString("N0"));
@@ -87,7 +93,7 @@ public class CompetitionTab : IDashboardTab {
                         ImGui.TextColored(new Vector4(0.4f, 1.0f, 0.4f, 1.0f), item.ServerCheapestPrice.ToString("N0"));
 
                         ImGui.TableNextColumn();
-                        ImGui.Text(item.CompetitorName);
+                        ImGui.TextUnformatted(item.CompetitorName);
                     }
 
                     ImGui.EndTable();

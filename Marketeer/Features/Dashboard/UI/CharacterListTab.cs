@@ -2,12 +2,13 @@
 using Marketeer.Features.CharacterTracking.Contracts;
 using Marketeer.Features.Dashboard.Contracts;
 using Marketeer.Features.Localization.Contracts;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
 namespace Marketeer.Features.Dashboard.UI;
 
-public class CharacterListTab : IDashboardTab {
+public class CharacterListTab : INavigationNode {
     private ICharacterTrackerService trackerService;
     private IWorldDataPresenter worldDataPresenter;
     private ILocalizationService localizationService;
@@ -17,6 +18,11 @@ public class CharacterListTab : IDashboardTab {
 
     public string Name => this.localizationService.Translate("CharacterList_TabName");
     public int Priority => 10;
+
+    // INavigationNode properties
+    public bool HasContent => true;
+    public bool DefaultExpanded => false;
+    public IEnumerable<INavigationNode> GetChildren() => [];
 
     public CharacterListTab(
         ICharacterTrackerService trackerService,
@@ -34,7 +40,7 @@ public class CharacterListTab : IDashboardTab {
         this.retainerDetailsWindow = retainerDetailsWindow;
     }
 
-    public void Draw() {
+    public void DrawContent() {
         var characters = this.trackerService.GetKnownCharacters().ToList();
 
         if (characters.Count == 0) {
@@ -105,7 +111,6 @@ public class CharacterListTab : IDashboardTab {
                 else {
                     float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
 
-                    // Extended to 5 columns to fit the Details action button
                     if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
                         ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
                         ImGui.TableSetupColumn(gilColName, ImGuiTableColumnFlags.WidthFixed, 100f);
