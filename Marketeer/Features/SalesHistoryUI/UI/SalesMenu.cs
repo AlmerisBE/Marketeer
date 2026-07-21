@@ -10,7 +10,7 @@ using System.Numerics;
 
 namespace Marketeer.Features.SalesHistoryUI.UI;
 
-public class SalesTab : INavigationNode {
+public class SalesMenu : INavigationNode {
     private ILocalizationService localization;
     private ITextureProvider textureProvider;
     private ISalesDataPresenter presenter;
@@ -28,7 +28,7 @@ public class SalesTab : INavigationNode {
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public SalesTab(
+    public SalesMenu(
         ILocalizationService localization,
         ITextureProvider textureProvider,
         ISalesDataPresenter presenter,

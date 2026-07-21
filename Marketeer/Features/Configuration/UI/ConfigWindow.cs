@@ -8,9 +8,9 @@ namespace Marketeer.Features.Configuration.UI;
 
 public class ConfigWindow : Window {
     private IConfigurationService configurationService;
-    private FinancialsTab financialsTab;
+    private FinancialsMenu financialsTab;
 
-    public ConfigWindow(IConfigurationService configurationService, FinancialsTab financialsTab)
+    public ConfigWindow(IConfigurationService configurationService, FinancialsMenu financialsTab)
         : base("Marketeer Configuration", ImGuiWindowFlags.None) {
         this.configurationService = configurationService;
         this.financialsTab = financialsTab;

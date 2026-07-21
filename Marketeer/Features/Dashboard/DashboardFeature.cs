@@ -14,8 +14,8 @@ public class DashboardFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILocalizationProvider, DashboardLocalizationProvider>();
 
-        services.AddSingleton<CharacterListTab>();
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CharacterListTab>());
+        services.AddSingleton<CharacterListMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CharacterListMenu>());
 
         // Main window registration
         services.AddSingleton<DashboardWindow>();

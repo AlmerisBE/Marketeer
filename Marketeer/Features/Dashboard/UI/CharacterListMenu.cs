@@ -8,7 +8,7 @@ using System.Numerics;
 
 namespace Marketeer.Features.Dashboard.UI;
 
-public class CharacterListTab : INavigationNode {
+public class CharacterListMenu : INavigationNode {
     private ICharacterTrackerService trackerService;
     private IWorldDataPresenter worldDataPresenter;
     private ILocalizationService localizationService;
@@ -24,7 +24,7 @@ public class CharacterListTab : INavigationNode {
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public CharacterListTab(
+    public CharacterListMenu(
         ICharacterTrackerService trackerService,
         IWorldDataPresenter worldDataPresenter,
         ILocalizationService localizationService,

@@ -14,9 +14,9 @@ public class FinancialsFeature : IFeatureModule {
         services.AddSingleton<ILocalizationProvider, FinancialsLocalizationProvider>();
         services.AddSingleton<IFinancialService, FinancialService>();
 
-        services.AddSingleton<FinancialsTab>();
+        services.AddSingleton<FinancialsMenu>();
 
         // Forward to INavigationNode instead of IDashboardTab
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<FinancialsTab>());
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<FinancialsMenu>());
     }
 }

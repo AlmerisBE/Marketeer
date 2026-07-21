@@ -9,7 +9,7 @@ using System.Numerics;
 
 namespace Marketeer.Features.UndercutTracking.UI;
 
-public class CompetitionTab : INavigationNode {
+public class CompetitionMenu : INavigationNode {
     private ICompetitionStateService competitionState;
     private ILocalizationService localizationService;
     private IPriceUpdateAutomationService priceUpdateService;
@@ -22,7 +22,7 @@ public class CompetitionTab : INavigationNode {
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public CompetitionTab(
+    public CompetitionMenu(
         ICompetitionStateService competitionState,
         ILocalizationService localizationService,
         IPriceUpdateAutomationService priceUpdateService) {

@@ -18,10 +18,10 @@ public class UndercutTrackingFeature : IFeatureModule {
         services.AddSingleton<ICompetitionStateService, CompetitionStateService>();
         services.AddSingleton<IUndercutMonitorService, UndercutMonitorService>();
 
-        services.AddSingleton<CompetitionTab>();
+        services.AddSingleton<CompetitionMenu>();
 
         // Forward to INavigationNode instead of IDashboardTab
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionTab>());
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionMenu>());
 
         // Commands
         services.AddSingleton<ICommand, PriceCommand>();

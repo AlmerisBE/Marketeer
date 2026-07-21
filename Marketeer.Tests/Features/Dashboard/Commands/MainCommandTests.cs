@@ -14,7 +14,7 @@ public class MainCommandTests {
         var mockLocalizationService = Substitute.For<ILocalizationService>();
 
         // Act
-        var exception = Record.Exception(() => new FinancialsTab(mockFinancialService, mockLocalizationService));
+        var exception = Record.Exception(() => new FinancialsMenu(mockFinancialService, mockLocalizationService));
 
         // Assert
         Assert.Null(exception);

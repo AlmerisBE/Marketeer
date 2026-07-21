@@ -7,7 +7,7 @@ using System.Numerics;
 
 namespace Marketeer.Features.Financials.UI;
 
-public class FinancialsTab : INavigationNode {
+public class FinancialsMenu : INavigationNode {
     private IFinancialService financialService;
     private ILocalizationService localizationService;
 
@@ -19,7 +19,7 @@ public class FinancialsTab : INavigationNode {
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public FinancialsTab(IFinancialService financialService, ILocalizationService localizationService) {
+    public FinancialsMenu(IFinancialService financialService, ILocalizationService localizationService) {
         this.financialService = financialService;
         this.localizationService = localizationService;
     }

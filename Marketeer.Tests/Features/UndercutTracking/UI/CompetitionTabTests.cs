@@ -17,7 +17,7 @@ public class CompetitionTabTests {
 
         mockLocalization.Translate("Undercuts_TabName").Returns("Concurrence");
 
-        var tab = new CompetitionTab(mockCompetitionState, mockLocalization, mockAutomation);
+        var tab = new CompetitionMenu(mockCompetitionState, mockLocalization, mockAutomation);
 
         // Act
         var result = tab.Name;

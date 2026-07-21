@@ -15,6 +15,6 @@ public class SalesHistoryUIFeature : IFeatureModule {
         services.AddSingleton<ISalesDataPresenter, SalesDataPresenter>();
 
         // Forward to INavigationNode instead of IDashboardTab
-        services.AddSingleton<INavigationNode, SalesTab>();
+        services.AddSingleton<INavigationNode, SalesMenu>();
     }
 }
