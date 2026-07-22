@@ -1,5 +1,8 @@
 {
   "RetainerMenu_SellItems": "Gegenstände aus dem Gehilfeninventar auf dem Markt verkaufen",
   "RetainerMenu_SalesHistory": "Verkaufsverlauf",
-  "RetainerMenu_Quit": "Beenden"
+  "RetainerMenu_Quit": "Beenden",
+  "RetainerMenu_AdjustPrice": "Preis anpassen",
+  "RetainerMenu_StopRetaining": "Zurückziehen",
+  "RetainerMenu_ReturnToInventory": "Ins Inventar verschieben"
 }

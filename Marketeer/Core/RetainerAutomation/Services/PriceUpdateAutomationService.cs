@@ -3,6 +3,7 @@ using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.CompetitionTracking.Models;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
 using Marketeer.API.RetainerAutomation.Models;
@@ -29,6 +30,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     private IObjectTable objectTable;
     private ILoggerService logger;
     private IConfigurationService configService;
+    private ILocalizationService localization;
 
     private Dictionary<string, Queue<UndercutItem>> tasksByRetainer;
     private UndercutItem? currentItemTask;
@@ -47,7 +49,8 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         IInventoryService inventoryService,
         IObjectTable objectTable,
         ILoggerService logger,
-        IConfigurationService configService) {
+        IConfigurationService configService,
+        ILocalizationService localization) {
 
         this.orchestrator = orchestrator;
         this.uiInteraction = uiInteraction;
@@ -56,6 +59,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.objectTable = objectTable;
         this.logger = logger;
         this.configService = configService;
+        this.localization = localization;
 
         this.tasksByRetainer = new Dictionary<string, Queue<UndercutItem>>();
         this.currentRetainerName = string.Empty;
@@ -104,7 +108,8 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         }
 
         if (DateTime.Now > this.timeoutAt && this.internalStep != PriceUpdateInternalStep.ProcessNextItem) {
-            this.logger.Error($"Price update step {this.internalStep} timed out.");
+            this.logger.Error($"Price update step {this.internalStep} timed out. Attempting recovery.");
+            this.uiInteraction.CloseUnexpectedWindows();
             this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 0.5);
             return false;
         }
@@ -129,9 +134,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.currentItemTask = queue.Dequeue();
 
         var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
-
         if (uiIndex == -1) {
-            this.logger.Warning($"[Marketeer] Cannot find UI index for slot {this.currentItemTask.SlotIndex} (Item: {this.currentItemTask.ItemName}). Skipping.");
             return this.ProcessNextItem();
         }
 
@@ -142,18 +145,23 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
     private void ProcessWaitContextMenu() {
         if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-            this.SetInternalStep(PriceUpdateInternalStep.SelectAdjustPrice, 0.1);
+            this.SetInternalStep(PriceUpdateInternalStep.SelectAdjustPrice, 0.1, 5.0);
         }
     }
 
     private void ProcessSelectAdjustPrice() {
-        this.uiInteraction.SelectContextMenuItem(0);
-        this.SetInternalStep(PriceUpdateInternalStep.WaitItemMenu, 0.2, 5.0);
+        var localizedText = this.localization.Translate("RetainerMenu_AdjustPrice");
+        var menuIndex = this.uiInteraction.GetContextMenuItemIndex(localizedText);
+
+        if (menuIndex != -1) {
+            this.uiInteraction.SelectContextMenuItem(menuIndex);
+            this.SetInternalStep(PriceUpdateInternalStep.WaitItemMenu, 0.2, 5.0);
+        }
     }
 
     private void ProcessWaitItemMenu() {
         if (this.uiInteraction.IsAddonReady("RetainerSell")) {
-            this.SetInternalStep(PriceUpdateInternalStep.ChangePrice, 0.2 + this.GetRandomDelay());
+            this.SetInternalStep(PriceUpdateInternalStep.ChangePrice, 0.2 + this.GetRandomDelay(), 5.0);
         }
     }
 

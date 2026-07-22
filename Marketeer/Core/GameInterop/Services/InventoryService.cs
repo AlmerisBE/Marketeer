@@ -2,14 +2,12 @@
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.GameInterop.Models;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Marketeer.Core.GameInterop.Services;
 
 public class InventoryService : IInventoryService {
     public unsafe int GetItemCountInInventory(uint itemId) {
         var inventoryManager = InventoryManager.Instance();
-
         if (inventoryManager == null) {
             return 0;
         }
@@ -19,7 +17,6 @@ public class InventoryService : IInventoryService {
 
     public unsafe uint GetRetainerMarketItemPrice(int slotIndex) {
         var inventoryManager = InventoryManager.Instance();
-
         if (inventoryManager == null) {
             return 0u;
         }
@@ -30,13 +27,11 @@ public class InventoryService : IInventoryService {
     public unsafe IReadOnlyList<InventorySlotInfo> GetInventorySlots(InventoryType inventoryType) {
         var slots = new List<InventorySlotInfo>();
         var inventoryManager = InventoryManager.Instance();
-
         if (inventoryManager == null) {
             return slots;
         }
 
         var container = inventoryManager->GetInventoryContainer(inventoryType);
-
         if (container == null) {
             return slots;
         }
@@ -73,16 +68,7 @@ public class InventoryService : IInventoryService {
     }
 
     public int GetUiIndexForRetainerMarketItem(int slotIndex) {
-        var slots = this.GetInventorySlots(InventoryType.RetainerMarket);
-
-        var occupiedSlots = slots.Where(s => s.IsOccupied).OrderBy(s => s.SlotIndex).ToList();
-
-        for (int i = 0; i < occupiedSlots.Count; i++) {
-            if (occupiedSlots[i].SlotIndex == slotIndex) {
-                return i;
-            }
-        }
-
-        return -1;
+        // RetainerSellList UI strictly maps 1:1 to market inventory slot indices 0..19
+        return slotIndex;
     }
 }

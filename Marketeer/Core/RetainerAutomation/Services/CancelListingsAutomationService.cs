@@ -2,6 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.MarketListings.Contracts;
 using Marketeer.API.MarketListings.Models;
@@ -16,7 +17,7 @@ namespace Marketeer.Core.RetainerAutomation.Services;
 public enum CancelListingInternalStep {
     ProcessNextItem,
     WaitContextMenu,
-    SelectStopRetaining,
+    SelectCancelOption,
     WaitYesNo,
     ConfirmYesNo,
     WaitItemRemoved
@@ -30,6 +31,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
     private IObjectTable objectTable;
     private ILoggerService logger;
     private IConfigurationService configService;
+    private ILocalizationService localization;
 
     private Dictionary<string, Queue<SuboptimalListing>> tasksByRetainer;
     private SuboptimalListing? currentItemTask;
@@ -48,7 +50,8 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         IInventoryService inventoryService,
         IObjectTable objectTable,
         ILoggerService logger,
-        IConfigurationService configService) {
+        IConfigurationService configService,
+        ILocalizationService localization) {
 
         this.orchestrator = orchestrator;
         this.uiInteraction = uiInteraction;
@@ -57,6 +60,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         this.objectTable = objectTable;
         this.logger = logger;
         this.configService = configService;
+        this.localization = localization;
 
         this.tasksByRetainer = new Dictionary<string, Queue<SuboptimalListing>>();
         this.currentRetainerName = string.Empty;
@@ -105,7 +109,8 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         }
 
         if (DateTime.Now > this.timeoutAt && this.internalStep != CancelListingInternalStep.ProcessNextItem) {
-            this.logger.Error($"Cancellation step {this.internalStep} timed out.");
+            this.logger.Error($"Cancellation step {this.internalStep} timed out. Attempting recovery.");
+            this.uiInteraction.CloseUnexpectedWindows();
             this.SetInternalStep(CancelListingInternalStep.ProcessNextItem, 0.5);
             return false;
         }
@@ -113,7 +118,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         switch (this.internalStep) {
             case CancelListingInternalStep.ProcessNextItem: return this.ProcessNextItem();
             case CancelListingInternalStep.WaitContextMenu: this.ProcessWaitContextMenu(); return false;
-            case CancelListingInternalStep.SelectStopRetaining: this.ProcessSelectStopRetaining(); return false;
+            case CancelListingInternalStep.SelectCancelOption: this.ProcessSelectCancelOption(); return false;
             case CancelListingInternalStep.WaitYesNo: this.ProcessWaitYesNo(); return false;
             case CancelListingInternalStep.ConfirmYesNo: this.ProcessConfirmYesNo(); return false;
             case CancelListingInternalStep.WaitItemRemoved: this.ProcessWaitItemRemoved(); return false;
@@ -149,43 +154,61 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
 
     private void ProcessWaitContextMenu() {
         if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-            this.SetInternalStep(CancelListingInternalStep.SelectStopRetaining, 0.1);
+            this.SetInternalStep(CancelListingInternalStep.SelectCancelOption, 0.1, 5.0);
         }
     }
 
-    private void ProcessSelectStopRetaining() {
-        if (this.currentItemTask == null) {
+    private void ProcessSelectCancelOption() {
+        // Try 'Return to Inventory' option first (bypasses Yes/No dialog)
+        var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
+        var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
+
+        if (menuIndex != -1) {
+            this.uiInteraction.SelectContextMenuItem(menuIndex);
+            if (this.currentItemTask != null) {
+                this.logger.Info($"Returned suboptimal listing to player inventory for '{this.currentItemTask.ItemName}'.");
+            }
+
+            this.SetInternalStep(CancelListingInternalStep.WaitItemRemoved, 0.5, 5.0);
             return;
         }
 
-        // Expert trick: The index shifts based on stack size
-        var slots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
-        var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.CurrentPrice);
+        // Fallback to 'Stop Retaining' option (requires Yes/No confirmation)
+        var stopRetainingText = this.localization.Translate("RetainerMenu_StopRetaining");
+        menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopRetainingText);
 
-        int menuIndex = (targetSlot != null && targetSlot.Quantity > 1) ? 2 : 1;
+        if (menuIndex != -1) {
+            this.uiInteraction.SelectContextMenuItem(menuIndex);
+            if (this.currentItemTask != null) {
+                this.logger.Info($"Stopping retaining for listing '{this.currentItemTask.ItemName}'.");
+            }
 
-        this.uiInteraction.SelectContextMenuItem(menuIndex);
-        this.SetInternalStep(CancelListingInternalStep.WaitYesNo, 0.2, 5.0);
+            this.SetInternalStep(CancelListingInternalStep.WaitYesNo, 0.2, 5.0);
+        }
     }
 
     private void ProcessWaitYesNo() {
         if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
-            this.SetInternalStep(CancelListingInternalStep.ConfirmYesNo, 0.2 + this.GetRandomDelay());
+            this.SetInternalStep(CancelListingInternalStep.ConfirmYesNo, 0.2 + this.GetRandomDelay(), 5.0);
         }
     }
 
     private void ProcessConfirmYesNo() {
         this.uiInteraction.ConfirmYesNo();
-        if (this.currentItemTask != null) {
-            this.logger.Info($"Cancelled suboptimal listing for '{this.currentItemTask.ItemName}'.");
-        }
-
         this.SetInternalStep(CancelListingInternalStep.WaitItemRemoved, 0.5, 5.0);
     }
 
     private void ProcessWaitItemRemoved() {
-        if (!this.uiInteraction.IsAddonReady("SelectYesNo")) {
-            this.SetInternalStep(CancelListingInternalStep.ProcessNextItem, 0.5);
+        if (this.currentItemTask == null) {
+            this.SetInternalStep(CancelListingInternalStep.ProcessNextItem, 0.2 + this.GetRandomDelay());
+            return;
+        }
+
+        var slots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
+        var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.CurrentPrice);
+
+        if (targetSlot == null) {
+            this.SetInternalStep(CancelListingInternalStep.ProcessNextItem, 0.2 + this.GetRandomDelay());
         }
     }
 

@@ -23,17 +23,23 @@ public class GameEventService : IGameEventService, IDisposable {
         this.framework = framework;
         this.logger = logger;
 
-        // Hook the main summoning bell list
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", this.OnRetainerListOpened);
-
-        // Hook the opening and closing of the listing window
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", this.OnSellListOpened);
         this.addonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSellList", this.OnSellListClosed);
-
-        // Hook when the user finishes changing a price (the RetainerSell window closes)
         this.addonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnItemPriceModified);
 
+        // Native interaction logger for manual user inspection
+        this.addonLifecycle.RegisterListener(AddonEvent.PreReceiveEvent, "RetainerSellList", this.OnRetainerSellListReceiveEvent);
+
         this.framework.Update += this.OnFrameworkUpdate;
+    }
+
+    private void OnRetainerSellListReceiveEvent(AddonEvent type, AddonArgs args) {
+        if (args is not AddonReceiveEventArgs eventArgs) {
+            return;
+        }
+
+        this.logger.Info($"[Dev UI Logger] RetainerSellList Event Received | Type: {eventArgs.AtkEventType} | Param: {eventArgs.EventParam}");
     }
 
     private void OnRetainerListOpened(AddonEvent type, AddonArgs args) {
@@ -62,7 +68,6 @@ public class GameEventService : IGameEventService, IDisposable {
             return;
         }
 
-        // Throttle to 500ms to catch asynchronous data loading without impacting performance
         if ((DateTime.Now - this.lastRefreshTime).TotalMilliseconds > 500) {
             this.lastRefreshTime = DateTime.Now;
             this.RetainerSellListUpdated?.Invoke();
@@ -74,6 +79,7 @@ public class GameEventService : IGameEventService, IDisposable {
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "RetainerSellList", this.OnSellListOpened);
         this.addonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "RetainerSellList", this.OnSellListClosed);
         this.addonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "RetainerSell", this.OnItemPriceModified);
+        this.addonLifecycle.UnregisterListener(AddonEvent.PreReceiveEvent, "RetainerSellList", this.OnRetainerSellListReceiveEvent);
 
         this.framework.Update -= this.OnFrameworkUpdate;
     }

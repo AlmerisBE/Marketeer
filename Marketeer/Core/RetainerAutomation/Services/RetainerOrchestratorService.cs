@@ -85,12 +85,16 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             return;
         }
 
+        // Globally skip any Talk/Dialogue window that intercepts the automation
+        this.uiInteractionService.SkipDialogue();
+
         if (DateTime.Now < this.actionAvailableAt) {
             return;
         }
 
         if (DateTime.Now > this.timeoutAt) {
             this.logger.Error($"Orchestration step {this.currentStep} timed out. Aborting.");
+            this.uiInteractionService.CloseUnexpectedWindows();
             this.Abort();
             return;
         }
