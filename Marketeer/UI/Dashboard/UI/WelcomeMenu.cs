@@ -11,6 +11,7 @@ public class WelcomeMenu : INavigationNode {
     private IDalamudPluginInterface pluginInterface;
     private ILocalizationService localizationService;
 
+    public string GroupName => this.localizationService.Translate("Group_General");
     public string Name => this.localizationService.Translate("Dashboard_WelcomeTab");
     public int Priority => 0;
     public bool HasContent => true;

@@ -19,10 +19,9 @@ public class CharacterListMenu : INavigationNode {
     private IMarketListingTrackerService marketListingTrackerService;
     private RetainerDetailsWindow retainerDetailsWindow;
 
+    public string GroupName => string.Empty;
     public string Name => this.localizationService.Translate("CharacterList_TabName");
     public int Priority => 10;
-
-    // INavigationNode properties
     public bool HasContent => true;
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -54,13 +53,11 @@ public class CharacterListMenu : INavigationNode {
         var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
         var forgetTooltip = this.localizationService.Translate("CharacterList_TooltipForget");
         var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
-
         var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
         var gilColName = this.localizationService.Translate("CharacterList_ColGil");
         var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
         var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
         var detailsButtonLabel = this.localizationService.Translate("Dashboard_DetailsButton");
-
         var updateRequiredTooltip = this.localizationService.Translate("Dashboard_PriceUpdateRequired");
         var syncRequiredTooltip = this.localizationService.Translate("Dashboard_SyncRequired");
 
@@ -133,7 +130,6 @@ public class CharacterListMenu : INavigationNode {
 
                             var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
                             var distinctItems = listings.Count;
-
                             var totalValue = listings.Sum(l => l.TotalPrice);
 
                             var needsPriceUpdate = distinctItems > 0 && listings.Any(l => l.PricePerUnit == 0);

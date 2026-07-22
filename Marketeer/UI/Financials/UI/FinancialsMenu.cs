@@ -11,11 +11,12 @@ public class FinancialsMenu : INavigationNode {
     private IFinancialService financialService;
     private ILocalizationService localizationService;
 
+    public string GroupName => this.localizationService.Translate("Group_Statistics");
     public string Name => this.localizationService.Translate("Financials_TabName") ?? "Financials";
     public int Priority => 30;
-
     public bool HasContent => true;
     public bool DefaultExpanded => false;
+
     public IEnumerable<INavigationNode> GetChildren() => [];
 
     public FinancialsMenu(IFinancialService financialService, ILocalizationService localizationService) {

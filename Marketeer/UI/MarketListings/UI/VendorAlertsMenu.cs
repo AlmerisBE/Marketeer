@@ -13,6 +13,7 @@ public class VendorAlertsMenu : INavigationNode {
     private ILocalizationService localization;
     private ICancelListingsAutomationService cancelService;
 
+    public string GroupName => this.localization.Translate("Group_Market");
     public string Name => this.localization.Translate("VendorAlerts_TabName");
     public int Priority => 50;
 
@@ -37,7 +38,6 @@ public class VendorAlertsMenu : INavigationNode {
         ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), this.localization.Translate("VendorAlerts_WarningMessage", listings.Count));
         ImGui.Spacing();
 
-        // Ajout du bouton d'automatisation
         if (this.cancelService.IsCancelling) {
             ImGui.BeginDisabled();
             ImGui.Button(this.localization.Translate("VendorAlerts_CancelActive"), new Vector2(200f, 24f));

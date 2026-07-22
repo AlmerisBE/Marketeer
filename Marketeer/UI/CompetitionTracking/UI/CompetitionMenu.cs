@@ -14,6 +14,7 @@ public class CompetitionMenu : INavigationNode {
     private ILocalizationService localizationService;
     private IPriceUpdateAutomationService priceUpdateService;
 
+    public string GroupName => this.localizationService.Translate("Group_Market");
     public string Name => this.localizationService.Translate("Undercuts_TabName");
     public int Priority => 40;
 

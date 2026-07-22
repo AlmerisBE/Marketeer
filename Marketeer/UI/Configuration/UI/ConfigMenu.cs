@@ -12,9 +12,9 @@ public class ConfigMenu : INavigationNode {
     private ILocalizationService localizationService;
     private string newWhitelistName = string.Empty;
 
+    public string GroupName => this.localizationService.Translate("Group_General");
     public string Name => this.localizationService.Translate("Config_TabName");
     public int Priority => 100;
-
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 

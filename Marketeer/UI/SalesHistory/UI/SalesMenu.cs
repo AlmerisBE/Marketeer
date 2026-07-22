@@ -20,10 +20,10 @@ public class SalesMenu : INavigationNode {
     private SalesSortColumn currentSortColumn = SalesSortColumn.Quantity;
     private bool isSortAscending = false;
 
+    public string GroupName => this.localization.Translate("Group_Market");
     public string Name => this.localization.Translate("SalesTab_Title");
     public int Priority => 20;
 
-    // INavigationNode implementation for a leaf node
     public bool HasContent => true;
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];

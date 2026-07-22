@@ -1,4 +1,5 @@
 {
+  "Group_Market": "Marché",
   "Undercuts_TabName": "Concurrence",
   "Command_Price_Description": "Vérifie le prix le plus bas pour un objet. Utilisation : /marketeer price lowest <nom de l'objet>",
   "Command_Price_InvalidArgs": "Arguments invalides. Utilisation : /marketeer price lowest <nom de l'objet>",

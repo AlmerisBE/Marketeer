@@ -18,8 +18,9 @@ public class CharacterNode : INavigationNode {
     private IRetainerDetailsView retainerDetailsView;
     private IMarketListingTrackerService marketListingTrackerService;
 
+    public string GroupName => string.Empty;
     public string Name => this.Character.Name;
-    public int Priority => 0; // Sorted by engine usually
+    public int Priority => 0;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
@@ -47,7 +48,6 @@ public class CharacterNode : INavigationNode {
     }
 
     public void DrawContent() {
-        // We pass the navigation callback so the Summary View can open the retainer directly
         this.summaryView.Draw(this.Character, retainerId => {
             var children = this.GetChildren().Cast<RetainerNode>();
             var targetNode = children.FirstOrDefault(r => r.Retainer.RetainerId == retainerId);

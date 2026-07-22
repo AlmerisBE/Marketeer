@@ -20,6 +20,7 @@ public class CharacterOverviewMenu : INavigationNode {
     private IMarketListingTrackerService marketListingTrackerService;
     private ILocalizationService localizationService;
 
+    public string GroupName => this.localizationService.Translate("Group_Characters");
     public string Name => this.localizationService.Translate("CharacterOverview_TabName");
     public int Priority => 10;
     public bool HasContent => true;

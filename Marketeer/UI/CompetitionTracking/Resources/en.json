@@ -1,4 +1,5 @@
 {
+  "Group_Market": "Market",
   "Undercuts_TabName": "Competition",
   "Command_Price_Description": "Checks the lowest price for an item. Usage: /marketeer price lowest <item name>",
   "Command_Price_InvalidArgs": "Invalid arguments. Usage: /marketeer price lowest <item name>",

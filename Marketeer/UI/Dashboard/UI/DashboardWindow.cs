@@ -27,7 +27,6 @@ public class DashboardWindow : Window {
         this.automationService = automationService;
         this.navigationService = navigationService;
 
-        // Default home page selection, checking for null to avoid CS8604
         if (this.navigationService.SelectedNode == null) {
             var defaultNode = this.rootNodes.FirstOrDefault();
             if (defaultNode != null) {
@@ -43,9 +42,23 @@ public class DashboardWindow : Window {
 
     public override void Draw() {
         if (ImGui.BeginChild("Sidebar", new Vector2(220, 0), true)) {
-
             if (ImGui.BeginChild("TreeArea", new Vector2(0, -30), false)) {
-                this.DrawNodeTree(this.rootNodes);
+                var groupedNodes = this.rootNodes
+                    .GroupBy(n => n.GroupName)
+                    .OrderBy(g => g.Min(n => n.Priority));
+
+                foreach (var group in groupedNodes) {
+                    if (string.IsNullOrEmpty(group.Key)) {
+                        this.DrawNodeTree(group);
+                    }
+                    else {
+                        if (ImGui.CollapsingHeader(group.Key, ImGuiTreeNodeFlags.DefaultOpen)) {
+                            ImGui.Indent(10f);
+                            this.DrawNodeTree(group);
+                            ImGui.Unindent(10f);
+                        }
+                    }
+                }
                 ImGui.EndChild();
             }
 
@@ -62,6 +75,7 @@ public class DashboardWindow : Window {
             if (this.navigationService.SelectedNode != null && this.navigationService.SelectedNode.HasContent) {
                 this.navigationService.SelectedNode.DrawContent();
             }
+
             ImGui.EndChild();
         }
     }
@@ -75,9 +89,11 @@ public class DashboardWindow : Window {
             if (isLeaf) {
                 flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
             }
+
             if (node.DefaultExpanded) {
                 flags |= ImGuiTreeNodeFlags.DefaultOpen;
             }
+
             if (this.navigationService.SelectedNode == node) {
                 flags |= ImGuiTreeNodeFlags.Selected;
             }

@@ -9,6 +9,7 @@ public class RetainerNode : INavigationNode {
     public RetainerDisplayData Retainer { get; }
     private IRetainerDetailsView detailsView;
 
+    public string GroupName => string.Empty;
     public string Name => this.Retainer.Name;
     public int Priority => 0;
     public bool HasContent => true;
