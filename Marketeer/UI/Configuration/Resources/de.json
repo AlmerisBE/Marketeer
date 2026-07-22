@@ -9,5 +9,6 @@
   "Config_WhitelistRemove": "Entfernen",
   "Config_AutomationDelayToggle": "Zufällige Verzögerung zwischen Aktionen aktivieren",
   "Config_AutomationDelayMin": "Min Verzögerung (s)",
-  "Config_AutomationDelayMax": "Max Verzögerung (s)"
+  "Config_AutomationDelayMax": "Max Verzögerung (s)",
+  "Config_AutoWhitelistOwnRetainers": "Eigene Gehilfen automatisch auf die Whitelist setzen"
 }

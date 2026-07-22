@@ -105,4 +105,56 @@ public class CompetitionMonitorServiceTests {
             list.Count() == 1 && list.First().CompetitorName == "CompetitorX"
         ));
     }
+
+    [Fact]
+    public async Task CheckUndercutsAsync_WhenCompetitorIsOwnRetainerAndAutoWhitelistEnabled_IgnoresUndercut() {
+        // Arrange
+        var mockRetainerState = Substitute.For<IRetainerStateService>();
+        var mockPriceProvider = Substitute.For<IServerPriceProvider>();
+        var mockCompetitionState = Substitute.For<ICompetitionStateService>();
+        var mockResolver = Substitute.For<IItemResolverService>();
+        var mockChatGui = Substitute.For<IChatGui>();
+        var mockLocalization = Substitute.For<ILocalizationService>();
+        var mockLogger = Substitute.For<ILoggerService>();
+        var mockFramework = Substitute.For<IFramework>();
+        var mockMarketTracker = Substitute.For<IMarketListingTrackerService>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+
+        var pluginConfig = new PluginConfiguration { AutoWhitelistOwnRetainers = true };
+        var charDataFin = new Marketeer.API.Financials.Models.CharacterFinancialData { CharacterName = "OtherCharacter" };
+        charDataFin.Retainers.Add(1, new Marketeer.API.Financials.Models.RetainerFinancialData { Name = "OwnRetainerB" });
+        pluginConfig.FinancialRecords.Add("OtherCharacter_33", charDataFin);
+
+        mockConfigService.GetConfig().Returns(pluginConfig);
+
+        var characterData = new List<CharacterMarketData> {
+            new CharacterMarketData {
+                CharacterName = "TestPlayer",
+                HomeWorldId = 33u,
+                Listings = new List<RetainerListing> {
+                    new RetainerListing { ItemId = 100, RetainerName = "RetainerA", CurrentPrice = 5000 }
+                }
+            }
+        };
+
+        mockRetainerState.GetAllCharactersListings().Returns(characterData);
+
+        var serverPrices = new List<LowestPriceResult> {
+            new LowestPriceResult { ItemId = 100, Price = 4500, RetainerName = "OwnRetainerB" }
+        };
+        mockPriceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), 33u)
+            .Returns(Task.FromResult<IReadOnlyList<LowestPriceResult>>(serverPrices));
+
+        mockResolver.ResolveItemName(100).Returns("Potion");
+
+        var service = new CompetitionMonitorService(
+            mockRetainerState, mockPriceProvider, mockCompetitionState, mockResolver,
+            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework, mockConfigService);
+
+        // Act
+        await service.CheckUndercutsAsync();
+
+        // Assert
+        mockCompetitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(list => !list.Any()));
+    }
 }

@@ -90,6 +90,14 @@ public class ConfigMenu : INavigationNode {
 
         ImGui.TextUnformatted(this.localizationService.Translate("Config_WhitelistLabel"));
 
+        bool autoWhitelist = config.AutoWhitelistOwnRetainers;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_AutoWhitelistOwnRetainers"), ref autoWhitelist)) {
+            config.AutoWhitelistOwnRetainers = autoWhitelist;
+            isChanged = true;
+        }
+
+        ImGui.Spacing();
+
         ImGui.SetNextItemWidth(200f);
         ImGui.InputText("##newWhitelist", ref this.newWhitelistName, 64);
         ImGui.SameLine();

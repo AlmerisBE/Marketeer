@@ -9,5 +9,6 @@
   "Config_WhitelistRemove": "削除",
   "Config_AutomationDelayToggle": "アクション間のランダム遅延を有効にする",
   "Config_AutomationDelayMin": "最小遅延 (秒)",
-  "Config_AutomationDelayMax": "最大遅延 (秒)"
+  "Config_AutomationDelayMax": "最大遅延 (秒)",
+  "Config_AutoWhitelistOwnRetainers": "自分のリテイナーを自動的にホワイトリストに追加する"
 }

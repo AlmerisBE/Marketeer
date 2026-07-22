@@ -15,6 +15,7 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public int UniversalisCacheMinutes { get; set; } = 30;
     public List<string> CompetitorWhitelist { get; set; } = new();
+    public bool AutoWhitelistOwnRetainers { get; set; } = true;
 
     public bool EnableAutomationDelay { get; set; } = false;
     public int AutomationDelayMin { get; set; } = 1;
