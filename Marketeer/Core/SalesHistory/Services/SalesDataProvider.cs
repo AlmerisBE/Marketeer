@@ -1,5 +1,6 @@
 ﻿using Marketeer.API.SalesHistory.Contracts;
 using Marketeer.API.SalesHistory.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,9 +20,10 @@ public class SalesDataProvider : ISalesDataProvider {
         this.itemResolver = itemResolver;
     }
 
-    public IReadOnlyList<ISalesViewRecord> GetSalesData() {
+    public IReadOnlyList<ISalesViewRecord> GetSalesData(SalesPeriod period) {
         var rawSales = this.salesRepository.GetAllSales();
-        var groupedSales = rawSales.GroupBy(s => s.ItemId);
+        var filteredSales = this.FilterByPeriod(rawSales, period);
+        var groupedSales = filteredSales.GroupBy(s => s.ItemId);
         var viewRecords = new List<ISalesViewRecord>();
 
         foreach (var group in groupedSales) {
@@ -41,5 +43,20 @@ public class SalesDataProvider : ISalesDataProvider {
         }
 
         return viewRecords;
+    }
+
+    private IEnumerable<SaleRecord> FilterByPeriod(IEnumerable<SaleRecord> sales, SalesPeriod period) {
+        var today = DateTime.UtcNow.Date;
+
+        return period switch {
+            SalesPeriod.Today => sales.Where(s => s.SaleDate.Date == today),
+            SalesPeriod.Yesterday => sales.Where(s => s.SaleDate.Date == today.AddDays(-1)),
+            SalesPeriod.ThisWeek => sales.Where(s => s.SaleDate.Date >= today.AddDays(-(int)today.DayOfWeek)),
+            SalesPeriod.ThisMonth => sales.Where(s => s.SaleDate.Month == today.Month && s.SaleDate.Year == today.Year),
+            SalesPeriod.LastMonth => sales.Where(s => s.SaleDate.Month == today.AddMonths(-1).Month && s.SaleDate.Year == today.AddMonths(-1).Year),
+            SalesPeriod.ThisQuarter => sales.Where(s => s.SaleDate.Year == today.Year && (s.SaleDate.Month - 1) / 3 == (today.Month - 1) / 3),
+            SalesPeriod.ThisYear => sales.Where(s => s.SaleDate.Year == today.Year),
+            _ => sales
+        };
     }
 }

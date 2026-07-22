@@ -23,6 +23,7 @@ public class SalesHistoryFeature : IFeatureModule {
         services.AddSingleton<ISalesDataProvider, SalesDataProvider>();
         services.AddSingleton<IItemResolverService, ItemResolverService>();
         services.AddSingleton<ISalesInferenceService, SalesInferenceService>();
+        services.AddSingleton<ISalesStatisticsService, SalesStatisticsService>();
 
         // Consolidated Scanner Service
         services.AddSingleton<ISalesScannerService, SalesScannerService>();
@@ -33,5 +34,8 @@ public class SalesHistoryFeature : IFeatureModule {
 
         services.AddSingleton<SalesMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<SalesMenu>());
+
+        services.AddSingleton<SalesStatisticsMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<SalesStatisticsMenu>());
     }
 }

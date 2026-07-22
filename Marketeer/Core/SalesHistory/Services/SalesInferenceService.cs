@@ -34,18 +34,17 @@ public class SalesInferenceService : ISalesInferenceService {
                 continue;
             }
 
-            // Step 3 & 10: The slot is empty, but it was occupied previously.
             if (isFirstScan) {
-                // Step 4: First scan of the inventory. Disappearance means a sale occurred while the retainer was dismissed.
                 this.logger.Info($"Inferred sale for Item ID {previousListing.ItemId} on Slot {previousListing.SlotIndex}. Price: {previousListing.UnitPrice}.");
 
                 inferredSales.Add(new SaleRecord {
                     RetainerId = retainerId,
                     ItemId = previousListing.ItemId,
                     Quantity = previousListing.Quantity,
-                    UnitPrice = previousListing.UnitPrice, // Includes tax as displayed on the market
+                    UnitPrice = previousListing.UnitPrice,
                     BuyerName = "Unknown (Inferred)",
-                    SaleDate = DateTime.UtcNow
+                    SaleDate = DateTime.UtcNow,
+                    ListingDate = previousListing.ListingDate
                 });
             }
             else {

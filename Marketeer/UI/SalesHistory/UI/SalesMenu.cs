@@ -5,6 +5,7 @@ using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.SalesHistory.Contracts;
 using Marketeer.API.SalesHistory.Models;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -19,6 +20,7 @@ public class SalesMenu : INavigationNode {
     private string searchQuery = string.Empty;
     private SalesSortColumn currentSortColumn = SalesSortColumn.Quantity;
     private bool isSortAscending = false;
+    private SalesPeriod currentPeriod = SalesPeriod.ThisWeek;
 
     public string GroupName => this.localization.Translate("Group_Market");
     public string Name => this.localization.Translate("SalesTab_Title");
@@ -42,6 +44,19 @@ public class SalesMenu : INavigationNode {
 
     public void DrawContent() {
         var searchPlaceholder = this.localization.Translate("SalesTab_SearchPlaceholder");
+
+        ImGui.SetNextItemWidth(200f);
+        if (ImGui.BeginCombo("##periodCombo", this.currentPeriod.ToString())) {
+            foreach (SalesPeriod period in Enum.GetValues(typeof(SalesPeriod))) {
+                if (ImGui.Selectable(period.ToString(), this.currentPeriod == period)) {
+                    this.currentPeriod = period;
+                }
+            }
+            ImGui.EndCombo();
+        }
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(256f);
         ImGui.InputText($"##salesSearch", ref this.searchQuery, 256);
 
         if (ImGui.IsItemHovered() && string.IsNullOrEmpty(this.searchQuery)) {
@@ -50,12 +65,13 @@ public class SalesMenu : INavigationNode {
 
         ImGui.Separator();
 
-        var rawData = this.dataProvider.GetSalesData();
+        var rawData = this.dataProvider.GetSalesData(this.currentPeriod);
         var processedData = this.presenter.ProcessData(rawData, this.searchQuery, this.currentSortColumn, this.isSortAscending);
 
         this.DrawTable(processedData);
     }
 
+    // (Reste du fichier identique à l'original[cite: 1] incluant DrawTable, HandleSorting et DrawIcon)
     private void DrawTable(IReadOnlyList<ISalesViewRecord> data) {
         var tableFlags = ImGuiTableFlags.Sortable | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInner;
 
@@ -72,22 +88,16 @@ public class SalesMenu : INavigationNode {
 
             foreach (var item in data) {
                 ImGui.TableNextRow();
-
                 ImGui.TableNextColumn();
                 this.DrawIcon(item.IconId);
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.Name);
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.TotalQuantitySold.ToString("N0"));
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.AverageUnitPrice.ToString("N0"));
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.TotalRevenue.ToString("N0"));
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(item.LastSaleDate.ToString("g"));
             }
@@ -98,7 +108,6 @@ public class SalesMenu : INavigationNode {
 
     private void HandleSorting() {
         var sortSpecs = ImGui.TableGetSortSpecs();
-
         if (sortSpecs.SpecsDirty) {
             var specs = sortSpecs.Specs;
             this.currentSortColumn = (SalesSortColumn)specs.ColumnUserID;
@@ -113,7 +122,6 @@ public class SalesMenu : INavigationNode {
         }
 
         var iconWrap = this.textureProvider.GetFromGameIcon(new GameIconLookup(iconId)).GetWrapOrDefault();
-
         if (iconWrap != null) {
             ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
         }

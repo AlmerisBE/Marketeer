@@ -9,6 +9,7 @@ public class RetainerMarketListingSaveData {
     public uint ItemId { get; set; }
     public uint Quantity { get; set; }
     public uint PricePerUnit { get; set; }
+    public DateTime ListingDate { get; set; }
 }
 
 [Serializable]
@@ -18,7 +19,6 @@ public class RetainerFinancialData {
     public ulong GilHeld { get; set; }
     public Dictionary<int, RetainerMarketListingSaveData> MarketListings { get; set; } = new();
 
-    // Centralized calculation
     public ulong TotalMarketValue => this.MarketListings.Values.Aggregate(0ul, (acc, listing) => acc + ((ulong)listing.PricePerUnit * listing.Quantity));
 }
 
@@ -30,11 +30,8 @@ public class CharacterFinancialData {
     public DateTime LastScanDate { get; set; }
     public Dictionary<ulong, RetainerFinancialData> Retainers { get; set; } = new();
 
-    // Centralized calculations and key generation
     public string StorageKey => $"{this.CharacterName}_{this.HomeWorldId}";
-
     public ulong TotalGil => this.Retainers.Values.Aggregate(0ul, (acc, ret) => acc + ret.GilHeld);
-
     public ulong TotalMarketValue => this.Retainers.Values.Aggregate(0ul, (acc, ret) => acc + ret.TotalMarketValue);
 }
 

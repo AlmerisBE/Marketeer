@@ -95,7 +95,8 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
                 SlotIndex = kvp.Key,
                 ItemId = kvp.Value.ItemId,
                 Quantity = kvp.Value.Quantity,
-                UnitPrice = kvp.Value.PricePerUnit
+                UnitPrice = kvp.Value.PricePerUnit,
+                ListingDate = kvp.Value.ListingDate
             }).ToList();
 
             var currentListings = fetchedListings.Select(f => new ListingState {
@@ -115,10 +116,14 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
             foreach (var fetched in fetchedListings) {
                 uint finalPrice = fetched.PricePerUnit;
+                DateTime listingDate = DateTime.UtcNow;
 
-                if (finalPrice == 0 && oldListings.TryGetValue((int)fetched.SlotIndex, out var oldListing)) {
+                if (oldListings.TryGetValue((int)fetched.SlotIndex, out var oldListing)) {
                     if (oldListing.ItemId == fetched.ItemId && oldListing.PricePerUnit > 0) {
                         finalPrice = oldListing.PricePerUnit;
+                        if (oldListing.ListingDate != DateTime.MinValue) {
+                            listingDate = oldListing.ListingDate;
+                        }
                     }
                 }
 
@@ -129,16 +134,17 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
                     isModified = true;
 
-                    // Track explicitly if the item itself changed or its price changed
                     if (existing == null || existing.ItemId != fetched.ItemId || existing.PricePerUnit != finalPrice) {
                         modifiedItems.Add(fetched.ItemId);
+                        listingDate = DateTime.UtcNow; // Reset date if price or item changed
                     }
                 }
 
                 targetRetainer.MarketListings[(int)fetched.SlotIndex] = new RetainerMarketListingSaveData {
                     ItemId = fetched.ItemId,
                     Quantity = fetched.Quantity,
-                    PricePerUnit = finalPrice
+                    PricePerUnit = finalPrice,
+                    ListingDate = listingDate
                 };
             }
 

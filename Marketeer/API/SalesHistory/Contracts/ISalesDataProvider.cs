@@ -4,5 +4,5 @@ using System.Collections.Generic;
 namespace Marketeer.API.SalesHistory.Contracts;
 
 public interface ISalesDataProvider {
-    IReadOnlyList<ISalesViewRecord> GetSalesData();
+    IReadOnlyList<ISalesViewRecord> GetSalesData(SalesPeriod period);
 }

@@ -10,6 +10,7 @@ public class SaleRecord {
     public uint UnitPrice { get; set; }
     public string BuyerName { get; set; } = string.Empty;
     public DateTime SaleDate { get; set; }
+    public DateTime ListingDate { get; set; }
 
     public override bool Equals(object? obj) {
         if (obj is SaleRecord other) {
