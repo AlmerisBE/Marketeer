@@ -81,7 +81,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[1].Type = AtkValueType.Int;
         values[1].Int = index;
 
-        addon->FireCallback(2, values, true);
+        addon->FireCallback(2u, values, true);
     }
 
     public bool IsMenuReadyForRetainer(string retainerName) {
@@ -139,7 +139,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[1].Type = AtkValueType.Int;
         values[1].Int = 5;
 
-        addon->FireCallback(2, values, true);
+        addon->FireCallback(2u, values, true);
     }
 
     public bool CloseRetainerMarket() {
@@ -153,7 +153,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[0].Type = AtkValueType.Int;
         values[0].Int = -1;
 
-        addon->FireCallback(1, values, true);
+        addon->FireCallback(1u, values, true);
         return true;
     }
 
@@ -168,7 +168,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[0].Type = AtkValueType.Int;
         values[0].Int = -1;
 
-        addon->FireCallback(1, values, true);
+        addon->FireCallback(1u, values, true);
         return true;
     }
 
@@ -191,13 +191,13 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[2];
 
-        // 2 arguments (0, uiIndex) natively triggers ContextMenu on RetainerSellList item row
+        // Simulates a left click (Event 0) on the specified row (uiIndex) to open the ContextMenu
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
         values[1].Type = AtkValueType.Int;
         values[1].Int = uiIndex;
 
-        addon->FireCallback(2, values, true);
+        addon->FireCallback(2u, values, true);
     }
 
     public int GetContextMenuItemIndex(string localizedText) {
@@ -242,14 +242,14 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[0].Int = 0;
         values[1].Type = AtkValueType.Int;
         values[1].Int = index;
-        values[2].Type = AtkValueType.Int;
-        values[2].Int = 0;
+        values[2].Type = AtkValueType.UInt;
+        values[2].UInt = 0u;
         values[3].Type = AtkValueType.Int;
         values[3].Int = 0;
         values[4].Type = AtkValueType.Int;
         values[4].Int = 0;
 
-        addon->FireCallback(5, values, true);
+        addon->FireCallback(5u, values, true);
     }
 
     public void ConfirmPriceUpdate(uint newPrice) {
@@ -265,7 +265,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[1].Type = AtkValueType.UInt;
         values[1].UInt = newPrice;
 
-        addon->FireCallback(2, values, true);
+        addon->FireCallback(2u, values, true);
     }
 
     public void ConfirmYesNo() {
@@ -279,7 +279,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
 
-        addon->FireCallback(1, values, true);
+        addon->FireCallback(1u, values, true);
     }
 
     public void CloseUnexpectedWindows() {
@@ -300,7 +300,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             var values = stackalloc AtkValue[1];
             values[0].Type = AtkValueType.Int;
             values[0].Int = -1;
-            addon->FireCallback(1, values, true);
+            addon->FireCallback(1u, values, true);
             addon->Close(true);
         }
     }
@@ -316,7 +316,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             var values = stackalloc AtkValue[1];
             values[0].Type = AtkValueType.Int;
             values[0].Int = 0;
-            addon->FireCallback(1, values, true);
+            addon->FireCallback(1u, values, true);
         }
     }
 }

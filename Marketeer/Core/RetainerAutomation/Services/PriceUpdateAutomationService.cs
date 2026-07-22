@@ -134,7 +134,9 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.currentItemTask = queue.Dequeue();
 
         var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
+
         if (uiIndex == -1) {
+            this.logger.Warning($"[Marketeer] Cannot find UI index for slot {this.currentItemTask.SlotIndex} (Item: {this.currentItemTask.ItemName}). Skipping.");
             return this.ProcessNextItem();
         }
 
@@ -147,16 +149,31 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         if (this.uiInteraction.IsAddonReady("ContextMenu")) {
             this.SetInternalStep(PriceUpdateInternalStep.SelectAdjustPrice, 0.1, 5.0);
         }
+        else if (DateTime.Now > this.actionAvailableAt.AddSeconds(1)) {
+            // Re-click if the server delayed the list population
+            if (this.currentItemTask != null) {
+                var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
+                if (uiIndex != -1) {
+                    this.uiInteraction.SelectItemInSellList(uiIndex);
+                }
+
+                this.actionAvailableAt = DateTime.Now;
+            }
+        }
     }
 
     private void ProcessSelectAdjustPrice() {
-        var localizedText = this.localization.Translate("RetainerMenu_AdjustPrice");
-        var menuIndex = this.uiInteraction.GetContextMenuItemIndex(localizedText);
+        var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
+        var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
 
         if (menuIndex != -1) {
             this.uiInteraction.SelectContextMenuItem(menuIndex);
             this.SetInternalStep(PriceUpdateInternalStep.WaitItemMenu, 0.2, 5.0);
+            return;
         }
+
+        this.uiInteraction.CloseUnexpectedWindows();
+        this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 0.5);
     }
 
     private void ProcessWaitItemMenu() {

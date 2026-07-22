@@ -156,26 +156,36 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         if (this.uiInteraction.IsAddonReady("ContextMenu")) {
             this.SetInternalStep(CancelListingInternalStep.SelectCancelOption, 0.1, 5.0);
         }
+        else if (DateTime.Now > this.actionAvailableAt.AddSeconds(1)) {
+            // Re-click if the server delayed the list population and our first click was ignored
+            if (this.currentItemTask != null) {
+                var slots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
+                var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.CurrentPrice);
+                if (targetSlot != null) {
+                    this.uiInteraction.SelectItemInSellList((int)targetSlot.SlotIndex);
+                }
+
+                this.actionAvailableAt = DateTime.Now;
+            }
+        }
     }
 
     private void ProcessSelectCancelOption() {
-        // Try 'Return to Inventory' option first (bypasses Yes/No dialog)
         var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
         var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
 
         if (menuIndex != -1) {
             this.uiInteraction.SelectContextMenuItem(menuIndex);
             if (this.currentItemTask != null) {
-                this.logger.Info($"Returned suboptimal listing to player inventory for '{this.currentItemTask.ItemName}'.");
+                this.logger.Info($"Returned suboptimal listing to inventory for '{this.currentItemTask.ItemName}'.");
             }
 
             this.SetInternalStep(CancelListingInternalStep.WaitItemRemoved, 0.5, 5.0);
             return;
         }
 
-        // Fallback to 'Stop Retaining' option (requires Yes/No confirmation)
-        var stopRetainingText = this.localization.Translate("RetainerMenu_StopRetaining");
-        menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopRetainingText);
+        var stopText = this.localization.Translate("RetainerMenu_StopRetaining");
+        menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopText);
 
         if (menuIndex != -1) {
             this.uiInteraction.SelectContextMenuItem(menuIndex);
@@ -184,7 +194,12 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
             }
 
             this.SetInternalStep(CancelListingInternalStep.WaitYesNo, 0.2, 5.0);
+            return;
         }
+
+        // Failsafe in case a rogue background menu popped up
+        this.uiInteraction.CloseUnexpectedWindows();
+        this.SetInternalStep(CancelListingInternalStep.ProcessNextItem, 0.5);
     }
 
     private void ProcessWaitYesNo() {
