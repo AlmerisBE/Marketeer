@@ -22,6 +22,7 @@
 	  <Folder Include="UI\CharacterManagement\Resources\" />
 	  <Folder Include="UI\Configuration\Resources\" />
 	  <Folder Include="UI\Financials\Resources\" />
+	  <Folder Include="UI\MarketListings\Resources\" />
 	  <Folder Include="UI\RetainerAutomation\Resources\" />
 	  <Folder Include="UI\SalesHistory\Resources\" />
 	</ItemGroup>

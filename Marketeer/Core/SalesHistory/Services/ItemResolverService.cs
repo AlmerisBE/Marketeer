@@ -29,7 +29,6 @@ public class ItemResolverService : IItemResolverService {
             return 0;
         }
 
-        // Detect if the game's UI engine truncated the item name
         bool isTruncated = itemName.EndsWith("...") || itemName.EndsWith("…");
         string searchName = itemName;
 
@@ -46,7 +45,6 @@ public class ItemResolverService : IItemResolverService {
             var name = item.Name.ToString();
 
             if (isTruncated) {
-                // InvariantCultureIgnoreCase safely handles accented characters
                 if (name.StartsWith(searchName, StringComparison.InvariantCultureIgnoreCase)) {
                     this.nameToIdCache[itemName] = item.RowId;
                     return item.RowId;
@@ -75,5 +73,12 @@ public class ItemResolverService : IItemResolverService {
         var item = sheet?.GetRowOrDefault(itemId);
 
         return item?.Icon ?? 0;
+    }
+
+    public uint ResolveVendorPrice(uint itemId) {
+        var sheet = this.dataManager.GetExcelSheet<Item>();
+        var item = sheet?.GetRowOrDefault(itemId);
+
+        return item?.PriceLow ?? 0;
     }
 }

@@ -1,0 +1,10 @@
+{
+  "VendorAlerts_TabName": "Alertes PNJ",
+  "VendorAlerts_NoIssues": "Tout va bien ! Aucun de vos objets n'est vendu en dessous de son prix de rachat PNJ.",
+  "VendorAlerts_WarningMessage": "Attention : {0} objet(s) sont actuellement mis en vente à un prix inférieur ou égal à ce qu'un PNJ pourrait vous donner immédiatement.",
+  "VendorAlerts_ColItem": "Objet",
+  "VendorAlerts_ColCharacter": "Personnage",
+  "VendorAlerts_ColRetainer": "Servant",
+  "VendorAlerts_ColCurrentPrice": "Votre Prix",
+  "VendorAlerts_ColVendorPrice": "Prix PNJ"
+}

@@ -1,0 +1,10 @@
+{
+  "VendorAlerts_TabName": "NPC-Warnungen",
+  "VendorAlerts_NoIssues": "Alles in Ordnung! Keiner deiner Gegenstände wird unter dem NPC-Verkaufspreis angeboten.",
+  "VendorAlerts_WarningMessage": "Warnung: {0} Gegenstand/Gegenstände werden derzeit zu einem Preis angeboten, der dem entspricht oder niedriger ist, was ein NPC dir sofort geben würde.",
+  "VendorAlerts_ColItem": "Gegenstand",
+  "VendorAlerts_ColCharacter": "Charakter",
+  "VendorAlerts_ColRetainer": "Gehilfe",
+  "VendorAlerts_ColCurrentPrice": "Dein Preis",
+  "VendorAlerts_ColVendorPrice": "NPC-Preis"
+}
