@@ -236,4 +236,18 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         addon->FireCallback(2, values, true);
     }
+
+    public void ConfirmYesNo() {
+        var addonPtr = this.gameGui.GetAddonByName("SelectYesNo");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[1];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0; // 0 = Yes, 1 = No
+
+        addon->FireCallback(1, values, true);
+    }
 }

@@ -6,5 +6,7 @@
   "VendorAlerts_ColCharacter": "キャラクター",
   "VendorAlerts_ColRetainer": "リテイナー",
   "VendorAlerts_ColCurrentPrice": "出品価格",
-  "VendorAlerts_ColVendorPrice": "NPC価格"
+  "VendorAlerts_ColVendorPrice": "NPC価格",
+  "VendorAlerts_CancelButton": "自動的に出品を取り下げる",
+  "VendorAlerts_CancelActive": "取り下げ中..."
 }

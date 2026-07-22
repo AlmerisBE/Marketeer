@@ -6,5 +6,7 @@
   "VendorAlerts_ColCharacter": "Charakter",
   "VendorAlerts_ColRetainer": "Gehilfe",
   "VendorAlerts_ColCurrentPrice": "Dein Preis",
-  "VendorAlerts_ColVendorPrice": "NPC-Preis"
+  "VendorAlerts_ColVendorPrice": "NPC-Preis",
+  "VendorAlerts_CancelButton": "Angebote automatisch zurückziehen",
+  "VendorAlerts_CancelActive": "Wird zurückgezogen..."
 }

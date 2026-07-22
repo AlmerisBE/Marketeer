@@ -6,5 +6,7 @@
   "VendorAlerts_ColCharacter": "Personnage",
   "VendorAlerts_ColRetainer": "Servant",
   "VendorAlerts_ColCurrentPrice": "Votre Prix",
-  "VendorAlerts_ColVendorPrice": "Prix PNJ"
+  "VendorAlerts_ColVendorPrice": "Prix PNJ",
+  "VendorAlerts_CancelButton": "Retirer automatiquement",
+  "VendorAlerts_CancelActive": "Retrait en cours..."
 }

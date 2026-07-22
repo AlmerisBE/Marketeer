@@ -22,4 +22,5 @@ public interface IRetainerUiInteractionService {
     void SelectItemInSellList(int uiIndex);
     void SelectContextMenuItem(int index);
     void ConfirmPriceUpdate(uint newPrice);
+    void ConfirmYesNo();
 }

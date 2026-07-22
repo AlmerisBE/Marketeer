@@ -6,5 +6,7 @@
   "VendorAlerts_ColCharacter": "Character",
   "VendorAlerts_ColRetainer": "Retainer",
   "VendorAlerts_ColCurrentPrice": "Your Price",
-  "VendorAlerts_ColVendorPrice": "Vendor Price"
+  "VendorAlerts_ColVendorPrice": "Vendor Price",
+  "VendorAlerts_CancelButton": "Auto-Cancel Listings",
+  "VendorAlerts_CancelActive": "Cancelling..."
 }

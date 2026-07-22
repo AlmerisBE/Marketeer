@@ -23,6 +23,9 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<RetainerAutomationService>();
         services.AddSingleton<IRetainerAutomationService>(provider => provider.GetRequiredService<RetainerAutomationService>());
 
+        services.AddSingleton<CancelListingsAutomationService>();
+        services.AddSingleton<ICancelListingsAutomationService>(provider => provider.GetRequiredService<CancelListingsAutomationService>());
+
         services.AddSingleton<PriceUpdateAutomationService>();
         services.AddSingleton<IPriceUpdateAutomationService>(provider => provider.GetRequiredService<PriceUpdateAutomationService>());
 

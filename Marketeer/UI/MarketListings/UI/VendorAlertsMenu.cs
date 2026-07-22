@@ -2,6 +2,7 @@
 using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.MarketListings.Contracts;
+using Marketeer.API.RetainerAutomation.Contracts;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -10,6 +11,7 @@ namespace Marketeer.UI.MarketListings.UI;
 public class VendorAlertsMenu : INavigationNode {
     private IListingOptimizationService optimizationService;
     private ILocalizationService localization;
+    private ICancelListingsAutomationService cancelService;
 
     public string Name => this.localization.Translate("VendorAlerts_TabName");
     public int Priority => 50;
@@ -18,9 +20,10 @@ public class VendorAlertsMenu : INavigationNode {
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public VendorAlertsMenu(IListingOptimizationService optimizationService, ILocalizationService localization) {
+    public VendorAlertsMenu(IListingOptimizationService optimizationService, ILocalizationService localization, ICancelListingsAutomationService cancelService) {
         this.optimizationService = optimizationService;
         this.localization = localization;
+        this.cancelService = cancelService;
     }
 
     public void DrawContent() {
@@ -32,6 +35,20 @@ public class VendorAlertsMenu : INavigationNode {
         }
 
         ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), this.localization.Translate("VendorAlerts_WarningMessage", listings.Count));
+        ImGui.Spacing();
+
+        // Ajout du bouton d'automatisation
+        if (this.cancelService.IsCancelling) {
+            ImGui.BeginDisabled();
+            ImGui.Button(this.localization.Translate("VendorAlerts_CancelActive"), new Vector2(200f, 24f));
+            ImGui.EndDisabled();
+        }
+        else {
+            if (ImGui.Button(this.localization.Translate("VendorAlerts_CancelButton"), new Vector2(200f, 24f))) {
+                this.cancelService.TriggerCancellation();
+            }
+        }
+
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
