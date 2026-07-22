@@ -2,12 +2,14 @@
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.API.CompetitionTracking.Contracts;
+using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.SalesHistory.Contracts;
 using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.Command.Services;
 using Marketeer.Core.Dependencies;
 using Marketeer.UI.Configuration.UI;
+using Marketeer.UI.Dashboard.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -87,9 +89,13 @@ public sealed class Plugin : IDalamudPlugin {
     }
 
     private void OnOpenConfigUi() {
-        var configWindow = this.serviceProvider.GetService<ConfigWindow>();
-        if (configWindow != null) {
-            configWindow.IsOpen = true;
+        var navService = this.serviceProvider.GetService<IDashboardNavigationService>();
+        var configMenu = this.serviceProvider.GetService<ConfigMenu>();
+        var dashboardWindow = this.serviceProvider.GetService<DashboardWindow>();
+
+        if (navService != null && configMenu != null && dashboardWindow != null) {
+            navService.NavigateTo(configMenu);
+            dashboardWindow.IsOpen = true;
         }
     }
 

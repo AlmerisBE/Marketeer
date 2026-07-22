@@ -1,10 +1,12 @@
 ﻿using Dalamud.Plugin.Services;
+using Marketeer.API.CompetitionTracking.Contracts;
+using Marketeer.API.CompetitionTracking.Models;
+using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Configuration.Models;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.MarketListings.Contracts;
 using Marketeer.API.SalesHistory.Contracts;
-using Marketeer.API.CompetitionTracking.Contracts;
-using Marketeer.API.CompetitionTracking.Models;
 using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.CompetitionTracking.Services;
@@ -14,10 +16,8 @@ using Xunit;
 namespace Marketeer.Tests.Core.CompetitionTracking.Services;
 
 public class CompetitionMonitorServiceTests {
-
     [Fact]
     public async Task CheckUndercutsAsync_WhenPricesAreLowerOnServer_UpdatesCompetitionStateWithCompetitorNameAndCharacter() {
-        // Arrange
         var mockRetainerState = Substitute.For<IRetainerStateService>();
         var mockPriceProvider = Substitute.For<IServerPriceProvider>();
         var mockCompetitionState = Substitute.For<ICompetitionStateService>();
@@ -27,6 +27,9 @@ public class CompetitionMonitorServiceTests {
         var mockLogger = Substitute.For<ILoggerService>();
         var mockFramework = Substitute.For<IFramework>();
         var mockMarketTracker = Substitute.For<IMarketListingTrackerService>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+
+        mockConfigService.GetConfig().Returns(new PluginConfiguration());
 
         var characterData = new List<CharacterMarketData> {
             new CharacterMarketData {
@@ -51,12 +54,10 @@ public class CompetitionMonitorServiceTests {
 
         var service = new CompetitionMonitorService(
             mockRetainerState, mockPriceProvider, mockCompetitionState, mockResolver,
-            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework);
+            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework, mockConfigService);
 
-        // Act
         await service.CheckUndercutsAsync();
 
-        // Assert
         mockCompetitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(list =>
             list.Count() == 1 &&
             list.First().ItemId == 100 &&
@@ -65,10 +66,8 @@ public class CompetitionMonitorServiceTests {
         ));
     }
 
-    // Ajoute ce test à la suite existante
     [Fact]
     public async Task CheckUndercutForItemAsync_UpdatesSpecificItemState() {
-        // Arrange
         var mockRetainerState = Substitute.For<IRetainerStateService>();
         var mockPriceProvider = Substitute.For<IServerPriceProvider>();
         var mockCompetitionState = Substitute.For<ICompetitionStateService>();
@@ -78,6 +77,9 @@ public class CompetitionMonitorServiceTests {
         var mockLocalization = Substitute.For<ILocalizationService>();
         var mockLogger = Substitute.For<ILoggerService>();
         var mockFramework = Substitute.For<IFramework>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+
+        mockConfigService.GetConfig().Returns(new PluginConfiguration());
 
         var characterData = new List<CharacterMarketData> {
             new CharacterMarketData {
@@ -95,12 +97,10 @@ public class CompetitionMonitorServiceTests {
 
         var service = new CompetitionMonitorService(
             mockRetainerState, mockPriceProvider, mockCompetitionState, mockResolver,
-            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework);
+            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework, mockConfigService);
 
-        // Act
         await service.CheckUndercutForItemAsync(100);
 
-        // Assert
         mockCompetitionState.Received(1).UpdateItemUndercuts(100, Arg.Is<IEnumerable<UndercutItem>>(list =>
             list.Count() == 1 && list.First().CompetitorName == "CompetitorX"
         ));

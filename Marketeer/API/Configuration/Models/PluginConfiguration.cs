@@ -11,7 +11,12 @@ public class PluginConfiguration : IPluginConfiguration {
     public int Version { get; set; } = 0;
 
     public Dictionary<string, CharacterFinancialData> FinancialRecords { get; set; } = [];
-
-    // Persistent storage for historical sales
     public List<SaleRecord> SalesHistory { get; set; } = new();
+
+    public int UniversalisCacheMinutes { get; set; } = 30;
+    public List<string> CompetitorWhitelist { get; set; } = new();
+
+    public bool EnableAutomationDelay { get; set; } = false;
+    public int AutomationDelayMin { get; set; } = 1;
+    public int AutomationDelayMax { get; set; } = 3;
 }

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.CompetitionTracking.Models;
+using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.MarketListings.Contracts;
@@ -23,6 +24,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
     private ILocalizationService localization;
     private ILoggerService logger;
     private IFramework framework;
+    private IConfigurationService configService;
 
     private bool isMonitoring;
     private bool isChecking;
@@ -38,7 +40,8 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
         IChatGui chatGui,
         ILocalizationService localization,
         ILoggerService logger,
-        IFramework framework) {
+        IFramework framework,
+        IConfigurationService configService) {
 
         this.retainerState = retainerState;
         this.priceProvider = priceProvider;
@@ -49,6 +52,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
         this.localization = localization;
         this.logger = logger;
         this.framework = framework;
+        this.configService = configService;
 
         this.isMonitoring = false;
         this.isChecking = false;
@@ -100,6 +104,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
         try {
             var allCharacters = this.retainerState.GetAllCharactersListings();
             var newUndercuts = new List<UndercutItem>();
+            var whitelist = this.configService.GetConfig().CompetitorWhitelist;
 
             foreach (var character in allCharacters) {
                 if (!character.Listings.Any(l => l.ItemId == itemId)) {
@@ -114,6 +119,10 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
                 var itemListings = character.Listings.Where(l => l.ItemId == itemId);
                 foreach (var listing in itemListings) {
                     if (lowestPriceResult.Price < listing.CurrentPrice && lowestPriceResult.RetainerName != listing.RetainerName) {
+                        if (whitelist.Contains(lowestPriceResult.RetainerName, StringComparer.InvariantCultureIgnoreCase)) {
+                            continue;
+                        }
+
                         var resolvedItemName = this.itemResolver.ResolveItemName(itemId) ?? "Unknown Item";
 
                         newUndercuts.Add(new UndercutItem {
@@ -148,6 +157,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
         try {
             var allCharacters = this.retainerState.GetAllCharactersListings();
             var undercuts = new List<UndercutItem>();
+            var whitelist = this.configService.GetConfig().CompetitorWhitelist;
 
             foreach (var character in allCharacters) {
                 if (!character.Listings.Any()) {
@@ -161,6 +171,10 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
                     var marketLowest = lowestPrices.FirstOrDefault(price => price.ItemId == listing.ItemId);
 
                     if (marketLowest != null && marketLowest.Price < listing.CurrentPrice && marketLowest.RetainerName != listing.RetainerName) {
+                        if (whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase)) {
+                            continue;
+                        }
+
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
                         undercuts.Add(new UndercutItem {

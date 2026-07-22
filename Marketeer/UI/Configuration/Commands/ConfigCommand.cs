@@ -1,19 +1,34 @@
 ﻿using Marketeer.API.Command.Contracts;
+using Marketeer.API.Dashboard.Contracts;
+using Marketeer.API.Localization.Contracts;
 using Marketeer.UI.Configuration.UI;
+using Marketeer.UI.Dashboard.UI;
 
 namespace Marketeer.UI.Configuration.Commands;
 
 public class ConfigCommand : ICommand {
-    private ConfigWindow configWindow;
+    private IDashboardNavigationService navigationService;
+    private DashboardWindow dashboardWindow;
+    private ConfigMenu configMenu;
+    private ILocalizationService localizationService;
 
     public string CommandTrigger => "config";
-    public string Description => "Ouvre ou ferme la fenêtre de configuration.";
+    public string Description => this.localizationService.Translate("Command_Config_Description");
 
-    public ConfigCommand(ConfigWindow configWindow) {
-        this.configWindow = configWindow;
+    public ConfigCommand(
+        IDashboardNavigationService navigationService,
+        DashboardWindow dashboardWindow,
+        ConfigMenu configMenu,
+        ILocalizationService localizationService) {
+
+        this.navigationService = navigationService;
+        this.dashboardWindow = dashboardWindow;
+        this.configMenu = configMenu;
+        this.localizationService = localizationService;
     }
 
     public void Execute(string arguments) {
-        this.configWindow.Toggle(); // Provided by Dalamud's Window base class
+        this.navigationService.NavigateTo(this.configMenu);
+        this.dashboardWindow.IsOpen = true;
     }
 }

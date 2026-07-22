@@ -1,0 +1,13 @@
+{
+  "Config_TabName": "Konfiguration",
+  "Config_Header": "Allgemeine Einstellungen",
+  "Config_GeneralText": "Allgemeine Konfigurationseinstellungen werden hier hinzugefügt.",
+  "Command_Config_Description": "Öffnet das Konfigurationsmenü. Verwendung: /marketeer config",
+  "Config_CacheLabel": "Universalis Cache-Dauer (Minuten)",
+  "Config_WhitelistLabel": "Konkurrenten-Whitelist (Gehilfennamen)",
+  "Config_WhitelistAdd": "Hinzufügen",
+  "Config_WhitelistRemove": "Entfernen",
+  "Config_AutomationDelayToggle": "Zufällige Verzögerung zwischen Aktionen aktivieren",
+  "Config_AutomationDelayMin": "Min Verzögerung (s)",
+  "Config_AutomationDelayMax": "Max Verzögerung (s)"
+}

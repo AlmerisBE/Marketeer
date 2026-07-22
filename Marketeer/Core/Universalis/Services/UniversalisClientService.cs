@@ -1,7 +1,9 @@
-﻿using Marketeer.API.Logging.Contracts;
+﻿using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Logging.Contracts;
 using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -13,10 +15,14 @@ namespace Marketeer.Core.Universalis.Services;
 public class UniversalisClientService : IServerPriceProvider {
     private HttpClient httpClient;
     private ILoggerService logger;
+    private IConfigurationService configService;
 
-    public UniversalisClientService(HttpClient httpClient, ILoggerService logger) {
+    private ConcurrentDictionary<uint, (LowestPriceResult? Result, DateTime FetchTime)> cache = new();
+
+    public UniversalisClientService(HttpClient httpClient, ILoggerService logger, IConfigurationService configService) {
         this.httpClient = httpClient;
         this.logger = logger;
+        this.configService = configService;
 
         if (this.httpClient.BaseAddress == null) {
             this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
@@ -30,18 +36,28 @@ public class UniversalisClientService : IServerPriceProvider {
 
     public async Task<IReadOnlyList<LowestPriceResult>> GetLowestPricesAsync(IEnumerable<uint> itemIds, uint worldId) {
         var results = new List<LowestPriceResult>();
-        var idsList = itemIds.Distinct().ToList();
+        var idsToFetch = new List<uint>();
+        var cacheDuration = TimeSpan.FromMinutes(this.configService.GetConfig().UniversalisCacheMinutes);
 
-        if (idsList.Count == 0) {
+        foreach (var id in itemIds.Distinct()) {
+            if (this.cache.TryGetValue(id, out var cachedData) && (DateTime.UtcNow - cachedData.FetchTime) < cacheDuration) {
+                if (cachedData.Result != null) {
+                    results.Add(cachedData.Result);
+                }
+            }
+            else {
+                idsToFetch.Add(id);
+            }
+        }
+
+        if (idsToFetch.Count == 0) {
             return results;
         }
 
         try {
-            // Universalis handles up to 100 items efficiently per request
-            for (int i = 0; i < idsList.Count; i += 100) {
-                var batch = idsList.Skip(i).Take(100).ToList();
+            for (int i = 0; i < idsToFetch.Count; i += 100) {
+                var batch = idsToFetch.Skip(i).Take(100).ToList();
                 var idsString = string.Join(",", batch);
-
                 var response = await this.httpClient.GetAsync($"{worldId}/{idsString}");
 
                 if (!response.IsSuccessStatusCode) {
@@ -52,16 +68,19 @@ public class UniversalisClientService : IServerPriceProvider {
                 var content = await response.Content.ReadAsStringAsync();
 
                 if (batch.Count == 1) {
-                    // Single item queries return the object directly
                     var data = JsonSerializer.Deserialize<UniversalisResponse>(content);
-                    this.ExtractAndAddLowestPrice(data, results);
+                    this.ExtractAndCacheLowestPrice(data, batch[0], results);
                 }
                 else {
-                    // Multi-item queries return a dictionary wrapper
                     var multiData = JsonSerializer.Deserialize<UniversalisMultiResponse>(content);
-                    if (multiData != null && multiData.Items != null) {
-                        foreach (var kvp in multiData.Items) {
-                            this.ExtractAndAddLowestPrice(kvp.Value, results);
+                    if (multiData?.Items != null) {
+                        foreach (var id in batch) {
+                            if (multiData.Items.TryGetValue(id, out var data)) {
+                                this.ExtractAndCacheLowestPrice(data, id, results);
+                            }
+                            else {
+                                this.CacheEmptyResult(id);
+                            }
                         }
                     }
                 }
@@ -74,15 +93,23 @@ public class UniversalisClientService : IServerPriceProvider {
         return results;
     }
 
-    private void ExtractAndAddLowestPrice(UniversalisResponse? data, List<LowestPriceResult> results) {
+    private void ExtractAndCacheLowestPrice(UniversalisResponse? data, uint itemId, List<LowestPriceResult> results) {
         if (data != null && data.Listings != null && data.Listings.Count > 0) {
             var lowest = data.Listings.OrderBy(l => l.PricePerUnit).First();
-
-            results.Add(new LowestPriceResult {
+            var result = new LowestPriceResult {
                 ItemId = data.ItemId,
                 Price = lowest.PricePerUnit,
                 RetainerName = lowest.RetainerName
-            });
+            };
+            this.cache[itemId] = (result, DateTime.UtcNow);
+            results.Add(result);
         }
+        else {
+            this.CacheEmptyResult(itemId);
+        }
+    }
+
+    private void CacheEmptyResult(uint itemId) {
+        this.cache[itemId] = (null, DateTime.UtcNow);
     }
 }

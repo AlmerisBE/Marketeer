@@ -1,0 +1,13 @@
+{
+  "Config_TabName": "設定",
+  "Config_Header": "一般設定",
+  "Config_GeneralText": "一般設定はここに追加されます。",
+  "Command_Config_Description": "設定メニューを開きます。使用方法: /marketeer config",
+  "Config_CacheLabel": "Universalisキャッシュの期間 (分)",
+  "Config_WhitelistLabel": "競合ホワイトリスト (リテイナー名)",
+  "Config_WhitelistAdd": "追加",
+  "Config_WhitelistRemove": "削除",
+  "Config_AutomationDelayToggle": "アクション間のランダム遅延を有効にする",
+  "Config_AutomationDelayMin": "最小遅延 (秒)",
+  "Config_AutomationDelayMax": "最大遅延 (秒)"
+}

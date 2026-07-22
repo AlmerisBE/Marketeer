@@ -1,0 +1,13 @@
+{
+  "Config_TabName": "Configuration",
+  "Config_Header": "Paramètres Généraux",
+  "Config_GeneralText": "Les paramètres généraux de configuration seront ajoutés ici.",
+  "Command_Config_Description": "Ouvre le menu de configuration. Utilisation : /marketeer config",
+  "Config_CacheLabel": "Durée du cache Universalis (Minutes)",
+  "Config_WhitelistLabel": "Liste blanche des concurrents (Noms des servants)",
+  "Config_WhitelistAdd": "Ajouter",
+  "Config_WhitelistRemove": "Retirer",
+  "Config_AutomationDelayToggle": "Activer un délai aléatoire entre les actions",
+  "Config_AutomationDelayMin": "Délai Min (s)",
+  "Config_AutomationDelayMax": "Délai Max (s)"
+}

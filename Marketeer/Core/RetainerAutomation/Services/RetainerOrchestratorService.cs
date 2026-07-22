@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
@@ -15,6 +16,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     private IRetainerUiInteractionService uiInteractionService;
     private INativeWindowService windowService;
     private ILocalizationService localizationService;
+    private IConfigurationService configService;
     private ILoggerService logger;
 
     private Queue<string> retainerQueue;
@@ -23,8 +25,9 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     private IRetainerTask? currentTask;
 
     private OrchestrationStep currentStep;
-    private int cooldownTicks;
-    private int timeoutTicks;
+
+    private DateTime actionAvailableAt;
+    private DateTime timeoutAt;
 
     public bool IsActive { get; private set; }
 
@@ -33,12 +36,14 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         IRetainerUiInteractionService uiInteractionService,
         INativeWindowService windowService,
         ILocalizationService localizationService,
+        IConfigurationService configService,
         ILoggerService logger) {
 
         this.framework = framework;
         this.uiInteractionService = uiInteractionService;
         this.windowService = windowService;
         this.localizationService = localizationService;
+        this.configService = configService;
         this.logger = logger;
 
         this.retainerQueue = new Queue<string>();
@@ -80,61 +85,42 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             return;
         }
 
-        if (this.cooldownTicks > 0) {
-            this.cooldownTicks--;
+        if (DateTime.Now < this.actionAvailableAt) {
             return;
         }
 
-        if (this.timeoutTicks <= 0) {
+        if (DateTime.Now > this.timeoutAt) {
             this.logger.Error($"Orchestration step {this.currentStep} timed out. Aborting.");
             this.Abort();
             return;
         }
 
-        this.timeoutTicks--;
-
         switch (this.currentStep) {
-            case OrchestrationStep.SelectRetainer:
-                this.ProcessSelectRetainer();
-                break;
-            case OrchestrationStep.OpenMenu:
-                this.ProcessOpenMenu();
-                break;
-            case OrchestrationStep.WaitMenu:
-                this.ProcessWaitMenu();
-                break;
-            case OrchestrationStep.ExecutingTask:
-                this.ProcessExecutingTask();
-                break;
-            case OrchestrationStep.CloseMenu:
-                this.ProcessCloseMenu();
-                break;
-            case OrchestrationStep.WaitMenuClosed:
-                this.ProcessWaitMenuClosed();
-                break;
-            case OrchestrationStep.CloseSelectString:
-                this.ProcessCloseSelectString();
-                break;
-            case OrchestrationStep.CloseRetainerList:
-                this.ProcessCloseRetainerList();
-                break;
+            case OrchestrationStep.SelectRetainer: this.ProcessSelectRetainer(); break;
+            case OrchestrationStep.OpenMenu: this.ProcessOpenMenu(); break;
+            case OrchestrationStep.WaitMenu: this.ProcessWaitMenu(); break;
+            case OrchestrationStep.ExecutingTask: this.ProcessExecutingTask(); break;
+            case OrchestrationStep.CloseMenu: this.ProcessCloseMenu(); break;
+            case OrchestrationStep.WaitMenuClosed: this.ProcessWaitMenuClosed(); break;
+            case OrchestrationStep.CloseSelectString: this.ProcessCloseSelectString(); break;
+            case OrchestrationStep.CloseRetainerList: this.ProcessCloseRetainerList(); break;
         }
     }
 
     private void AdvanceToNextRetainerOrFinish() {
         if (this.retainerQueue.Count > 0) {
             this.currentRetainerName = this.retainerQueue.Dequeue();
-            this.SetState(OrchestrationStep.SelectRetainer, 15);
+            this.SetState(OrchestrationStep.SelectRetainer, 0.5 + this.GetRandomDelay());
         }
         else {
-            this.SetState(OrchestrationStep.CloseRetainerList, 15);
+            this.SetState(OrchestrationStep.CloseRetainerList, 0.5);
         }
     }
 
     private void ProcessSelectRetainer() {
         if (this.uiInteractionService.IsRetainerAvailable(this.currentRetainerName)) {
             if (this.uiInteractionService.SelectRetainer(this.currentRetainerName)) {
-                this.SetState(OrchestrationStep.OpenMenu, 15);
+                this.SetState(OrchestrationStep.OpenMenu, 0.5);
             }
             else {
                 this.Abort();
@@ -150,7 +136,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
             if (this.uiInteractionService.IsMenuOptionAvailable(optionText)) {
                 if (this.uiInteractionService.SelectMenuOption(optionText)) {
-                    this.SetState(OrchestrationStep.WaitMenu, 30);
+                    this.SetState(OrchestrationStep.WaitMenu, 1.0);
                 }
                 else {
                     this.Abort();
@@ -165,8 +151,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (window != null && window.IsVisible) {
             this.currentTask?.OnMenuOpened(this.currentRetainerName);
-            this.SetState(OrchestrationStep.ExecutingTask, 15);
-            this.timeoutTicks = int.MaxValue;
+            this.SetState(OrchestrationStep.ExecutingTask, 0.5 + this.GetRandomDelay());
+            this.timeoutAt = DateTime.MaxValue;
         }
     }
 
@@ -174,11 +160,11 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (this.currentTask != null) {
             bool isDone = this.currentTask.OnTick();
             if (isDone) {
-                this.SetState(OrchestrationStep.CloseMenu, 15);
+                this.SetState(OrchestrationStep.CloseMenu, 0.5);
             }
         }
         else {
-            this.SetState(OrchestrationStep.CloseMenu, 15);
+            this.SetState(OrchestrationStep.CloseMenu, 0.5);
         }
     }
 
@@ -189,7 +175,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (success) {
             this.currentTask?.OnMenuClosed(this.currentRetainerName);
-            this.SetState(OrchestrationStep.WaitMenuClosed, 30);
+            this.SetState(OrchestrationStep.WaitMenuClosed, 1.0);
         }
     }
 
@@ -198,7 +184,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         var window = this.windowService.GetWindow(targetWindowName);
 
         if (window == null || !window.IsVisible) {
-            this.SetState(OrchestrationStep.CloseSelectString, 30);
+            this.SetState(OrchestrationStep.CloseSelectString, 1.0);
         }
     }
 
@@ -218,10 +204,25 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         }
     }
 
-    private void SetState(OrchestrationStep nextStep, int initialCooldown) {
+    private void SetState(OrchestrationStep nextStep, double delaySeconds) {
         this.currentStep = nextStep;
-        this.cooldownTicks = initialCooldown;
-        this.timeoutTicks = 600;
+        this.actionAvailableAt = DateTime.Now.AddSeconds(delaySeconds);
+        this.timeoutAt = DateTime.Now.AddSeconds(20);
+    }
+
+    private double GetRandomDelay() {
+        var config = this.configService.GetConfig();
+        if (!config.EnableAutomationDelay) {
+            return 0;
+        }
+
+        var min = config.AutomationDelayMin;
+        var max = config.AutomationDelayMax;
+        if (min > max) {
+            min = max;
+        }
+
+        return min + (new Random().NextDouble() * (max - min));
     }
 
     public void Dispose() {

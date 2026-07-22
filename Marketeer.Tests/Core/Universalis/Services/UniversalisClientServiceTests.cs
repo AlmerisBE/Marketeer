@@ -1,4 +1,5 @@
-﻿using Marketeer.API.Logging.Contracts;
+﻿using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Logging.Contracts;
 using Marketeer.Core.Universalis.Services;
 using NSubstitute;
 using System.Net;
@@ -7,11 +8,11 @@ using Xunit;
 namespace Marketeer.Tests.Core.Universalis.Services;
 
 public class UniversalisClientServiceTests {
-
     [Fact]
     public async Task GetLowestPricesAsync_WithMultipleItems_ParsesDictionaryAndReturnsResults() {
-        // Arrange
         var mockLogger = Substitute.For<ILoggerService>();
+        var mockConfigService = Substitute.For<IConfigurationService>();
+        mockConfigService.GetConfig().Returns(new Marketeer.API.Configuration.Models.PluginConfiguration { UniversalisCacheMinutes = 30 });
 
         var jsonResponse = @"{
             ""items"": {
@@ -36,12 +37,10 @@ public class UniversalisClientServiceTests {
             BaseAddress = new Uri("https://universalis.app/api/v2/")
         };
 
-        var service = new UniversalisClientService(httpClient, mockLogger);
+        var service = new UniversalisClientService(httpClient, mockLogger, mockConfigService);
 
-        // Act
         var results = await service.GetLowestPricesAsync(new[] { 1234u, 5678u }, 33);
 
-        // Assert
         Assert.NotNull(results);
         Assert.Equal(2, results.Count);
 
