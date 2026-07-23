@@ -1,10 +1,11 @@
 {
-  "Group_Statistics": "Statistics",
+  "Group_Financials": "Statistics",
   "Financials_TabName": "Financial Statistics",
   "Financials_LiquidGil": "Grand Total (Liquid Gil):",
   "Financials_MarketValue": "Grand Total (Active Market Value):",
   "Financials_ColHeader_CharacterRetainer": "Character / Retainer",
   "Financials_ColHeader_LiquidGil": "Liquid Gil",
   "Financials_ColHeader_MarketValue": "Market Value",
-  "Financials_ColHeader_CombinedTotal": "Combined Total"
+  "Financials_ColHeader_CombinedTotal": "Combined Total",
+  "Financials_Inventory": "(Inventory)"
 }

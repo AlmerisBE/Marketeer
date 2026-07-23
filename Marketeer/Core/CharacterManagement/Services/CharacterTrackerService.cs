@@ -3,6 +3,7 @@ using Marketeer.API.CharacterManagement.Contracts;
 using Marketeer.API.CharacterManagement.Models;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Financials.Models;
+using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.Logging.Contracts;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
     private IConfigurationService configService;
     private ILoggerService logger;
     private IFramework framework;
+    private IInventoryService inventoryService;
 
     public event Action<string, uint>? CharacterForgotten;
 
@@ -24,13 +26,15 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
         IObjectTable objectTable,
         IConfigurationService configService,
         ILoggerService logger,
-        IFramework framework) {
+        IFramework framework,
+        IInventoryService inventoryService) {
 
         this.clientState = clientState;
         this.objectTable = objectTable;
         this.configService = configService;
         this.logger = logger;
         this.framework = framework;
+        this.inventoryService = inventoryService;
 
         this.clientState.Login += this.OnLogin;
 
@@ -80,6 +84,9 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
 
             charData.CompanyTag = companyTag;
             charData.LastScanDate = DateTime.UtcNow;
+
+            // Read Gil directly from memory via InventoryManager (ItemId 1 = Gil)
+            charData.CharacterGil = (ulong)this.inventoryService.GetItemCountInInventory(1);
 
             this.configService.Save();
         }

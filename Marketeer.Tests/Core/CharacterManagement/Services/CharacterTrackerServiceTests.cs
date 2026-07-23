@@ -2,6 +2,7 @@
 using Dalamud.Plugin.Services;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Configuration.Models;
+using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.Core.CharacterManagement.Services;
 using NSubstitute;
@@ -18,6 +19,7 @@ public class CharacterTrackerServiceTests {
         var mockConfigService = Substitute.For<IConfigurationService>();
         var mockLogger = Substitute.For<ILoggerService>();
         var mockFramework = Substitute.For<IFramework>();
+        var mockInventoryService = Substitute.For<IInventoryService>();
 
         mockFramework.When(x => x.RunOnFrameworkThread(Arg.Any<Action>())).Do(cb => cb.Arg<Action>()());
         mockClientState.IsLoggedIn.Returns(true);
@@ -32,7 +34,6 @@ public class CharacterTrackerServiceTests {
                 new Dalamud.Game.Text.SeStringHandling.Payloads.TextPayload("Almeris Tester")
             }));
 
-        // Mock the CompanyTag to prevent NullReferenceException during character recording
         mockPlayer.CompanyTag.Returns(new Dalamud.Game.Text.SeStringHandling.SeString(
             new List<Dalamud.Game.Text.SeStringHandling.Payload> {
                 new Dalamud.Game.Text.SeStringHandling.Payloads.TextPayload("FC")
@@ -42,9 +43,11 @@ public class CharacterTrackerServiceTests {
 
         mockObjectTable.LocalPlayer.Returns(mockPlayer);
 
-        var service = new CharacterTrackerService(mockClientState, mockObjectTable, mockConfigService, mockLogger, mockFramework);
+        // Mock Gil (ItemId 1)
+        mockInventoryService.GetItemCountInInventory(1).Returns(15000);
 
-        // Clear invocations triggered during constructor initialization to isolate the Act phase
+        var service = new CharacterTrackerService(mockClientState, mockObjectTable, mockConfigService, mockLogger, mockFramework, mockInventoryService);
+
         mockConfigService.ClearReceivedCalls();
 
         // Act
@@ -53,6 +56,7 @@ public class CharacterTrackerServiceTests {
         // Assert
         Assert.Single(pluginConfig.FinancialRecords);
         Assert.True(pluginConfig.FinancialRecords.ContainsKey("Almeris Tester_0"));
+        Assert.Equal(15000ul, pluginConfig.FinancialRecords["Almeris Tester_0"].CharacterGil);
         mockConfigService.Received(1).Save();
     }
 }

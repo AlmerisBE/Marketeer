@@ -28,10 +28,13 @@ public class CharacterFinancialData {
     public uint HomeWorldId { get; set; }
     public string CompanyTag { get; set; } = string.Empty;
     public DateTime LastScanDate { get; set; }
+    public ulong CharacterGil { get; set; }
     public Dictionary<ulong, RetainerFinancialData> Retainers { get; set; } = new();
 
     public string StorageKey => $"{this.CharacterName}_{this.HomeWorldId}";
-    public ulong TotalGil => this.Retainers.Values.Aggregate(0ul, (acc, ret) => acc + ret.GilHeld);
+
+    public ulong TotalGil => this.CharacterGil + this.Retainers.Values.Aggregate(0ul, (acc, ret) => acc + ret.GilHeld);
+
     public ulong TotalMarketValue => this.Retainers.Values.Aggregate(0ul, (acc, ret) => acc + ret.TotalMarketValue);
 }
 

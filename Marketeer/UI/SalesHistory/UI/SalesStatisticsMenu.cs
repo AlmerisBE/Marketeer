@@ -112,11 +112,10 @@ public class SalesStatisticsMenu : INavigationNode {
         float[] revenueData = chartData.Select(d => (float)d.Revenue).ToArray();
         float[] salesData = chartData.Select(d => (float)d.SalesCount).ToArray();
 
-        var daysLabel = this.localization.Translate("SalesStatistics_ChartDaysX");
-
         ImGui.Spacing();
         if (ImPlot.BeginPlot(this.localization.Translate("SalesStatistics_ChartRevenueTitle"), new Vector2(-1, 250))) {
-            ImPlot.SetupAxes(daysLabel, this.localization.Translate("SalesStatistics_ChartRevenueY"));
+            // Explicit cast to resolve CS0121 ambiguity
+            ImPlot.SetupAxes((byte*)null, (byte*)null);
 
             fixed (float* pRev = revenueData) {
                 ImPlot.PlotBars(this.localization.Translate("SalesStatistics_ColRevenue"), pRev, chartData.Count);
@@ -126,7 +125,8 @@ public class SalesStatisticsMenu : INavigationNode {
 
         ImGui.Spacing();
         if (ImPlot.BeginPlot(this.localization.Translate("SalesStatistics_ChartSalesCountTitle"), new Vector2(-1, 250))) {
-            ImPlot.SetupAxes(daysLabel, this.localization.Translate("SalesStatistics_ChartSalesCountY"));
+            // Explicit cast to resolve CS0121 ambiguity
+            ImPlot.SetupAxes((byte*)null, (byte*)null);
 
             fixed (float* pSales = salesData) {
                 ImPlot.PlotBars(this.localization.Translate("SalesStatistics_ChartSalesCountLegend"), pSales, chartData.Count);

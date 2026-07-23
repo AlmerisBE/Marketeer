@@ -1,10 +1,11 @@
 {
-  "Group_Statistics": "Statistiken",
+  "Group_Financials": "Statistiken",
   "Financials_TabName": "Finanzstatistik",
   "Financials_LiquidGil": "Gesamtsumme (Verfügbares Gil):",
   "Financials_MarketValue": "Gesamtsumme (Aktueller Marktwert):",
   "Financials_ColHeader_CharacterRetainer": "Charakter / Gehilfe",
   "Financials_ColHeader_LiquidGil": "Verfügbares Gil",
   "Financials_ColHeader_MarketValue": "Marktwert",
-  "Financials_ColHeader_CombinedTotal": "Gesamtsumme"
+  "Financials_ColHeader_CombinedTotal": "Gesamtsumme",
+  "Financials_Inventory": "(Inventar)"
 }

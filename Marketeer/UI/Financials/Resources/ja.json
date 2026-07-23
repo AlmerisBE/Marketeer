@@ -1,10 +1,11 @@
 {
-  "Group_Statistics": "統計",
+  "Group_Financials": "統計",
   "Financials_TabName": "財務統計",
   "Financials_LiquidGil": "総計 (所持ギル):",
   "Financials_MarketValue": "総計 (出品市場価値):",
   "Financials_ColHeader_CharacterRetainer": "キャラクター / リテイナー",
   "Financials_ColHeader_LiquidGil": "所持ギル",
   "Financials_ColHeader_MarketValue": "市場価値",
-  "Financials_ColHeader_CombinedTotal": "合計"
+  "Financials_ColHeader_CombinedTotal": "合計",
+  "Financials_Inventory": "(所持品)"
 }
