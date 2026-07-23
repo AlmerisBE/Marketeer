@@ -154,6 +154,11 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         var window = this.windowService.GetWindow(targetWindowName);
 
         if (window != null && window.IsVisible) {
+            if (this.currentTargetMenu == RetainerTargetMenu.MarketListings) {
+                // Silently hide the player or retainer inventory windows once the listing menu is ready
+                this.uiInteractionService.CloseRetainerInventory();
+            }
+
             this.currentTask?.OnMenuOpened(this.currentRetainerName);
             this.SetState(OrchestrationStep.ExecutingTask, 0.5 + this.GetRandomDelay());
             this.timeoutAt = DateTime.MaxValue;
