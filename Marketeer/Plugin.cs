@@ -33,7 +33,8 @@ public sealed class Plugin : IDalamudPlugin {
         IDataManager dataManager,
         ICondition condition,
         IAddonLifecycle addonLifecycle,
-        ITextureProvider textureProvider) {
+        ITextureProvider textureProvider,
+        IContextMenu contextMenu) { // <-- Injection ajoutée
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -53,6 +54,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(condition);
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(textureProvider);
+        services.AddSingleton(contextMenu); // <-- Enregistrement ajouté
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
@@ -62,6 +64,11 @@ public sealed class Plugin : IDalamudPlugin {
 
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
+
+        // Start Context Menu tracking
+        this.serviceProvider.GetRequiredService<Marketeer.Core.RetainerAutomation.Services.RetainerContextMenuService>();
+
+        // (Le reste de l'initialisation de Plugin.cs reste identique...)
 
         // Start Window Tracking
         var windowTracker = this.serviceProvider.GetRequiredService<IWindowTrackerService>();

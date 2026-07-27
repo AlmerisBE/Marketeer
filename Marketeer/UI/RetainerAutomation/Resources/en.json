@@ -4,5 +4,7 @@
   "RetainerMenu_Quit": "Quit",
   "RetainerMenu_AdjustPrice": "Adjust Price",
   "RetainerMenu_StopRetaining": "Stop Retaining",
-  "RetainerMenu_ReturnToInventory": "Return to Inventory"
+  "RetainerMenu_ReturnToInventory": "Return to Inventory",
+  "ContextMenu_Compete": "Compete",
+  "ContextMenu_CancelAndSell": "Cancel and Sell"
 }

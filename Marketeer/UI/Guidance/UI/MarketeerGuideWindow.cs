@@ -34,10 +34,6 @@ public class MarketeerGuideWindow : Window {
     }
 
     public override void Draw() {
-        ImGui.TextColored(new Vector4(0.2f, 0.8f, 0.2f, 1.0f), "Marketeer Guide");
-        ImGui.Separator();
-        ImGui.Spacing();
-
         var instruction = this.instructionProviders.Select(p => p.GetCurrentInstruction()).FirstOrDefault(i => i != null);
 
         if (instruction == null) {

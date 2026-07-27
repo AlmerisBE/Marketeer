@@ -4,5 +4,7 @@
   "RetainerMenu_Quit": "終了する",
   "RetainerMenu_AdjustPrice": "価格を変更する",
   "RetainerMenu_StopRetaining": "出品を取り下げる",
-  "RetainerMenu_ReturnToInventory": "所持品に戻す"
+  "RetainerMenu_ReturnToInventory": "所持品に戻す",
+  "ContextMenu_Compete": "競争する",
+  "ContextMenu_CancelAndSell": "キャンセルして販売"
 }
