@@ -19,6 +19,9 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<IRetainerUiInteractionService, RetainerUiInteractionService>();
         services.AddSingleton<IRetainerOrchestratorService, RetainerOrchestratorService>();
 
+        // Context Menu
+        services.AddSingleton<RetainerContextMenuService>();
+
         // Core Automations
         services.AddSingleton<RetainerAutomationService>();
         services.AddSingleton<IRetainerAutomationService>(provider => provider.GetRequiredService<RetainerAutomationService>());
@@ -28,8 +31,6 @@ public class RetainerAutomationFeature : IFeatureModule {
 
         services.AddSingleton<PriceUpdateAutomationService>();
         services.AddSingleton<IPriceUpdateAutomationService>(provider => provider.GetRequiredService<PriceUpdateAutomationService>());
-
-        services.AddSingleton<RetainerContextMenuService>();
 
         // UI Commands
         services.AddSingleton<ICommand, RetainerCommand>();

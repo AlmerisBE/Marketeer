@@ -34,7 +34,7 @@ public sealed class Plugin : IDalamudPlugin {
         ICondition condition,
         IAddonLifecycle addonLifecycle,
         ITextureProvider textureProvider,
-        IContextMenu contextMenu) { // <-- Injection ajoutée
+        IContextMenu contextMenu) { // <-- Injection ajoutée ici
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -54,7 +54,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(condition);
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(textureProvider);
-        services.AddSingleton(contextMenu); // <-- Enregistrement ajouté
+        services.AddSingleton(contextMenu); // <-- Ajouté ici
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
@@ -64,11 +64,6 @@ public sealed class Plugin : IDalamudPlugin {
 
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
-
-        // Start Context Menu tracking
-        this.serviceProvider.GetRequiredService<Marketeer.Core.RetainerAutomation.Services.RetainerContextMenuService>();
-
-        // (Le reste de l'initialisation de Plugin.cs reste identique...)
 
         // Start Window Tracking
         var windowTracker = this.serviceProvider.GetRequiredService<IWindowTrackerService>();
@@ -80,6 +75,9 @@ public sealed class Plugin : IDalamudPlugin {
 
         var monitorService = this.serviceProvider.GetRequiredService<ICompetitionMonitorService>();
         monitorService.StartMonitoring();
+
+        // Start Context Menu Service
+        this.serviceProvider.GetRequiredService<Marketeer.Core.RetainerAutomation.Services.RetainerContextMenuService>();
 
         // Force instantiation of the GameEventService so it starts listening immediately
         this.serviceProvider.GetRequiredService<IGameEventService>();

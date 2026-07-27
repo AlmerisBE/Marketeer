@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using NSubstitute;
 using Xunit;
@@ -9,14 +8,13 @@ namespace Marketeer.Tests;
 public class PluginTests {
 
     [Fact]
-    public void Plugin_OnInitialization_BuildsDependencyInjectionWithoutErrors() {
-        // Arrange
+    public void Plugin_Initialization_Succeeds() {
         var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
         var mockChatGui = Substitute.For<IChatGui>();
-        var mockGameUi = Substitute.For<IGameGui>();
+        var mockGameGui = Substitute.For<IGameGui>();
         var mockCommandManager = Substitute.For<ICommandManager>();
         var mockClientState = Substitute.For<IClientState>();
-        var mockLogger = Substitute.For<IPluginLog>();
+        var mockPluginLog = Substitute.For<IPluginLog>();
         var mockObjectTable = Substitute.For<IObjectTable>();
         var mockFramework = Substitute.For<IFramework>();
         var mockDataManager = Substitute.For<IDataManager>();
@@ -24,23 +22,26 @@ public class PluginTests {
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockTextureProvider = Substitute.For<ITextureProvider>();
 
-        mockObjectTable.LocalPlayer.Returns((IPlayerCharacter?)null);
+        // Fix CS7036 by mocking the newly required IContextMenu
+        var mockContextMenu = Substitute.For<IContextMenu>();
 
-        // Act & Assert
-        var exception = Record.Exception(() => new Plugin(
+        var plugin = new Plugin(
             mockPluginInterface,
             mockChatGui,
-            mockGameUi,
+            mockGameGui,
             mockCommandManager,
             mockClientState,
-            mockLogger,
+            mockPluginLog,
             mockObjectTable,
             mockFramework,
             mockDataManager,
             mockCondition,
             mockAddonLifecycle,
-            mockTextureProvider));
+            mockTextureProvider,
+            mockContextMenu
+        );
 
-        Assert.Null(exception);
+        Assert.NotNull(plugin);
+        plugin.Dispose();
     }
 }
