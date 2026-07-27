@@ -1,7 +1,5 @@
 ﻿using Dalamud.Memory;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
@@ -184,28 +182,22 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         return true;
     }
 
-    public void CloseRetainerInventory() {
-        this.HideAddon("InventoryRetainer");
-        this.HideAddon("InventoryRetainerLarge");
-        this.HideAddon("Inventory");
-        this.HideAddon("InventoryLarge");
-        this.HideAddon("InventoryExpansion");
-    }
-
     public void SelectItemInSellList(int uiIndex) {
-        var agent = AgentInventoryContext.Instance();
-        if (agent == null) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
+        if (addonPtr.Address == IntPtr.Zero) {
             return;
         }
 
-        var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
-        uint addonId = 0;
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        var values = stackalloc AtkValue[2];
 
-        if (addonPtr.Address != IntPtr.Zero) {
-            addonId = ((AtkUnitBase*)addonPtr.Address)->Id;
-        }
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0; // Event ID 0 is Left-Click (opens the contextual menu directly on RetainerSellList)
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = uiIndex;
 
-        agent->OpenForItemSlot(InventoryType.RetainerMarket, uiIndex, 0, addonId);
+        this.logger.Info($"[RetainerUiInteractionService] Firing Event ID 0 (Left-Click) on RetainerSellList at UI index {uiIndex}.");
+        addon->FireCallback(2u, values, true);
     }
 
     public int GetContextMenuItemIndex(string localizedText) {
@@ -309,18 +301,6 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             values[0].Type = AtkValueType.Int;
             values[0].Int = -1;
             addon->FireCallback(1u, values, true);
-            addon->Close(true);
-        }
-    }
-
-    private void HideAddon(string name) {
-        var addonPtr = this.gameGui.GetAddonByName(name);
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
-
-        var addon = (AtkUnitBase*)addonPtr.Address;
-        if (addon->IsVisible) {
             addon->Close(true);
         }
     }

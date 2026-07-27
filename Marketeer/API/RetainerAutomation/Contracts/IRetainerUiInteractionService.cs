@@ -15,7 +15,6 @@ public interface IRetainerUiInteractionService {
     bool CloseRetainerMarket();
     bool CloseSelectString();
     bool CloseSalesHistory();
-    void CloseRetainerInventory();
 
     void SelectItemInSellList(int uiIndex);
     void SelectContextMenuItem(int index);
