@@ -45,13 +45,23 @@ public class MarketeerGuideWindow : Window {
             return;
         }
 
-        string title = instruction.ActionType == GuidanceActionType.UpdatePrice ? this.localization.Translate("Guidance_Action_UpdatePrice") : this.localization.Translate("Guidance_Action_CancelListing");
+        string title = instruction.ActionType switch {
+            GuidanceActionType.UpdatePrice => this.localization.Translate("Guidance_Action_UpdatePrice"),
+            GuidanceActionType.CancelListing => this.localization.Translate("Guidance_Action_CancelListing"),
+            GuidanceActionType.SwitchRetainer => this.localization.Translate("Guidance_Action_SwitchRetainer"),
+            _ => "Guidance"
+        };
 
         ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.2f, 1.0f), title);
-        ImGui.TextUnformatted(this.localization.Translate("Guidance_ItemName", instruction.ItemName));
 
-        if (instruction.ActionType == GuidanceActionType.UpdatePrice && instruction.TargetPrice.HasValue) {
-            ImGui.TextUnformatted(this.localization.Translate("Guidance_TargetPrice", instruction.TargetPrice.Value.ToString("N0")));
+        if (instruction.ActionType == GuidanceActionType.SwitchRetainer) {
+            ImGui.TextUnformatted(this.localization.Translate("Guidance_SwitchTo", instruction.RetainerName));
+        }
+        else {
+            ImGui.TextUnformatted(this.localization.Translate("Guidance_ItemName", instruction.ItemName));
+            if (instruction.ActionType == GuidanceActionType.UpdatePrice && instruction.TargetPrice.HasValue) {
+                ImGui.TextUnformatted(this.localization.Translate("Guidance_TargetPrice", instruction.TargetPrice.Value.ToString("N0")));
+            }
         }
     }
 }

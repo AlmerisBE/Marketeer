@@ -28,42 +28,51 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
 
     public GuidanceInstruction? GetCurrentInstruction() {
         var activeId = this.listingProvider.GetActiveRetainerId();
-        if (!activeId.HasValue) {
-            return null;
+        string? activeRetainerName = null;
+
+        if (activeId.HasValue) {
+            var retainers = this.retainerProvider.GetActiveRetainers();
+            var activeRetainer = retainers.FirstOrDefault(r => r.RetainerId == activeId.Value);
+            activeRetainerName = activeRetainer?.Name;
         }
 
-        var retainers = this.retainerProvider.GetActiveRetainers();
-        var activeRetainer = retainers.FirstOrDefault(r => r.RetainerId == activeId.Value);
-        if (activeRetainer == null) {
-            return null;
+        var allUndercuts = this.competitionState.GetUndercutItems().OrderByDescending(u => u.OurPrice).ToList();
+        var allSuboptimal = this.optimizationService.GetVendorPricedListings().OrderByDescending(s => s.VendorPrice).ToList();
+
+        // 1. Evaluate instructions for the CURRENT retainer first
+        if (!string.IsNullOrEmpty(activeRetainerName)) {
+            var currentUndercut = allUndercuts.FirstOrDefault(u => u.RetainerName == activeRetainerName);
+            if (currentUndercut != null) {
+                return new GuidanceInstruction {
+                    ActionType = GuidanceActionType.UpdatePrice,
+                    ItemName = currentUndercut.ItemName,
+                    TargetPrice = Math.Max(1u, currentUndercut.ServerCheapestPrice - 1),
+                    RetainerName = activeRetainerName
+                };
+            }
+
+            var currentSuboptimal = allSuboptimal.FirstOrDefault(s => s.RetainerName == activeRetainerName);
+            if (currentSuboptimal != null) {
+                return new GuidanceInstruction {
+                    ActionType = GuidanceActionType.CancelListing,
+                    ItemName = currentSuboptimal.ItemName,
+                    RetainerName = activeRetainerName
+                };
+            }
         }
 
-        // Priority 1: Most impactful price update first (Descending OurPrice)
-        var undercuts = this.competitionState.GetUndercutItems()
-            .Where(u => u.RetainerName == activeRetainer.Name)
-            .OrderByDescending(u => u.OurPrice)
-            .ToList();
-
-        if (undercuts.Count > 0) {
-            var top = undercuts[0];
+        // 2. If the current retainer is fully optimized (or no retainer is active), suggest the best global switch
+        if (allUndercuts.Count > 0) {
             return new GuidanceInstruction {
-                ActionType = GuidanceActionType.UpdatePrice,
-                ItemName = top.ItemName,
-                TargetPrice = Math.Max(1u, top.ServerCheapestPrice - 1)
+                ActionType = GuidanceActionType.SwitchRetainer,
+                RetainerName = allUndercuts[0].RetainerName
             };
         }
 
-        // Priority 2: Most impactful vendor cancellation first (Descending VendorPrice)
-        var suboptimal = this.optimizationService.GetVendorPricedListings()
-            .Where(s => s.RetainerName == activeRetainer.Name)
-            .OrderByDescending(s => s.VendorPrice)
-            .ToList();
-
-        if (suboptimal.Count > 0) {
-            var top = suboptimal[0];
+        if (allSuboptimal.Count > 0) {
             return new GuidanceInstruction {
-                ActionType = GuidanceActionType.CancelListing,
-                ItemName = top.ItemName
+                ActionType = GuidanceActionType.SwitchRetainer,
+                RetainerName = allSuboptimal[0].RetainerName
             };
         }
 

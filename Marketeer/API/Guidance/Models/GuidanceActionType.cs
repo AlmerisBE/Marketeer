@@ -2,5 +2,6 @@
 
 public enum GuidanceActionType {
     UpdatePrice,
-    CancelListing
+    CancelListing,
+    SwitchRetainer
 }

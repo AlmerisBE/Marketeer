@@ -2,6 +2,8 @@
   "Guidance_Waiting": "Waiting for instructions...",
   "Guidance_Action_UpdatePrice": "Price Adjustment",
   "Guidance_Action_CancelListing": "Cancel Listing",
+  "Guidance_Action_SwitchRetainer": "Change Retainer",
+  "Guidance_SwitchTo": "Switch to: {0}",
   "Guidance_ItemName": "Item: {0}",
   "Guidance_TargetPrice": "New Price: {0} Gil"
 }
