@@ -8,89 +8,65 @@ using System.Linq;
 
 namespace Marketeer.Core.Guidance.Services;
 
-public class GuidanceEngineService : IGuidanceInstructionProvider, IDisposable {
-    private IGameEventService gameEventService;
+public class GuidanceEngineService : IGuidanceInstructionProvider {
     private IMarketListingProvider listingProvider;
     private IRetainerProvider retainerProvider;
     private ICompetitionStateService competitionState;
     private IListingOptimizationService optimizationService;
 
-    private GuidanceInstruction? currentInstruction;
-
     public GuidanceEngineService(
-        IGameEventService gameEventService,
         IMarketListingProvider listingProvider,
         IRetainerProvider retainerProvider,
         ICompetitionStateService competitionState,
         IListingOptimizationService optimizationService) {
 
-        this.gameEventService = gameEventService;
         this.listingProvider = listingProvider;
         this.retainerProvider = retainerProvider;
         this.competitionState = competitionState;
         this.optimizationService = optimizationService;
-
-        // Reactive triggers
-        this.gameEventService.RetainerSellListUpdated += this.EvaluateState;
-        this.gameEventService.RetainerBellOpened += this.ClearState;
     }
 
-    public GuidanceInstruction? GetCurrentInstruction() => this.currentInstruction;
-
-    private void EvaluateState() {
+    public GuidanceInstruction? GetCurrentInstruction() {
         var activeId = this.listingProvider.GetActiveRetainerId();
         if (!activeId.HasValue) {
-            this.currentInstruction = null;
-            return;
+            return null;
         }
 
         var retainers = this.retainerProvider.GetActiveRetainers();
         var activeRetainer = retainers.FirstOrDefault(r => r.RetainerId == activeId.Value);
         if (activeRetainer == null) {
-            this.currentInstruction = null;
-            return;
+            return null;
         }
 
-        // Priorité 1 : Changement de prix (Plus impactant d'abord : tri par OurPrice décroissant)
+        // Priority 1: Most impactful price update first (Descending OurPrice)
         var undercuts = this.competitionState.GetUndercutItems()
             .Where(u => u.RetainerName == activeRetainer.Name)
             .OrderByDescending(u => u.OurPrice)
             .ToList();
 
-        if (undercuts.Any()) {
-            var top = undercuts.First();
-            this.currentInstruction = new GuidanceInstruction {
+        if (undercuts.Count > 0) {
+            var top = undercuts[0];
+            return new GuidanceInstruction {
                 ActionType = GuidanceActionType.UpdatePrice,
                 ItemName = top.ItemName,
                 TargetPrice = Math.Max(1u, top.ServerCheapestPrice - 1)
             };
-            return;
         }
 
-        // Priorité 2 : Annulation de vente (Prix marchand le plus élevé d'abord : tri par VendorPrice décroissant)
+        // Priority 2: Most impactful vendor cancellation first (Descending VendorPrice)
         var suboptimal = this.optimizationService.GetVendorPricedListings()
             .Where(s => s.RetainerName == activeRetainer.Name)
             .OrderByDescending(s => s.VendorPrice)
             .ToList();
 
-        if (suboptimal.Any()) {
-            var top = suboptimal.First();
-            this.currentInstruction = new GuidanceInstruction {
+        if (suboptimal.Count > 0) {
+            var top = suboptimal[0];
+            return new GuidanceInstruction {
                 ActionType = GuidanceActionType.CancelListing,
                 ItemName = top.ItemName
             };
-            return;
         }
 
-        this.currentInstruction = null;
-    }
-
-    private void ClearState() {
-        this.currentInstruction = null;
-    }
-
-    public void Dispose() {
-        this.gameEventService.RetainerSellListUpdated -= this.EvaluateState;
-        this.gameEventService.RetainerBellOpened -= this.ClearState;
+        return null;
     }
 }
