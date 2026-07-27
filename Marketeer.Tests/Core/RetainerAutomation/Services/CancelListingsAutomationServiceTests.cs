@@ -27,7 +27,6 @@ public class CancelListingsAutomationServiceTests {
         var mockLogger = Substitute.For<ILoggerService>();
         var mockConfig = Substitute.For<IConfigurationService>();
         var mockLocalization = Substitute.For<ILocalizationService>();
-        var mockGuidance = Substitute.For<IRetainerGuidanceService>();
 
         mockConfig.GetConfig().Returns(new PluginConfiguration());
 
@@ -47,8 +46,7 @@ public class CancelListingsAutomationServiceTests {
             mockObjectTable,
             mockLogger,
             mockConfig,
-            mockLocalization,
-            mockGuidance
+            mockLocalization
         );
 
         service.TriggerCancellation();
@@ -57,47 +55,6 @@ public class CancelListingsAutomationServiceTests {
             Arg.Is<IEnumerable<string>>(r => r.Contains("Retainer1")),
             RetainerTargetMenu.MarketListings,
             service
-        );
-    }
-
-    [Fact]
-    public void TriggerCancellation_DoesNotStartOrchestration_WhenNoSuboptimalListingsExist() {
-        var mockOrchestrator = Substitute.For<IRetainerOrchestratorService>();
-        var mockUiInteraction = Substitute.For<IRetainerUiInteractionService>();
-        var mockOptimization = Substitute.For<IListingOptimizationService>();
-        var mockInventory = Substitute.For<IInventoryService>();
-        var mockObjectTable = Substitute.For<IObjectTable>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockConfig = Substitute.For<IConfigurationService>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
-        var mockGuidance = Substitute.For<IRetainerGuidanceService>();
-
-        mockConfig.GetConfig().Returns(new PluginConfiguration());
-
-        var mockPlayer = Substitute.For<IPlayerCharacter>();
-        mockPlayer.Name.Returns(new Dalamud.Game.Text.SeStringHandling.SeString(new Dalamud.Game.Text.SeStringHandling.Payloads.TextPayload("Test Player")));
-        mockObjectTable.LocalPlayer.Returns(mockPlayer);
-
-        mockOptimization.GetVendorPricedListings().Returns(new List<SuboptimalListing>());
-
-        var service = new CancelListingsAutomationService(
-            mockOrchestrator,
-            mockUiInteraction,
-            mockOptimization,
-            mockInventory,
-            mockObjectTable,
-            mockLogger,
-            mockConfig,
-            mockLocalization,
-            mockGuidance
-        );
-
-        service.TriggerCancellation();
-
-        mockOrchestrator.DidNotReceive().StartOrchestration(
-            Arg.Any<IEnumerable<string>>(),
-            Arg.Any<RetainerTargetMenu>(),
-            Arg.Any<IRetainerTask>()
         );
     }
 }

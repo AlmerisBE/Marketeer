@@ -22,7 +22,6 @@ public class PriceUpdateAutomationServiceTests {
         var mockCompetition = Substitute.For<ICompetitionStateService>();
         var mockObjectTable = Substitute.For<IObjectTable>();
         var mockConfig = Substitute.For<IConfigurationService>();
-        var mockGuidance = Substitute.For<IRetainerGuidanceService>();
 
         mockConfig.GetConfig().Returns(new PluginConfiguration());
 
@@ -42,8 +41,7 @@ public class PriceUpdateAutomationServiceTests {
             mockObjectTable,
             Substitute.For<ILoggerService>(),
             mockConfig,
-            Substitute.For<ILocalizationService>(),
-            mockGuidance
+            Substitute.For<ILocalizationService>()
         );
 
         service.TriggerPriceUpdate();

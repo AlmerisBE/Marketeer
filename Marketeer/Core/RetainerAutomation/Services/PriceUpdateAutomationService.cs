@@ -3,7 +3,6 @@ using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.CompetitionTracking.Models;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Guidance.Models;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
@@ -23,7 +22,6 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     private ILoggerService logger;
     private IConfigurationService configService;
     private ILocalizationService localization;
-    private IRetainerGuidanceService guidanceService;
 
     private Dictionary<string, Queue<UndercutItem>> tasksByRetainer;
     private UndercutItem? currentItemTask;
@@ -42,8 +40,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         IObjectTable objectTable,
         ILoggerService logger,
         IConfigurationService configService,
-        ILocalizationService localization,
-        IRetainerGuidanceService guidanceService) {
+        ILocalizationService localization) {
 
         this.orchestrator = orchestrator;
         this.uiInteraction = uiInteraction;
@@ -53,7 +50,6 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.logger = logger;
         this.configService = configService;
         this.localization = localization;
-        this.guidanceService = guidanceService;
 
         this.tasksByRetainer = new Dictionary<string, Queue<UndercutItem>>();
         this.currentRetainerName = string.Empty;
@@ -117,7 +113,6 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         // 1. Validated state: Item has reached the target price
         if (currentPrice == targetPrice) {
             this.logger.Info($"Price for '{this.currentItemTask.ItemName}' successfully updated. Moving to next.");
-            this.guidanceService.ClearInstruction();
             return this.ProcessNextItem();
         }
 
@@ -160,19 +155,13 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
     private bool ProcessNextItem() {
         if (!this.tasksByRetainer.TryGetValue(this.currentRetainerName, out var queue) || queue.Count == 0) {
+            this.currentItemTask = null;
             return true;
         }
 
         this.currentItemTask = queue.Dequeue();
         this.currentItemStartTime = DateTime.Now;
         this.SetDelay(0.5);
-
-        this.guidanceService.SetInstruction(new GuidanceInstruction {
-            ActionType = GuidanceActionType.UpdatePrice,
-            ItemName = this.currentItemTask.ItemName,
-            TargetPrice = Math.Max(1u, this.currentItemTask.ServerCheapestPrice - 1)
-        });
-
         return false;
     }
 
@@ -193,12 +182,9 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.actionAvailableAt = DateTime.Now.AddSeconds(waitSeconds + randomDelay);
     }
 
-    public void OnMenuClosed(string retainerName) {
-        this.guidanceService.ClearInstruction();
-    }
+    public void OnMenuClosed(string retainerName) { }
 
     public void OnAbort() {
         this.tasksByRetainer.Clear();
-        this.guidanceService.ClearInstruction();
     }
 }

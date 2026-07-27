@@ -14,6 +14,10 @@ public class GuidanceFeature : IFeatureModule {
         services.AddSingleton<ILocalizationProvider, GuidanceLocalizationProvider>();
         services.AddSingleton<IWindowGeometryProvider, WindowGeometryProvider>();
 
+        // Guidance Engine
+        services.AddSingleton<GuidanceEngineService>();
+        services.AddSingleton<IGuidanceInstructionProvider>(provider => provider.GetRequiredService<GuidanceEngineService>());
+
         services.AddSingleton<MarketeerGuideWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<MarketeerGuideWindow>());
     }

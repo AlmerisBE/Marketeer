@@ -2,7 +2,6 @@
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Guidance.Models;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.MarketListings.Contracts;
@@ -24,7 +23,6 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
     private ILoggerService logger;
     private IConfigurationService configService;
     private ILocalizationService localization;
-    private IRetainerGuidanceService guidanceService;
 
     private Dictionary<string, Queue<SuboptimalListing>> tasksByRetainer;
     private SuboptimalListing? currentItemTask;
@@ -43,8 +41,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         IObjectTable objectTable,
         ILoggerService logger,
         IConfigurationService configService,
-        ILocalizationService localization,
-        IRetainerGuidanceService guidanceService) {
+        ILocalizationService localization) {
 
         this.orchestrator = orchestrator;
         this.uiInteraction = uiInteraction;
@@ -54,7 +51,6 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         this.logger = logger;
         this.configService = configService;
         this.localization = localization;
-        this.guidanceService = guidanceService;
 
         this.tasksByRetainer = new Dictionary<string, Queue<SuboptimalListing>>();
         this.currentRetainerName = string.Empty;
@@ -118,7 +114,6 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         // 1. Validated state: Item is no longer listed at that price
         if (targetSlot == null) {
             this.logger.Info($"Listing for '{this.currentItemTask.ItemName}' successfully cancelled. Moving to next.");
-            this.guidanceService.ClearInstruction();
             return this.ProcessNextItem();
         }
 
@@ -169,18 +164,13 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
 
     private bool ProcessNextItem() {
         if (!this.tasksByRetainer.TryGetValue(this.currentRetainerName, out var queue) || queue.Count == 0) {
+            this.currentItemTask = null;
             return true;
         }
 
         this.currentItemTask = queue.Dequeue();
         this.currentItemStartTime = DateTime.Now;
         this.SetDelay(0.5);
-
-        this.guidanceService.SetInstruction(new GuidanceInstruction {
-            ActionType = GuidanceActionType.CancelListing,
-            ItemName = this.currentItemTask.ItemName
-        });
-
         return false;
     }
 
@@ -201,12 +191,9 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         this.actionAvailableAt = DateTime.Now.AddSeconds(waitSeconds + randomDelay);
     }
 
-    public void OnMenuClosed(string retainerName) {
-        this.guidanceService.ClearInstruction();
-    }
+    public void OnMenuClosed(string retainerName) { }
 
     public void OnAbort() {
         this.tasksByRetainer.Clear();
-        this.guidanceService.ClearInstruction();
     }
 }
