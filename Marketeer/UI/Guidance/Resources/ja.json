@@ -1,0 +1,9 @@
+{
+  "Guidance_Waiting": "指示を待機中...",
+  "Guidance_Action_UpdatePrice": "価格調整",
+  "Guidance_Action_CancelListing": "出品取消",
+  "Guidance_Action_SwitchRetainer": "リテイナー変更",
+  "Guidance_SwitchTo": "次へ: {0}",
+  "Guidance_ItemName": "アイテム: {0}",
+  "Guidance_TargetPrice": "新価格: {0} ギル"
+}

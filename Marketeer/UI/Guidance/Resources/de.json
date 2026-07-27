@@ -1,0 +1,9 @@
+{
+  "Guidance_Waiting": "Warte auf Anweisungen...",
+  "Guidance_Action_UpdatePrice": "Preisanpassung",
+  "Guidance_Action_CancelListing": "Angebot stornieren",
+  "Guidance_Action_SwitchRetainer": "Gehilfen wechseln",
+  "Guidance_SwitchTo": "Wechsle zu: {0}",
+  "Guidance_ItemName": "Gegenstand: {0}",
+  "Guidance_TargetPrice": "Neuer Preis: {0} Gil"
+}
