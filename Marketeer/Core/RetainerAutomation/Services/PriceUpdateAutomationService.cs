@@ -3,6 +3,7 @@ using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.CompetitionTracking.Models;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.Guidance.Models;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
@@ -13,15 +14,6 @@ using System.Linq;
 
 namespace Marketeer.Core.RetainerAutomation.Services;
 
-public enum PriceUpdateInternalStep {
-    ProcessNextItem,
-    WaitContextMenu,
-    SelectAdjustPrice,
-    WaitItemMenu,
-    ChangePrice,
-    WaitPriceApplied
-}
-
 public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IRetainerTask {
     private IRetainerOrchestratorService orchestrator;
     private IRetainerUiInteractionService uiInteraction;
@@ -31,13 +23,13 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     private ILoggerService logger;
     private IConfigurationService configService;
     private ILocalizationService localization;
+    private IRetainerGuidanceService guidanceService;
 
     private Dictionary<string, Queue<UndercutItem>> tasksByRetainer;
     private UndercutItem? currentItemTask;
 
-    private PriceUpdateInternalStep internalStep;
     private DateTime actionAvailableAt;
-    private DateTime timeoutAt;
+    private DateTime currentItemStartTime;
     private string currentRetainerName;
 
     public bool IsUpdating => this.orchestrator.IsActive;
@@ -50,7 +42,8 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         IObjectTable objectTable,
         ILoggerService logger,
         IConfigurationService configService,
-        ILocalizationService localization) {
+        ILocalizationService localization,
+        IRetainerGuidanceService guidanceService) {
 
         this.orchestrator = orchestrator;
         this.uiInteraction = uiInteraction;
@@ -60,6 +53,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.logger = logger;
         this.configService = configService;
         this.localization = localization;
+        this.guidanceService = guidanceService;
 
         this.tasksByRetainer = new Dictionary<string, Queue<UndercutItem>>();
         this.currentRetainerName = string.Empty;
@@ -99,7 +93,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
     public void OnMenuOpened(string retainerName) {
         this.currentRetainerName = retainerName;
-        this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 0.5);
+        this.ProcessNextItem();
     }
 
     public bool OnTick() {
@@ -107,20 +101,58 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             return false;
         }
 
-        if (DateTime.Now > this.timeoutAt && this.internalStep != PriceUpdateInternalStep.ProcessNextItem) {
-            this.logger.Error($"Price update step {this.internalStep} timed out. Attempting recovery.");
+        if (this.currentItemTask == null) {
+            return this.ProcessNextItem();
+        }
+
+        if (DateTime.Now - this.currentItemStartTime > TimeSpan.FromSeconds(15)) {
+            this.logger.Error($"Timeout while updating price for {this.currentItemTask.ItemName}. Attempting recovery.");
             this.uiInteraction.CloseUnexpectedWindows();
-            this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 0.5);
+            return this.ProcessNextItem();
+        }
+
+        uint targetPrice = Math.Max(1u, this.currentItemTask.ServerCheapestPrice - 1);
+        uint currentPrice = this.inventoryService.GetRetainerMarketItemPrice(this.currentItemTask.SlotIndex);
+
+        // 1. Validated state: Item has reached the target price
+        if (currentPrice == targetPrice) {
+            this.logger.Info($"Price for '{this.currentItemTask.ItemName}' successfully updated. Moving to next.");
+            this.guidanceService.ClearInstruction();
+            return this.ProcessNextItem();
+        }
+
+        // 2. Reactive state: Price input window is open
+        if (this.uiInteraction.IsAddonReady("RetainerSell")) {
+            this.uiInteraction.ConfirmPriceUpdate(targetPrice);
+            this.SetDelay(0.5);
             return false;
         }
 
-        switch (this.internalStep) {
-            case PriceUpdateInternalStep.ProcessNextItem: return this.ProcessNextItem();
-            case PriceUpdateInternalStep.WaitContextMenu: this.ProcessWaitContextMenu(); return false;
-            case PriceUpdateInternalStep.SelectAdjustPrice: this.ProcessSelectAdjustPrice(); return false;
-            case PriceUpdateInternalStep.WaitItemMenu: this.ProcessWaitItemMenu(); return false;
-            case PriceUpdateInternalStep.ChangePrice: this.ProcessChangePrice(); return false;
-            case PriceUpdateInternalStep.WaitPriceApplied: this.ProcessWaitPriceApplied(); return false;
+        // 3. Reactive state: Context menu is open
+        if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+            var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
+            var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
+
+            if (menuIndex != -1) {
+                this.uiInteraction.SelectContextMenuItem(menuIndex);
+                this.SetDelay(0.2);
+            }
+            else {
+                this.uiInteraction.CloseUnexpectedWindows();
+                this.SetDelay(0.5);
+            }
+            return false;
+        }
+
+        // 4. Default state: Click the item in the list
+        var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
+        if (uiIndex != -1) {
+            this.uiInteraction.SelectItemInSellList(uiIndex);
+            this.SetDelay(0.5);
+        }
+        else {
+            this.logger.Warning($"Cannot find UI index for {this.currentItemTask.ItemName}. Skipping.");
+            return this.ProcessNextItem();
         }
 
         return false;
@@ -132,97 +164,41 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         }
 
         this.currentItemTask = queue.Dequeue();
+        this.currentItemStartTime = DateTime.Now;
+        this.SetDelay(0.5);
 
-        var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
+        this.guidanceService.SetInstruction(new GuidanceInstruction {
+            ActionType = GuidanceActionType.UpdatePrice,
+            ItemName = this.currentItemTask.ItemName,
+            TargetPrice = Math.Max(1u, this.currentItemTask.ServerCheapestPrice - 1)
+        });
 
-        if (uiIndex == -1) {
-            this.logger.Warning($"[Marketeer] Cannot find UI index for slot {this.currentItemTask.SlotIndex} (Item: {this.currentItemTask.ItemName}). Skipping.");
-            return this.ProcessNextItem();
-        }
-
-        this.uiInteraction.SelectItemInSellList(uiIndex);
-        this.SetInternalStep(PriceUpdateInternalStep.WaitContextMenu, 0.2, 5.0);
         return false;
     }
 
-    private void ProcessWaitContextMenu() {
-        if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-            this.SetInternalStep(PriceUpdateInternalStep.SelectAdjustPrice, 0.1, 5.0);
-        }
-        else if (DateTime.Now > this.actionAvailableAt.AddSeconds(1)) {
-            // Re-click if the server delayed the list population
-            if (this.currentItemTask != null) {
-                var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
-                if (uiIndex != -1) {
-                    this.uiInteraction.SelectItemInSellList(uiIndex);
-                }
-
-                this.actionAvailableAt = DateTime.Now;
-            }
-        }
-    }
-
-    private void ProcessSelectAdjustPrice() {
-        var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
-        var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
-
-        if (menuIndex != -1) {
-            this.uiInteraction.SelectContextMenuItem(menuIndex);
-            this.SetInternalStep(PriceUpdateInternalStep.WaitItemMenu, 0.2, 5.0);
-            return;
-        }
-
-        this.uiInteraction.CloseUnexpectedWindows();
-        this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 0.5);
-    }
-
-    private void ProcessWaitItemMenu() {
-        if (this.uiInteraction.IsAddonReady("RetainerSell")) {
-            this.SetInternalStep(PriceUpdateInternalStep.ChangePrice, 0.2 + this.GetRandomDelay(), 5.0);
-        }
-    }
-
-    private void ProcessChangePrice() {
-        if (this.currentItemTask != null) {
-            uint newPrice = Math.Max(1u, this.currentItemTask.ServerCheapestPrice - 1);
-            this.uiInteraction.ConfirmPriceUpdate(newPrice);
-            this.logger.Info($"Updated item '{this.currentItemTask.ItemName}' to {newPrice} Gil.");
-
-            this.SetInternalStep(PriceUpdateInternalStep.WaitPriceApplied, 0.5, 5.0);
-        }
-    }
-
-    private void ProcessWaitPriceApplied() {
-        if (!this.uiInteraction.IsAddonReady("RetainerSell")) {
-            this.SetInternalStep(PriceUpdateInternalStep.ProcessNextItem, 0.5);
-        }
-    }
-
-    private void SetInternalStep(PriceUpdateInternalStep step, double waitSeconds, double timeoutSeconds = 0) {
-        this.internalStep = step;
-        this.actionAvailableAt = DateTime.Now.AddSeconds(waitSeconds);
-        if (timeoutSeconds > 0) {
-            this.timeoutAt = DateTime.Now.AddSeconds(timeoutSeconds);
-        }
-    }
-
-    private double GetRandomDelay() {
+    private void SetDelay(double waitSeconds) {
         var config = this.configService.GetConfig();
-        if (!config.EnableAutomationDelay) {
-            return 0;
+        double randomDelay = 0;
+
+        if (config.EnableAutomationDelay) {
+            var min = config.AutomationDelayMin;
+            var max = config.AutomationDelayMax;
+            if (min > max) {
+                min = max;
+            }
+
+            randomDelay = min + (new Random().NextDouble() * (max - min));
         }
 
-        var min = config.AutomationDelayMin;
-        var max = config.AutomationDelayMax;
-        if (min > max) {
-            min = max;
-        }
-
-        return min + (new Random().NextDouble() * (max - min));
+        this.actionAvailableAt = DateTime.Now.AddSeconds(waitSeconds + randomDelay);
     }
 
-    public void OnMenuClosed(string retainerName) { }
+    public void OnMenuClosed(string retainerName) {
+        this.guidanceService.ClearInstruction();
+    }
+
     public void OnAbort() {
         this.tasksByRetainer.Clear();
+        this.guidanceService.ClearInstruction();
     }
 }
