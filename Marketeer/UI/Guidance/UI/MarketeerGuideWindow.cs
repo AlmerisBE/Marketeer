@@ -21,9 +21,7 @@ public class MarketeerGuideWindow : Window {
 
     public override void PreDraw() {
         if (this.geometryProvider.GetWindowGeometry("RetainerSellList", out var x, out var y, out _, out _, out _)) {
-            float margin = 10f;
-            float targetX = x - margin;
-            ImGui.SetNextWindowPos(new Vector2(targetX, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
+            ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
         }
     }
 
