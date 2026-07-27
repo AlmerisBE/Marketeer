@@ -1,0 +1,7 @@
+{
+  "Guidance_Waiting": "En attente d'instructions...",
+  "Guidance_Action_UpdatePrice": "Gestion de la concurrence",
+  "Guidance_Action_CancelListing": "Annulation de vente",
+  "Guidance_ItemName": "Objet : {0}",
+  "Guidance_TargetPrice": "Nouveau prix : {0} Gils"
+}

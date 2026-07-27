@@ -1,5 +1,6 @@
 ﻿using Marketeer.API.Command.Contracts;
 using Marketeer.API.Features;
+using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
 using Marketeer.Core.RetainerAutomation.Services;
@@ -28,6 +29,10 @@ public class RetainerAutomationFeature : IFeatureModule {
 
         services.AddSingleton<PriceUpdateAutomationService>();
         services.AddSingleton<IPriceUpdateAutomationService>(provider => provider.GetRequiredService<PriceUpdateAutomationService>());
+
+        services.AddSingleton<RetainerGuidanceService>();
+        services.AddSingleton<IRetainerGuidanceService>(provider => provider.GetRequiredService<RetainerGuidanceService>());
+        services.AddSingleton<IGuidanceInstructionProvider>(provider => provider.GetRequiredService<RetainerGuidanceService>());
 
         // UI Commands
         services.AddSingleton<ICommand, RetainerCommand>();
