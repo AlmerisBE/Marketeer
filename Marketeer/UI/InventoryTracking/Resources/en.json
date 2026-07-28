@@ -1,11 +1,10 @@
 {
   "Group_Inventory": "Inventories",
   "InventoryTab_Title": "Bags & Retainers",
-  "InventoryTab_NoData": "No inventory data captured yet. Open your character's bags to generate a snapshot.",
-  "InventoryTab_PlayerInventory": "Player Bags",
+  "InventoryTab_PlayerInventory": "Inventory: {0}",
+  "InventoryTab_RetainerInventory": "Retainer Inventory: {0}",
+  "InventoryTab_NoData": "No inventory data captured.",
   "InventoryTab_LastUpdated": "Last updated: {0}",
-  "InventoryTab_RetainerInventory": "Retainer: {0} (Market Listings)",
-  "InventoryTab_NoRetainerData": "No data available for this retainer.",
   "InventoryTab_ColName": "Item Name",
   "InventoryTab_ColQuantity": "Qty"
 }

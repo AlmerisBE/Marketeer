@@ -1,5 +1,4 @@
-﻿using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
+﻿using Marketeer.API.Features;
 using Marketeer.API.InventoryTracking.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.Core.InventoryTracking.Services;
@@ -17,12 +16,9 @@ public class InventoryTrackingFeature : IFeatureModule {
         // Core Tracking
         services.AddSingleton<IInventoryDiffService, InventoryDiffService>();
         services.AddSingleton<IInventorySnapshotService, InventorySnapshotService>();
-
-        // Background automatic retainer scanner
         services.AddSingleton<RetainerInventoryTrackerService>();
 
-        // UI Dashboard Integration
-        services.AddSingleton<InventoryMenu>();
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<InventoryMenu>());
+        // Hidden UI View integration (Not bound to INavigationNode collection)
+        services.AddSingleton<InventoryView>();
     }
 }

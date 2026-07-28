@@ -1,11 +1,10 @@
 {
   "Group_Inventory": "所持品",
   "InventoryTab_Title": "所持品とリテイナー",
-  "InventoryTab_NoData": "所持品データがまだキャプチャされていません。キャラクターのバッグを開いてスナップショットを生成してください。",
-  "InventoryTab_PlayerInventory": "プレイヤーの所持品",
+  "InventoryTab_PlayerInventory": "所持品: {0}",
+  "InventoryTab_RetainerInventory": "リテイナーの所持品: {0}",
+  "InventoryTab_NoData": "所持品データがキャプチャされていません。",
   "InventoryTab_LastUpdated": "最終更新: {0}",
-  "InventoryTab_RetainerInventory": "リテイナー: {0} (出品中)",
-  "InventoryTab_NoRetainerData": "このリテイナーのデータはありません。",
   "InventoryTab_ColName": "アイテム名",
   "InventoryTab_ColQuantity": "数量"
 }

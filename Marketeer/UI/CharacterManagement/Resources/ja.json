@@ -19,5 +19,8 @@
   "CharacterOverview_None": "なし",
   "CharacterOverview_ActiveRetainers": "アクティブなリテイナー:",
   "CharacterOverview_LastScan": "最終スキャン:",
-  "CharacterOverview_OpenButton": "開く"
+  "CharacterOverview_OpenButton": "開く",
+  "CharacterOverview_InventoryButton": "所持品",
+  "CharacterList_BtnOnSale": "出品中",
+  "CharacterList_BtnInventory": "所持品"
 }

@@ -4,6 +4,7 @@ using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.MarketListings.Contracts;
+using Marketeer.UI.InventoryTracking.UI;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -19,6 +20,7 @@ public class CharacterOverviewMenu : INavigationNode {
     private IRetainerDetailsView retainerDetailsView;
     private IMarketListingTrackerService marketListingTrackerService;
     private ILocalizationService localizationService;
+    private InventoryView inventoryView;
 
     public string GroupName => this.localizationService.Translate("Group_Characters");
     public string Name => this.localizationService.Translate("CharacterOverview_TabName");
@@ -34,7 +36,8 @@ public class CharacterOverviewMenu : INavigationNode {
         IRetainerDataPresenter retainerDataPresenter,
         IRetainerDetailsView retainerDetailsView,
         IMarketListingTrackerService marketListingTrackerService,
-        ILocalizationService localizationService) {
+        ILocalizationService localizationService,
+        InventoryView inventoryView) {
 
         this.trackerService = trackerService;
         this.worldDataPresenter = worldDataPresenter;
@@ -44,6 +47,7 @@ public class CharacterOverviewMenu : INavigationNode {
         this.retainerDetailsView = retainerDetailsView;
         this.marketListingTrackerService = marketListingTrackerService;
         this.localizationService = localizationService;
+        this.inventoryView = inventoryView;
     }
 
     public IEnumerable<INavigationNode> GetChildren() {
@@ -76,6 +80,7 @@ public class CharacterOverviewMenu : INavigationNode {
         var activeLabel = this.localizationService.Translate("CharacterOverview_ActiveRetainers");
         var scanLabel = this.localizationService.Translate("CharacterOverview_LastScan");
         var openLabel = this.localizationService.Translate("CharacterOverview_OpenButton");
+        var invLabel = this.localizationService.Translate("CharacterOverview_InventoryButton");
 
         foreach (CharacterNode node in nodes) {
             var charData = node.Character;
@@ -90,8 +95,16 @@ public class CharacterOverviewMenu : INavigationNode {
                 ImGui.TextUnformatted($"{activeLabel} {charData.RetainerCount}");
                 ImGui.TextUnformatted($"{scanLabel} {charData.LastScanDate:g}");
 
-                ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() - 100, ImGui.GetWindowHeight() - 35));
-                if (ImGui.Button(openLabel, new Vector2(90, 24))) {
+                var buttonWidth = 90f;
+                var spacing = ImGui.GetStyle().ItemSpacing.X;
+                ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() - (buttonWidth * 2 + spacing + 10), ImGui.GetWindowHeight() - 35));
+
+                if (ImGui.Button(invLabel, new Vector2(buttonWidth, 24))) {
+                    this.inventoryView.OpenForCharacter(charData.Name, charData.HomeWorldId);
+                    this.navigationService.NavigateTo(this.inventoryView);
+                }
+                ImGui.SameLine();
+                if (ImGui.Button(openLabel, new Vector2(buttonWidth, 24))) {
                     this.navigationService.NavigateTo(node);
                 }
 

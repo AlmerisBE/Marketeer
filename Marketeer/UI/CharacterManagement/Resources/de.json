@@ -19,5 +19,8 @@
   "CharacterOverview_None": "Keine",
   "CharacterOverview_ActiveRetainers": "Aktive Gehilfen:",
   "CharacterOverview_LastScan": "Letzter Scan:",
-  "CharacterOverview_OpenButton": "Öffnen"
+  "CharacterOverview_OpenButton": "Öffnen",
+  "CharacterOverview_InventoryButton": "Inventar",
+  "CharacterList_BtnOnSale": "Im Verkauf",
+  "CharacterList_BtnInventory": "Inventar"
 }

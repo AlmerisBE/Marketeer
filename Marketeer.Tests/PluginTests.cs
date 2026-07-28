@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin;
+﻿using Dalamud.Interface;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using NSubstitute;
 using Xunit;
@@ -6,42 +7,44 @@ using Xunit;
 namespace Marketeer.Tests;
 
 public class PluginTests {
-
     [Fact]
     public void Plugin_Initialization_Succeeds() {
-        var mockPluginInterface = Substitute.For<IDalamudPluginInterface>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockGameGui = Substitute.For<IGameGui>();
-        var mockCommandManager = Substitute.For<ICommandManager>();
-        var mockClientState = Substitute.For<IClientState>();
-        var mockPluginLog = Substitute.For<IPluginLog>();
-        var mockObjectTable = Substitute.For<IObjectTable>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockDataManager = Substitute.For<IDataManager>();
-        var mockCondition = Substitute.For<ICondition>();
-        var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
-        var mockTextureProvider = Substitute.For<ITextureProvider>();
+        // Arrange
+        var pluginInterface = Substitute.For<IDalamudPluginInterface>();
+        var chatGui = Substitute.For<IChatGui>();
+        var gameGui = Substitute.For<IGameGui>();
+        var commandManager = Substitute.For<ICommandManager>();
+        var clientState = Substitute.For<IClientState>();
+        var pluginLog = Substitute.For<IPluginLog>();
+        var objectTable = Substitute.For<IObjectTable>();
+        var framework = Substitute.For<IFramework>();
+        var dataManager = Substitute.For<IDataManager>();
+        var condition = Substitute.For<ICondition>();
+        var addonLifecycle = Substitute.For<IAddonLifecycle>();
+        var textureProvider = Substitute.For<ITextureProvider>();
 
-        // Fix CS7036 by mocking the newly required IContextMenu
-        var mockContextMenu = Substitute.For<IContextMenu>();
+        // We mock the UiBuilder to avoid NullReferenceExceptions when Plugin hooks events
+        var uiBuilder = Substitute.For<UiBuilder>();
+        pluginInterface.UiBuilder.Returns(uiBuilder);
 
+        // Act
         var plugin = new Plugin(
-            mockPluginInterface,
-            mockChatGui,
-            mockGameGui,
-            mockCommandManager,
-            mockClientState,
-            mockPluginLog,
-            mockObjectTable,
-            mockFramework,
-            mockDataManager,
-            mockCondition,
-            mockAddonLifecycle,
-            mockTextureProvider,
-            mockContextMenu
+            pluginInterface,
+            chatGui,
+            gameGui,
+            commandManager,
+            clientState,
+            pluginLog,
+            objectTable,
+            framework,
+            dataManager,
+            condition,
+            addonLifecycle,
+            textureProvider
         );
 
+        // Assert
         Assert.NotNull(plugin);
-        plugin.Dispose();
+        Assert.Equal("Marketeer", plugin.Name);
     }
 }

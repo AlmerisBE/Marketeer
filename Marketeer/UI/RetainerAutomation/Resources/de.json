@@ -5,6 +5,5 @@
   "RetainerMenu_AdjustPrice": "Preis anpassen",
   "RetainerMenu_StopRetaining": "Zurückziehen",
   "RetainerMenu_ReturnToInventory": "Ins Inventar verschieben",
-  "ContextMenu_Compete": "Konkurrieren",
-  "ContextMenu_CancelAndSell": "Abbrechen und verkaufen"
+  "ContextMenu_HaveRetainerSell": "Durch Gehilfen verkaufen lassen"
 }

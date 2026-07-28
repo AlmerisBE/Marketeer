@@ -19,5 +19,8 @@
   "CharacterOverview_None": "None",
   "CharacterOverview_ActiveRetainers": "Active Retainers:",
   "CharacterOverview_LastScan": "Last Scan:",
-  "CharacterOverview_OpenButton": "Open"
+  "CharacterOverview_OpenButton": "Open",
+  "CharacterOverview_InventoryButton": "Inventory",
+  "CharacterList_BtnOnSale": "On Sale",
+  "CharacterList_BtnInventory": "Inventory"
 }
