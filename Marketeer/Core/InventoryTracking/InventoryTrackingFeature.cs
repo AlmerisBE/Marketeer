@@ -16,9 +16,12 @@ public class InventoryTrackingFeature : IFeatureModule {
         // Core Tracking
         services.AddSingleton<IInventoryDiffService, InventoryDiffService>();
         services.AddSingleton<IInventorySnapshotService, InventorySnapshotService>();
-        services.AddSingleton<RetainerInventoryTrackerService>();
 
-        // Hidden UI View integration (Not bound to INavigationNode collection)
+        // Background automatic scanners
+        services.AddSingleton<RetainerInventoryTrackerService>();
+        services.AddSingleton<PlayerInventoryTrackerService>();
+
+        // Hidden UI View integration
         services.AddSingleton<InventoryView>();
     }
 }

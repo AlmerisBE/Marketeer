@@ -63,6 +63,9 @@ public sealed class Plugin : IDalamudPlugin {
 
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
+        // Force instantiation of the Inventory Trackers to start background captures
+        this.serviceProvider.GetRequiredService<RetainerInventoryTrackerService>();
+        this.serviceProvider.GetRequiredService<PlayerInventoryTrackerService>();
 
         // Start Window Tracking
         var windowTracker = this.serviceProvider.GetRequiredService<IWindowTrackerService>();
