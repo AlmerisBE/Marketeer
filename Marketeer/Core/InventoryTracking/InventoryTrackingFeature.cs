@@ -8,6 +8,6 @@ namespace Marketeer.Core.InventoryTracking;
 public class InventoryTrackingFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IInventoryDiffService, InventoryDiffService>();
-        // IInventorySnapshotService will be added here once we implement the memory reading logic
+        services.AddSingleton<IInventorySnapshotService, InventorySnapshotService>();
     }
 }

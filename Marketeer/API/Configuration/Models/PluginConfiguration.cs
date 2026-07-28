@@ -1,5 +1,6 @@
 ﻿using Dalamud.Configuration;
 using Marketeer.API.Financials.Models;
+using Marketeer.API.InventoryTracking.Models;
 using Marketeer.API.SalesHistory.Models;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public Dictionary<string, CharacterFinancialData> FinancialRecords { get; set; } = [];
     public List<SaleRecord> SalesHistory { get; set; } = new();
+    public Dictionary<string, InventorySnapshot> InventorySnapshots { get; set; } = new();
 
     public int UniversalisCacheMinutes { get; set; } = 30;
     public List<string> CompetitorWhitelist { get; set; } = new();
