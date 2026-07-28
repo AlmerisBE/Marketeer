@@ -4,6 +4,7 @@ using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.MarketListings.Contracts;
+using Marketeer.UI.InventoryTracking.UI;
 using Marketeer.UI.MarketListings.UI;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,8 @@ public class CharacterListMenu : INavigationNode {
     private IRetainerDataPresenter retainerDataPresenter;
     private IMarketListingTrackerService marketListingTrackerService;
     private RetainerDetailsWindow retainerDetailsWindow;
+    private IDashboardNavigationService navigationService;
+    private InventoryView inventoryView;
 
     public string GroupName => string.Empty;
     public string Name => this.localizationService.Translate("CharacterList_TabName");
@@ -32,7 +35,9 @@ public class CharacterListMenu : INavigationNode {
         ILocalizationService localizationService,
         IRetainerDataPresenter retainerDataPresenter,
         IMarketListingTrackerService marketListingTrackerService,
-        RetainerDetailsWindow retainerDetailsWindow) {
+        RetainerDetailsWindow retainerDetailsWindow,
+        IDashboardNavigationService navigationService,
+        InventoryView inventoryView) {
 
         this.trackerService = trackerService;
         this.worldDataPresenter = worldDataPresenter;
@@ -40,13 +45,15 @@ public class CharacterListMenu : INavigationNode {
         this.retainerDataPresenter = retainerDataPresenter;
         this.marketListingTrackerService = marketListingTrackerService;
         this.retainerDetailsWindow = retainerDetailsWindow;
+        this.navigationService = navigationService;
+        this.inventoryView = inventoryView;
     }
 
     public void DrawContent() {
         var characters = this.trackerService.GetKnownCharacters().ToList();
 
         if (characters.Count == 0) {
-            ImGui.Text(this.localizationService.Translate("CharacterList_NoCharacters"));
+            ImGui.TextUnformatted(this.localizationService.Translate("CharacterList_NoCharacters"));
             return;
         }
 
@@ -57,7 +64,10 @@ public class CharacterListMenu : INavigationNode {
         var gilColName = this.localizationService.Translate("CharacterList_ColGil");
         var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
         var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
-        var detailsButtonLabel = this.localizationService.Translate("Dashboard_DetailsButton");
+
+        var onSaleButtonLabel = this.localizationService.Translate("CharacterList_BtnOnSale");
+        var inventoryButtonLabel = this.localizationService.Translate("CharacterList_BtnInventory");
+
         var updateRequiredTooltip = this.localizationService.Translate("Dashboard_PriceUpdateRequired");
         var syncRequiredTooltip = this.localizationService.Translate("Dashboard_SyncRequired");
 
@@ -110,23 +120,24 @@ public class CharacterListMenu : INavigationNode {
                 }
                 else {
                     float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
+                    var actionColumnWidth = ImGui.CalcTextSize(onSaleButtonLabel).X + ImGui.CalcTextSize(inventoryButtonLabel).X + (ImGui.GetStyle().FramePadding.X * 4) + ImGui.GetStyle().ItemSpacing.X;
 
                     if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
                         ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
                         ImGui.TableSetupColumn(gilColName, ImGuiTableColumnFlags.WidthFixed, 100f);
                         ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 60f);
                         ImGui.TableSetupColumn(totalColName, ImGuiTableColumnFlags.WidthFixed, 100f);
-                        ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize(detailsButtonLabel).X + 16f);
+                        ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, actionColumnWidth);
                         ImGui.TableHeadersRow();
 
                         foreach (var retainer in retainers) {
                             ImGui.TableNextRow();
 
                             ImGui.TableNextColumn();
-                            ImGui.Text(retainer.Name);
+                            ImGui.TextUnformatted(retainer.Name);
 
                             ImGui.TableNextColumn();
-                            ImGui.Text($"{retainer.Gil:N0}");
+                            ImGui.TextUnformatted($"{retainer.Gil:N0}");
 
                             var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
                             var distinctItems = listings.Count;
@@ -136,7 +147,7 @@ public class CharacterListMenu : INavigationNode {
                             var isDesynced = distinctItems != retainer.MarketItemCount;
 
                             ImGui.TableNextColumn();
-                            ImGui.Text(retainer.MarketItemCount.ToString());
+                            ImGui.TextUnformatted(retainer.MarketItemCount.ToString());
 
                             ImGui.TableNextColumn();
                             if (isDesynced || needsPriceUpdate) {
@@ -146,12 +157,20 @@ public class CharacterListMenu : INavigationNode {
                                 }
                             }
                             else {
-                                ImGui.Text($"{totalValue:N0}");
+                                ImGui.TextUnformatted($"{totalValue:N0}");
                             }
 
                             ImGui.TableNextColumn();
-                            if (ImGui.Button($"{detailsButtonLabel}##det_{retainer.RetainerId}")) {
+
+                            if (ImGui.Button($"{onSaleButtonLabel}##det_{retainer.RetainerId}")) {
                                 this.retainerDetailsWindow.OpenForRetainer(retainer.RetainerId, retainer.Name);
+                            }
+
+                            ImGui.SameLine();
+
+                            if (ImGui.Button($"{inventoryButtonLabel}##inv_{retainer.RetainerId}")) {
+                                this.inventoryView.OpenForRetainer(retainer.RetainerId, retainer.Name);
+                                this.navigationService.NavigateTo(this.inventoryView);
                             }
                         }
 
