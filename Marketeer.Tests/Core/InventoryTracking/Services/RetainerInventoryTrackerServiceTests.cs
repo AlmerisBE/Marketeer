@@ -31,6 +31,9 @@ public class RetainerInventoryTrackerServiceTests {
             mockFramework, mockListingProvider, mockRetainerProvider,
             mockSnapshotService, mockWindowService, mockLogger);
 
+        // Correct delegate type for Dalamud's IFramework
+        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
+
         mockSnapshotService.DidNotReceiveWithAnyArgs().SaveRetainerSnapshot(default, default!);
     }
 
@@ -57,12 +60,12 @@ public class RetainerInventoryTrackerServiceTests {
         var snapshot = new InventorySnapshot { Items = new List<TrackedItem> { new TrackedItem() } };
         mockSnapshotService.CreateRetainerSnapshot(12345ul, "Adelaide").Returns(snapshot);
 
-        var service = new RetainerInventoryTrackerService(
+        using var service = new RetainerInventoryTrackerService(
             mockFramework, mockListingProvider, mockRetainerProvider,
             mockSnapshotService, mockWindowService, mockLogger);
 
-        // Simulate Framework Update call
-        mockFramework.Update += Raise.Event<IFrameworkUpdateDelegate>(mockFramework);
+        // Correct delegate type for Dalamud's IFramework
+        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
 
         mockSnapshotService.Received(1).SaveRetainerSnapshot(12345ul, snapshot);
     }
