@@ -36,4 +36,29 @@ public class InventorySnapshotServiceTests {
         Assert.Equal("Test Player", retrieved.CharacterName);
         mockConfig.Received(1).Save();
     }
+
+    [Fact]
+    public void SaveRetainerSnapshot_UsesConfigurationServiceCorrectly() {
+        var mockInventory = Substitute.For<IInventoryService>();
+        var mockObjectTable = Substitute.For<IObjectTable>();
+        var mockConfig = Substitute.For<IConfigurationService>();
+
+        var pluginConfig = new PluginConfiguration();
+        mockConfig.GetConfig().Returns(pluginConfig);
+
+        var service = new InventorySnapshotService(mockInventory, mockObjectTable, mockConfig);
+
+        var snapshot = new InventorySnapshot {
+            CharacterName = "MyRetainer",
+        };
+
+        // Act
+        service.SaveRetainerSnapshot(12345ul, snapshot);
+        var retrieved = service.GetLatestRetainerSnapshot(12345ul);
+
+        // Assert
+        Assert.NotNull(retrieved);
+        Assert.Equal("MyRetainer", retrieved.CharacterName);
+        mockConfig.Received(1).Save();
+    }
 }

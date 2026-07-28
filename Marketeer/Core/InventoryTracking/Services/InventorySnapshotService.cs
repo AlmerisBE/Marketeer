@@ -38,12 +38,34 @@ public class InventorySnapshotService : IInventorySnapshotService {
         };
 
         InventoryType[] bags = {
-            InventoryType.Inventory1,
-            InventoryType.Inventory2,
-            InventoryType.Inventory3,
-            InventoryType.Inventory4
+            InventoryType.Inventory1, InventoryType.Inventory2,
+            InventoryType.Inventory3, InventoryType.Inventory4
         };
 
+        this.PopulateSnapshot(snapshot, bags);
+        return snapshot;
+    }
+
+    public InventorySnapshot CreateRetainerSnapshot(ulong retainerId, string retainerName) {
+        var snapshot = new InventorySnapshot {
+            CharacterName = retainerName, // We reuse CharacterName to store the retainer's name
+            HomeWorldId = 0, // Irrelevant for retainers
+            Timestamp = DateTime.UtcNow,
+            Items = new List<TrackedItem>()
+        };
+
+        // FFXIV natively uses RetainerPage1 through 7 for standard retainer bags
+        InventoryType[] bags = {
+            InventoryType.RetainerPage1, InventoryType.RetainerPage2, InventoryType.RetainerPage3,
+            InventoryType.RetainerPage4, InventoryType.RetainerPage5, InventoryType.RetainerPage6,
+            InventoryType.RetainerPage7
+        };
+
+        this.PopulateSnapshot(snapshot, bags);
+        return snapshot;
+    }
+
+    private void PopulateSnapshot(InventorySnapshot snapshot, InventoryType[] bags) {
         foreach (var bag in bags) {
             var slots = this.inventoryService.GetInventorySlots(bag);
             foreach (var slot in slots) {
@@ -57,8 +79,6 @@ public class InventorySnapshotService : IInventorySnapshotService {
                 }
             }
         }
-
-        return snapshot;
     }
 
     public void SaveSnapshot(InventorySnapshot snapshot) {
@@ -78,6 +98,30 @@ public class InventorySnapshotService : IInventorySnapshotService {
         var config = this.configService.GetConfig();
 
         if (config.InventorySnapshots.TryGetValue(key, out var snapshot)) {
+            return snapshot;
+        }
+
+        return null;
+    }
+
+    public void SaveRetainerSnapshot(ulong retainerId, InventorySnapshot snapshot) {
+        if (retainerId == 0) {
+            return;
+        }
+
+        var config = this.configService.GetConfig();
+        // Fallback for older configurations that might not have this dictionary initialized
+        if (config.RetainerInventorySnapshots == null) {
+            config.RetainerInventorySnapshots = new Dictionary<ulong, InventorySnapshot>();
+        }
+
+        config.RetainerInventorySnapshots[retainerId] = snapshot;
+        this.configService.Save();
+    }
+
+    public InventorySnapshot? GetLatestRetainerSnapshot(ulong retainerId) {
+        var config = this.configService.GetConfig();
+        if (config.RetainerInventorySnapshots != null && config.RetainerInventorySnapshots.TryGetValue(retainerId, out var snapshot)) {
             return snapshot;
         }
 

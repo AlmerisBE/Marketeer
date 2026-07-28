@@ -14,6 +14,7 @@ public class PluginConfiguration : IPluginConfiguration {
     public Dictionary<string, CharacterFinancialData> FinancialRecords { get; set; } = [];
     public List<SaleRecord> SalesHistory { get; set; } = new();
     public Dictionary<string, InventorySnapshot> InventorySnapshots { get; set; } = new();
+    public Dictionary<ulong, InventorySnapshot> RetainerInventorySnapshots { get; set; } = new();
 
     public int UniversalisCacheMinutes { get; set; } = 30;
     public List<string> CompetitorWhitelist { get; set; } = new();

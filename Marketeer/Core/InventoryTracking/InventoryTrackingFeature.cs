@@ -18,6 +18,9 @@ public class InventoryTrackingFeature : IFeatureModule {
         services.AddSingleton<IInventoryDiffService, InventoryDiffService>();
         services.AddSingleton<IInventorySnapshotService, InventorySnapshotService>();
 
+        // Background automatic retainer scanner
+        services.AddSingleton<RetainerInventoryTrackerService>();
+
         // UI Dashboard Integration
         services.AddSingleton<InventoryMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<InventoryMenu>());
