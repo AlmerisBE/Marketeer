@@ -2,6 +2,7 @@
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.InventoryTracking.Contracts;
 using Marketeer.API.Logging.Contracts;
+using Marketeer.API.UiInterop.Contracts;
 using System;
 using System.Linq;
 
@@ -12,6 +13,7 @@ public class RetainerInventoryTrackerService : IDisposable {
     private IMarketListingProvider listingProvider;
     private IRetainerProvider retainerProvider;
     private IInventorySnapshotService snapshotService;
+    private INativeWindowService windowService;
     private ILoggerService logger;
 
     private ulong lastScannedRetainerId = 0;
@@ -21,12 +23,14 @@ public class RetainerInventoryTrackerService : IDisposable {
         IMarketListingProvider listingProvider,
         IRetainerProvider retainerProvider,
         IInventorySnapshotService snapshotService,
+        INativeWindowService windowService,
         ILoggerService logger) {
 
         this.framework = framework;
         this.listingProvider = listingProvider;
         this.retainerProvider = retainerProvider;
         this.snapshotService = snapshotService;
+        this.windowService = windowService;
         this.logger = logger;
 
         this.framework.Update += this.OnFrameworkUpdate;
@@ -37,24 +41,27 @@ public class RetainerInventoryTrackerService : IDisposable {
 
         if (activeId.HasValue && activeId.Value != 0) {
             if (this.lastScannedRetainerId != activeId.Value) {
-                var retainers = this.retainerProvider.GetActiveRetainers();
-                var retainer = retainers.FirstOrDefault(r => r.RetainerId == activeId.Value);
+                // Wait for the server to transmit the inventory data.
+                // The "SelectString" menu only appears once the retainer memory is fully loaded.
+                var menuWindow = this.windowService.GetWindow("SelectString");
 
-                if (retainer != null) {
-                    var snapshot = this.snapshotService.CreateRetainerSnapshot(retainer.RetainerId, retainer.Name);
+                if (menuWindow != null && menuWindow.IsVisible) {
+                    var retainers = this.retainerProvider.GetActiveRetainers();
+                    var retainer = retainers.FirstOrDefault(r => r.RetainerId == activeId.Value);
 
-                    // Native memory safety: ensure bags are fully loaded before committing the snapshot.
-                    // If count is 0, we'll try again next tick.
-                    if (snapshot.Items.Count > 0) {
-                        this.snapshotService.SaveRetainerSnapshot(retainer.RetainerId, snapshot);
-                        this.lastScannedRetainerId = activeId.Value;
-                        this.logger.Info($"[RetainerInventoryTracker] Successfully captured inventory snapshot for retainer: {retainer.Name}");
+                    if (retainer != null) {
+                        var snapshot = this.snapshotService.CreateRetainerSnapshot(retainer.RetainerId, retainer.Name);
+
+                        if (snapshot.Items.Count > 0) {
+                            this.snapshotService.SaveRetainerSnapshot(retainer.RetainerId, snapshot);
+                            this.lastScannedRetainerId = activeId.Value;
+                            this.logger.Info($"[RetainerInventoryTracker] Successfully captured inventory snapshot for retainer: {retainer.Name}");
+                        }
                     }
                 }
             }
         }
         else {
-            // Retainer dismissed
             this.lastScannedRetainerId = 0;
         }
     }
