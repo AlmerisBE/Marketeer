@@ -83,6 +83,34 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.orchestrator.StartOrchestration(retainers, RetainerTargetMenu.MarketListings, this);
     }
 
+    public void TriggerSingleItemUpdate(uint itemId) {
+        if (this.IsUpdating) {
+            return;
+        }
+
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null || localPlayer.Name == null) {
+            this.logger.Warning("Cannot start targeted price update: No local player found.");
+            return;
+        }
+
+        var playerName = localPlayer.Name.TextValue;
+        var allUndercuts = this.competitionState.GetUndercutItems();
+
+        var targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == playerName && u.ItemId == itemId);
+
+        if (targetUndercut == null) {
+            this.logger.Info($"No undercut detected for item {itemId} on current character. Single update aborted.");
+            return;
+        }
+
+        this.tasksByRetainer = new Dictionary<string, Queue<UndercutItem>> {
+            { targetUndercut.RetainerName, new Queue<UndercutItem>(new[] { targetUndercut }) }
+        };
+
+        this.orchestrator.StartOrchestration(new[] { targetUndercut.RetainerName }, RetainerTargetMenu.MarketListings, this);
+    }
+
     public void AbortUpdate() {
         this.orchestrator.Abort();
     }
@@ -110,20 +138,17 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         uint targetPrice = Math.Max(1u, this.currentItemTask.ServerCheapestPrice - 1);
         uint currentPrice = this.inventoryService.GetRetainerMarketItemPrice(this.currentItemTask.SlotIndex);
 
-        // 1. Validated state: Item has reached the target price
         if (currentPrice == targetPrice) {
             this.logger.Info($"Price for '{this.currentItemTask.ItemName}' successfully updated. Moving to next.");
             return this.ProcessNextItem();
         }
 
-        // 2. Reactive state: Price input window is open
         if (this.uiInteraction.IsAddonReady("RetainerSell")) {
             this.uiInteraction.ConfirmPriceUpdate(targetPrice);
             this.SetDelay(0.5);
             return false;
         }
 
-        // 3. Reactive state: Context menu is open
         if (this.uiInteraction.IsAddonReady("ContextMenu")) {
             var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
             var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
@@ -139,7 +164,6 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             return false;
         }
 
-        // 4. Default state: Click the item in the list
         var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
         if (uiIndex != -1) {
             this.uiInteraction.SelectItemInSellList(uiIndex);
