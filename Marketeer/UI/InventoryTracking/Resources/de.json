@@ -1,0 +1,11 @@
+{
+  "Group_Inventory": "Inventare",
+  "InventoryTab_Title": "Taschen & Gehilfen",
+  "InventoryTab_NoData": "Noch keine Inventardaten erfasst. Öffne die Taschen deines Charakters, um einen Snapshot zu erstellen.",
+  "InventoryTab_PlayerInventory": "Spielertaschen",
+  "InventoryTab_LastUpdated": "Zuletzt aktualisiert: {0}",
+  "InventoryTab_RetainerInventory": "Gehilfe: {0} (Marktangebote)",
+  "InventoryTab_NoRetainerData": "Keine Daten für diesen Gehilfen verfügbar.",
+  "InventoryTab_ColName": "Gegenstandsname",
+  "InventoryTab_ColQuantity": "Menge"
+}

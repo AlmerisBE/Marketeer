@@ -1,0 +1,11 @@
+{
+  "Group_Inventory": "Inventaires",
+  "InventoryTab_Title": "Sacs & Servants",
+  "InventoryTab_NoData": "Aucune donnée d'inventaire capturée. Ouvrez l'inventaire de votre personnage pour générer un snapshot.",
+  "InventoryTab_PlayerInventory": "Sacs du Joueur",
+  "InventoryTab_LastUpdated": "Dernière mise à jour : {0}",
+  "InventoryTab_RetainerInventory": "Servant : {0} (En Vente)",
+  "InventoryTab_NoRetainerData": "Aucune donnée disponible pour ce servant.",
+  "InventoryTab_ColName": "Nom de l'objet",
+  "InventoryTab_ColQuantity": "Qté"
+}
