@@ -32,6 +32,9 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<PriceUpdateAutomationService>();
         services.AddSingleton<IPriceUpdateAutomationService>(provider => provider.GetRequiredService<PriceUpdateAutomationService>());
 
+        services.AddSingleton<ItemCancelAndSellService>();
+        services.AddSingleton<IItemCancelAndSellService>(provider => provider.GetRequiredService<ItemCancelAndSellService>());
+
         // UI Commands
         services.AddSingleton<ICommand, RetainerCommand>();
         services.AddSingleton<ICommand, RetainerMenuCommand>();

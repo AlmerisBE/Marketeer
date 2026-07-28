@@ -9,25 +9,24 @@ namespace Marketeer.Core.RetainerAutomation.Services;
 public class RetainerContextMenuService : IDisposable {
     private IContextMenu contextMenu;
     private IPriceUpdateAutomationService priceUpdateService;
-    private ICancelListingsAutomationService cancelService;
+    private IItemCancelAndSellService itemCancelAndSellService;
     private ILocalizationService localization;
 
     public RetainerContextMenuService(
         IContextMenu contextMenu,
         IPriceUpdateAutomationService priceUpdateService,
-        ICancelListingsAutomationService cancelService,
+        IItemCancelAndSellService itemCancelAndSellService,
         ILocalizationService localization) {
 
         this.contextMenu = contextMenu;
         this.priceUpdateService = priceUpdateService;
-        this.cancelService = cancelService;
+        this.itemCancelAndSellService = itemCancelAndSellService;
         this.localization = localization;
 
         this.contextMenu.OnMenuOpened += this.OnMenuOpened;
     }
 
     private void OnMenuOpened(IMenuOpenedArgs args) {
-        // Target the specific retainer sell list context menu
         if (args.AddonName == "RetainerSellList") {
             args.AddMenuItem(new MenuItem {
                 Name = this.localization.Translate("ContextMenu_Compete"),
@@ -46,7 +45,8 @@ public class RetainerContextMenuService : IDisposable {
     }
 
     private void OnCancelClicked(IMenuItemClickedArgs args) {
-        this.cancelService.TriggerCancellation();
+        // Transmits the targeted UI element to the automation service
+        this.itemCancelAndSellService.TriggerCancelAndSell(args.Target);
     }
 
     public void Dispose() {

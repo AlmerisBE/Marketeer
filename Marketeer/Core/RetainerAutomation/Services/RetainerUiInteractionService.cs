@@ -319,4 +319,20 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             addon->FireCallback(1u, values, true);
         }
     }
+
+    public unsafe void OpenInventory() {
+        var uiModule = FFXIVClientStructs.FFXIV.Client.UI.UIModule.Instance();
+        if (uiModule != null) {
+            var agentModule = uiModule->GetAgentModule();
+            if (agentModule != null) {
+                // Fetch the specific agent for the inventory
+                var inventoryAgent = agentModule->GetAgentByInternalId(FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentId.Inventory);
+
+                // Call Show() directly on the agent interface
+                if (inventoryAgent != null) {
+                    inventoryAgent->Show();
+                }
+            }
+        }
+    }
 }
