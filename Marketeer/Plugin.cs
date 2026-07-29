@@ -9,6 +9,7 @@ using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.Command.Services;
 using Marketeer.Core.Dependencies;
 using Marketeer.Core.InventoryTracking.Services;
+using Marketeer.Core.RetainerAutomation.Services;
 using Marketeer.UI.Configuration.UI;
 using Marketeer.UI.Dashboard.UI;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +36,7 @@ public sealed class Plugin : IDalamudPlugin {
         ICondition condition,
         IAddonLifecycle addonLifecycle,
         ITextureProvider textureProvider,
-        IContextMenu contextMenu) { // Restauration ici
+        IContextMenu contextMenu) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -55,7 +56,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(condition);
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(textureProvider);
-        services.AddSingleton(contextMenu); // Enregistrement dans le DI
+        services.AddSingleton(contextMenu);
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
@@ -78,7 +79,9 @@ public sealed class Plugin : IDalamudPlugin {
         monitorService.StartMonitoring();
 
         this.serviceProvider.GetRequiredService<IGameEventService>();
-        this.serviceProvider.GetRequiredService<RetainerInventoryTrackerService>();
+
+        // Forced instantiation of the Context Menu Hook
+        this.serviceProvider.GetRequiredService<RetainerContextMenuService>();
 
         // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();

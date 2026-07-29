@@ -5,5 +5,7 @@
   "RetainerMenu_AdjustPrice": "Adjust Price",
   "RetainerMenu_StopRetaining": "Stop Retaining",
   "RetainerMenu_ReturnToInventory": "Return to Inventory",
-  "ContextMenu_HaveRetainerSell": "Have retainer sell items"
+  "ContextMenu_HaveRetainerSell": "Have retainer sell items",
+  "ContextMenu_Compete": "Adjust Price",
+  "ContextMenu_CancelAndSell": "Auto-Cancel Listing"
 }

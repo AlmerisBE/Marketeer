@@ -5,5 +5,7 @@
   "RetainerMenu_AdjustPrice": "Changer le prix",
   "RetainerMenu_StopRetaining": "Redonner au servant",
   "RetainerMenu_ReturnToInventory": "Mettre dans l'inventaire",
-  "ContextMenu_HaveRetainerSell": "Faire vendre par le servant"
+  "ContextMenu_HaveRetainerSell": "Faire vendre par le servant",
+  "ContextMenu_Compete": "Ajuster le prix",
+  "ContextMenu_CancelAndSell": "Annuler la vente"
 }

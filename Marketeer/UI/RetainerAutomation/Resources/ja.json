@@ -5,5 +5,7 @@
   "RetainerMenu_AdjustPrice": "価格を変更する",
   "RetainerMenu_StopRetaining": "出品を取り下げる",
   "RetainerMenu_ReturnToInventory": "所持品に戻す",
-  "ContextMenu_HaveRetainerSell": "リテイナーに売却を依頼する"
+  "ContextMenu_HaveRetainerSell": "リテイナーに売却を依頼する",
+  "ContextMenu_Compete": "価格を調整する",
+  "ContextMenu_CancelAndSell": "出品を取り消す"
 }
