@@ -41,11 +41,10 @@ public class RetainerContextMenuService : IDisposable {
     }
 
     private void OnCompeteClicked(IMenuItemClickedArgs args) {
-        this.priceUpdateService.TriggerPriceUpdate();
+        this.priceUpdateService.TriggerSingleItemUpdate(args.Target);
     }
 
     private void OnCancelClicked(IMenuItemClickedArgs args) {
-        // Transmits the targeted UI element to the automation service
         this.itemCancelAndSellService.TriggerCancelAndSell(args.Target);
     }
 

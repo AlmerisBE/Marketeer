@@ -83,8 +83,30 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.orchestrator.StartOrchestration(retainers, RetainerTargetMenu.MarketListings, this);
     }
 
-    public void TriggerSingleItemUpdate(uint itemId) {
+    public void TriggerSingleItemUpdate(object? menuTarget) {
         if (this.IsUpdating) {
+            return;
+        }
+
+        int slotIndex = -1;
+
+        // Utilisation de la réflexion pour extraire TargetIndex en toute sécurité sans MenuTargetInventory
+        if (menuTarget != null) {
+            var prop = menuTarget.GetType().GetProperty("TargetIndex", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (prop != null) {
+                var val = prop.GetValue(menuTarget);
+                if (val is uint uIndex) {
+                    slotIndex = (int)uIndex;
+                }
+                else if (val is int iIndex) {
+                    slotIndex = iIndex;
+                }
+            }
+        }
+
+        if (slotIndex == -1) {
+            // Fallback sur la mise à jour globale si on n'a pas pu identifier la cible
+            this.TriggerPriceUpdate();
             return;
         }
 
@@ -93,6 +115,16 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             this.logger.Warning("Cannot start targeted price update: No local player found.");
             return;
         }
+
+        var slots = this.inventoryService.GetInventorySlots(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.RetainerMarket);
+        var targetSlot = slots.FirstOrDefault(s => s.SlotIndex == slotIndex);
+
+        if (targetSlot == null || !targetSlot.IsOccupied) {
+            this.logger.Warning("Targeted item slot is empty or invalid. Aborting single update.");
+            return;
+        }
+
+        uint itemId = targetSlot.ItemId > 1000000u ? targetSlot.ItemId - 1000000u : targetSlot.ItemId;
 
         var playerName = localPlayer.Name.TextValue;
         var allUndercuts = this.competitionState.GetUndercutItems();

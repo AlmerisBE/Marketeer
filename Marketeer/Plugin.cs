@@ -34,7 +34,8 @@ public sealed class Plugin : IDalamudPlugin {
         IDataManager dataManager,
         ICondition condition,
         IAddonLifecycle addonLifecycle,
-        ITextureProvider textureProvider) {
+        ITextureProvider textureProvider,
+        IContextMenu contextMenu) { // Restauration ici
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -54,6 +55,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(condition);
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(textureProvider);
+        services.AddSingleton(contextMenu); // Enregistrement dans le DI
 
         // 2. Discover and register all features automatically
         services.AddPluginFeatures();
@@ -63,25 +65,19 @@ public sealed class Plugin : IDalamudPlugin {
 
         // 4. Initialize Core Systems
         this.serviceProvider.GetRequiredService<CommandDispatcher>();
-        // Force instantiation of the Inventory Trackers to start background captures
         this.serviceProvider.GetRequiredService<RetainerInventoryTrackerService>();
         this.serviceProvider.GetRequiredService<PlayerInventoryTrackerService>();
 
-        // Start Window Tracking
         var windowTracker = this.serviceProvider.GetRequiredService<IWindowTrackerService>();
         windowTracker.EnableTracking();
 
-        // Enable the Sales Scanner to listen for RetainerItemHistory
         var salesScanner = this.serviceProvider.GetRequiredService<ISalesScannerService>();
         salesScanner.Enable();
 
         var monitorService = this.serviceProvider.GetRequiredService<ICompetitionMonitorService>();
         monitorService.StartMonitoring();
 
-        // Force instantiation of the GameEventService so it starts listening immediately
         this.serviceProvider.GetRequiredService<IGameEventService>();
-
-        // Force instantiation of the RetainerInventoryTrackerService to start background inventory capture
         this.serviceProvider.GetRequiredService<RetainerInventoryTrackerService>();
 
         // 5. Initialize Window System

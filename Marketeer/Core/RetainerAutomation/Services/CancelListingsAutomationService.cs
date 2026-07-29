@@ -84,6 +84,34 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         this.orchestrator.StartOrchestration(retainers, RetainerTargetMenu.MarketListings, this);
     }
 
+    public void TriggerSingleItemCancellation(uint itemId) {
+        if (this.IsCancelling) {
+            return;
+        }
+
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null || localPlayer.Name == null) {
+            this.logger.Warning("Cannot start targeted cancellation: No local player found.");
+            return;
+        }
+
+        var playerName = localPlayer.Name.TextValue;
+        var allSuboptimal = this.optimizationService.GetVendorPricedListings();
+
+        var targetSuboptimal = allSuboptimal.FirstOrDefault(u => u.CharacterName == playerName && u.ItemId == itemId);
+
+        if (targetSuboptimal == null) {
+            this.logger.Info($"No suboptimal listing detected for item {itemId} on current character. Single cancellation aborted.");
+            return;
+        }
+
+        this.tasksByRetainer = new Dictionary<string, Queue<SuboptimalListing>> {
+            { targetSuboptimal.RetainerName, new Queue<SuboptimalListing>(new[] { targetSuboptimal }) }
+        };
+
+        this.orchestrator.StartOrchestration(new[] { targetSuboptimal.RetainerName }, RetainerTargetMenu.MarketListings, this);
+    }
+
     public void AbortCancellation() {
         this.orchestrator.Abort();
     }
@@ -111,20 +139,17 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         var slots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
         var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.CurrentPrice);
 
-        // 1. Validated state: Item is no longer listed at that price
         if (targetSlot == null) {
             this.logger.Info($"Listing for '{this.currentItemTask.ItemName}' successfully cancelled. Moving to next.");
             return this.ProcessNextItem();
         }
 
-        // 2. Reactive state: Confirmation dialog is open
         if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
             this.uiInteraction.ConfirmYesNo();
             this.SetDelay(0.5);
             return false;
         }
 
-        // 3. Reactive state: Context menu is open
         if (this.uiInteraction.IsAddonReady("ContextMenu")) {
             var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
             var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
@@ -149,7 +174,6 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
             return false;
         }
 
-        // 4. Default state: Click the item in the list
         var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem((int)targetSlot.SlotIndex);
         if (uiIndex != -1) {
             this.uiInteraction.SelectItemInSellList(uiIndex);
