@@ -24,6 +24,4 @@ public interface IRetainerUiInteractionService {
     int GetContextMenuItemIndex(string localizedText);
     void CloseUnexpectedWindows();
     void SkipDialogue();
-
-    void OpenInventory();
 }

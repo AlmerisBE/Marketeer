@@ -1,6 +1,9 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.InventoryTracking.Contracts;
+using Marketeer.API.InventoryTracking.Models;
 using Marketeer.API.Localization.Contracts;
+using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
 using System;
 using System.Reflection;
@@ -12,34 +15,43 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
     private IInventoryService inventoryService;
     private ILocalizationService localization;
     private IFramework framework;
+    private IInventorySnapshotService snapshotService;
+    private IInventoryDiffService diffService;
+    private ILoggerService logger;
 
-    private bool pendingMenuClick;
-    private DateTime menuClickAt;
-
-    private bool pendingInventoryOpen;
-    private DateTime openInventoryAt;
+    private int stateMachineIndex;
+    private DateTime nextActionAt;
+    private InventorySnapshot? initialSnapshot;
 
     public ItemCancelAndSellService(
         IRetainerUiInteractionService uiInteraction,
         IInventoryService inventoryService,
         ILocalizationService localization,
-        IFramework framework) {
+        IFramework framework,
+        IInventorySnapshotService snapshotService,
+        IInventoryDiffService diffService,
+        ILoggerService logger) {
 
         this.uiInteraction = uiInteraction;
         this.inventoryService = inventoryService;
         this.localization = localization;
         this.framework = framework;
+        this.snapshotService = snapshotService;
+        this.diffService = diffService;
+        this.logger = logger;
 
-        this.pendingMenuClick = false;
-        this.pendingInventoryOpen = false;
+        this.stateMachineIndex = 0;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
     public void TriggerCancelAndSell(object? menuTarget) {
+        if (this.stateMachineIndex != 0) {
+            return;
+        }
+
         int uiIndex = -1;
 
-        // Safely extract TargetIndex using Reflection to bypass strict Dalamud UI API type changes
         if (menuTarget != null) {
             var prop = menuTarget.GetType().GetProperty("TargetIndex", BindingFlags.Public | BindingFlags.Instance);
             if (prop != null) {
@@ -53,18 +65,15 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
             }
         }
 
+        // Take the initial inventory snapshot right before starting the cancellation process
+        this.initialSnapshot = this.snapshotService.CreateSnapshot();
+
         if (uiIndex != -1) {
-            // Reopen the context menu seamlessly for the targeted item
             this.uiInteraction.SelectItemInSellList(uiIndex);
-
-            this.pendingMenuClick = true;
-            this.menuClickAt = DateTime.Now.AddSeconds(0.2);
-
-            this.pendingInventoryOpen = true;
-            this.openInventoryAt = DateTime.Now.AddSeconds(0.7);
+            this.stateMachineIndex = 1;
+            this.nextActionAt = DateTime.Now.AddSeconds(0.2);
         }
         else {
-            // Fallback: Try an immediate click just in case the menu hasn't fully closed
             var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
             var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
 
@@ -73,28 +82,51 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
             }
 
             this.uiInteraction.SelectContextMenuItem(menuIndex);
-
-            this.pendingInventoryOpen = true;
-            this.openInventoryAt = DateTime.Now.AddSeconds(0.5);
+            this.stateMachineIndex = 2;
+            this.nextActionAt = DateTime.Now.AddSeconds(1.0);
         }
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
-        if (this.pendingMenuClick && DateTime.Now >= this.menuClickAt) {
-            this.pendingMenuClick = false;
+        if (this.stateMachineIndex == 0 || DateTime.Now < this.nextActionAt) {
+            return;
+        }
 
+        if (this.stateMachineIndex == 1) {
             var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
             var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
+
             if (menuIndex == -1) {
                 menuIndex = 2;
             }
 
             this.uiInteraction.SelectContextMenuItem(menuIndex);
+            this.stateMachineIndex = 2;
+            this.nextActionAt = DateTime.Now.AddSeconds(1.0);
         }
+        else if (this.stateMachineIndex == 2) {
+            var newSnapshot = this.snapshotService.CreateSnapshot();
 
-        if (this.pendingInventoryOpen && DateTime.Now >= this.openInventoryAt) {
-            this.pendingInventoryOpen = false;
-            this.uiInteraction.OpenInventory();
+            if (this.initialSnapshot != null) {
+                var diff = this.diffService.Compare(this.initialSnapshot, newSnapshot);
+
+                foreach (var added in diff.Added) {
+                    this.logger.Info($"[CancelAndSell] Item {added.ItemId} transferred to inventory -> Bag {added.ContainerId}, Slot {added.SlotIndex} | Quantity to sell: {added.Quantity}");
+                }
+
+                foreach (var changed in diff.QuantityChanged) {
+                    if (changed.Difference > 0) {
+                        this.logger.Info($"[CancelAndSell] Item {changed.ItemId} quantity increased in inventory -> Bag {changed.ContainerId}, Slot {changed.SlotIndex} | Quantity added to sell: {changed.Difference}");
+                    }
+                }
+
+                if (diff.Added.Count == 0 && diff.QuantityChanged.Count == 0) {
+                    this.logger.Warning("[CancelAndSell] No inventory changes detected after canceling the sale.");
+                }
+            }
+
+            this.stateMachineIndex = 0;
+            this.initialSnapshot = null;
         }
     }
 
