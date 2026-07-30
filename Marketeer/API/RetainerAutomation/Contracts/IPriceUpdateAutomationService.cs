@@ -3,6 +3,6 @@
 public interface IPriceUpdateAutomationService {
     bool IsUpdating { get; }
     void TriggerPriceUpdate();
-    void TriggerSingleItemUpdate(object? menuTarget);
+    void TriggerSingleItemUpdate(uint itemId);
     void AbortUpdate();
 }

@@ -26,26 +26,30 @@ public class RetainerContextMenuService : IDisposable {
         this.contextMenu.OnMenuOpened += this.OnMenuOpened;
     }
 
+    protected virtual uint GetTargetItemId(MenuTarget target) {
+        if (target is MenuTargetInventory inventoryTarget) {
+            return inventoryTarget.TargetItem?.ItemId ?? 0;
+        }
+        return 0;
+    }
+
     private void OnMenuOpened(IMenuOpenedArgs args) {
         if (args.AddonName == "RetainerSellList") {
+            var itemId = this.GetTargetItemId(args.Target);
+            if (itemId == 0) {
+                return;
+            }
+
             args.AddMenuItem(new MenuItem {
                 Name = this.localization.Translate("ContextMenu_Compete"),
-                OnClicked = this.OnCompeteClicked
+                OnClicked = _ => this.priceUpdateService.TriggerSingleItemUpdate(itemId)
             });
 
             args.AddMenuItem(new MenuItem {
                 Name = this.localization.Translate("ContextMenu_CancelAndSell"),
-                OnClicked = this.OnCancelClicked
+                OnClicked = _ => this.itemCancelAndSellService.TriggerCancelAndSell(itemId)
             });
         }
-    }
-
-    private void OnCompeteClicked(IMenuItemClickedArgs args) {
-        this.priceUpdateService.TriggerSingleItemUpdate(args.Target);
-    }
-
-    private void OnCancelClicked(IMenuItemClickedArgs args) {
-        this.itemCancelAndSellService.TriggerCancelAndSell(args.Target);
     }
 
     public void Dispose() {

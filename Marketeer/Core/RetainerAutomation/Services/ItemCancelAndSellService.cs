@@ -9,7 +9,6 @@ using Marketeer.API.RetainerAutomation.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace Marketeer.Core.RetainerAutomation.Services;
 
@@ -48,41 +47,22 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
-    public void TriggerCancelAndSell(object? menuTarget) {
+    public void TriggerCancelAndSell(uint itemId) {
         if (this.isProcessing) {
             return;
         }
 
-        int slotIndex = -1;
-
-        if (menuTarget != null) {
-            var prop = menuTarget.GetType().GetProperty("TargetIndex", BindingFlags.Public | BindingFlags.Instance);
-            if (prop != null) {
-                var val = prop.GetValue(menuTarget);
-                if (val is uint uIndex) {
-                    slotIndex = (int)uIndex;
-                }
-                else if (val is int iIndex) {
-                    slotIndex = iIndex;
-                }
-            }
-        }
-
-        if (slotIndex == -1) {
-            this.logger.Warning("[CancelAndSell] Could not determine TargetIndex from menu.");
-            return;
-        }
-
+        var normalizedItemId = itemId > 1000000u ? itemId - 1000000u : itemId;
         var marketSlots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
-        var targetSlot = marketSlots.FirstOrDefault(s => s.SlotIndex == slotIndex);
+        var targetSlot = marketSlots.FirstOrDefault(s => s.IsOccupied && (s.ItemId == itemId || s.ItemId == normalizedItemId || s.ItemId == normalizedItemId + 1000000u));
 
-        if (targetSlot == null || !targetSlot.IsOccupied) {
-            this.logger.Warning("[CancelAndSell] Targeted slot is empty or invalid.");
+        if (targetSlot == null) {
+            this.logger.Warning($"[CancelAndSell] Could not find item ID {itemId} in retainer market inventory.");
             return;
         }
 
-        this.targetItemId = targetSlot.ItemId > 1000000u ? targetSlot.ItemId - 1000000u : targetSlot.ItemId;
-        this.sourceUiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(slotIndex);
+        this.targetItemId = normalizedItemId;
+        this.sourceUiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem((int)targetSlot.SlotIndex);
 
         if (this.sourceUiIndex == -1) {
             this.logger.Warning("[CancelAndSell] Could not resolve UI Index for targeted slot.");
@@ -127,14 +107,11 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
                 var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
                 var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
                 if (menuIndex == -1) {
-                    menuIndex = 2; // Fallback par défaut
+                    menuIndex = 2;
                 }
 
                 this.uiInteraction.SelectContextMenuItem(menuIndex);
                 this.stateMachineIndex++;
-
-                // On laisse un délai de 1 seconde pour s'assurer que le serveur ait le temps
-                // de déplacer l'objet depuis le servant vers l'inventaire du joueur
                 this.nextActionAt = DateTime.Now.AddSeconds(1.0);
                 break;
 
@@ -163,12 +140,24 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
             }
 
             foreach (var currentSlot in currentSlots) {
-                if (!currentSlot.IsOccupied || currentSlot.ItemId != this.targetItemId) {
+                if (!currentSlot.IsOccupied) {
+                    continue;
+                }
+
+                var normalizedCurrentId = currentSlot.ItemId > 1000000u ? currentSlot.ItemId - 1000000u : currentSlot.ItemId;
+                if (normalizedCurrentId != this.targetItemId) {
                     continue;
                 }
 
                 var oldSlot = oldSlots.FirstOrDefault(s => s.SlotIndex == currentSlot.SlotIndex);
-                uint oldQuantity = (oldSlot != null && oldSlot.IsOccupied && oldSlot.ItemId == this.targetItemId) ? oldSlot.Quantity : 0;
+                uint oldQuantity = 0;
+
+                if (oldSlot != null && oldSlot.IsOccupied) {
+                    var normalizedOldId = oldSlot.ItemId > 1000000u ? oldSlot.ItemId - 1000000u : oldSlot.ItemId;
+                    if (normalizedOldId == this.targetItemId) {
+                        oldQuantity = oldSlot.Quantity;
+                    }
+                }
 
                 if (currentSlot.Quantity > oldQuantity) {
                     uint addedQuantity = currentSlot.Quantity - oldQuantity;

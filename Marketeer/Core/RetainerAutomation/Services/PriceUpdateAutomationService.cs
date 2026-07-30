@@ -83,30 +83,8 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.orchestrator.StartOrchestration(retainers, RetainerTargetMenu.MarketListings, this);
     }
 
-    public void TriggerSingleItemUpdate(object? menuTarget) {
+    public void TriggerSingleItemUpdate(uint itemId) {
         if (this.IsUpdating) {
-            return;
-        }
-
-        int slotIndex = -1;
-
-        // Utilisation de la réflexion pour extraire TargetIndex en toute sécurité sans MenuTargetInventory
-        if (menuTarget != null) {
-            var prop = menuTarget.GetType().GetProperty("TargetIndex", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            if (prop != null) {
-                var val = prop.GetValue(menuTarget);
-                if (val is uint uIndex) {
-                    slotIndex = (int)uIndex;
-                }
-                else if (val is int iIndex) {
-                    slotIndex = iIndex;
-                }
-            }
-        }
-
-        if (slotIndex == -1) {
-            // Fallback sur la mise à jour globale si on n'a pas pu identifier la cible
-            this.TriggerPriceUpdate();
             return;
         }
 
@@ -116,23 +94,14 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             return;
         }
 
-        var slots = this.inventoryService.GetInventorySlots(FFXIVClientStructs.FFXIV.Client.Game.InventoryType.RetainerMarket);
-        var targetSlot = slots.FirstOrDefault(s => s.SlotIndex == slotIndex);
-
-        if (targetSlot == null || !targetSlot.IsOccupied) {
-            this.logger.Warning("Targeted item slot is empty or invalid. Aborting single update.");
-            return;
-        }
-
-        uint itemId = targetSlot.ItemId > 1000000u ? targetSlot.ItemId - 1000000u : targetSlot.ItemId;
-
+        var normalizedItemId = itemId > 1000000u ? itemId - 1000000u : itemId;
         var playerName = localPlayer.Name.TextValue;
         var allUndercuts = this.competitionState.GetUndercutItems();
 
-        var targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == playerName && u.ItemId == itemId);
+        var targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == playerName && u.ItemId == normalizedItemId);
 
         if (targetUndercut == null) {
-            this.logger.Info($"No undercut detected for item {itemId} on current character. Single update aborted.");
+            this.logger.Info($"No undercut detected for item {normalizedItemId} on current character. Single update aborted.");
             return;
         }
 
