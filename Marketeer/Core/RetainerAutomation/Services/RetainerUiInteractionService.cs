@@ -319,11 +319,4 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             addon->FireCallback(1u, values, true);
         }
     }
-
-    public void OpenInventory() {
-        var uiModule = FFXIVClientStructs.FFXIV.Client.UI.UIModule.Instance();
-        if (uiModule != null) {
-            uiModule->ExecuteMainCommand(34u);
-        }
-    }
 }
