@@ -1,0 +1,14 @@
+{
+  "Group_MarketWatch": "Market Watch",
+  "MarketWatch_TabName": "Watched Items",
+  "MarketWatch_Header": "Manage Watched Items",
+  "MarketWatch_BtnAdd": "Add Item",
+  "MarketWatch_NoItems": "No items are currently being watched.",
+  "MarketWatch_ColItem": "Item Name",
+  "MarketWatch_ColBuyWatch": "Watch Buy",
+  "MarketWatch_ColTargetBuy": "Target Buy Price",
+  "MarketWatch_ColSellWatch": "Watch Sell",
+  "MarketWatch_ColTargetSell": "Target Sell Price",
+  "MarketWatch_ColActions": "Actions",
+  "MarketWatch_BtnRemove": "Remove"
+}

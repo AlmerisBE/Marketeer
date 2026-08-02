@@ -25,6 +25,7 @@
 	  <Folder Include="UI\Guidance\Resources\" />
 	  <Folder Include="UI\InventoryTracking\Resources\" />
 	  <Folder Include="UI\MarketListings\Resources\" />
+	  <Folder Include="UI\MarketWatch\Resources\" />
 	  <Folder Include="UI\RetainerAutomation\Resources\" />
 	  <Folder Include="UI\SalesHistory\Resources\" />
 	</ItemGroup>
