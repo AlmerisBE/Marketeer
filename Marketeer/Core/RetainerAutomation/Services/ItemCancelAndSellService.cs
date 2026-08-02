@@ -1,13 +1,12 @@
 ﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.GameInterop.Models;
+using Marketeer.API.InventoryTracking.Contracts;
+using Marketeer.API.InventoryTracking.Models;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
-using Marketeer.API.RetainerAutomation.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Marketeer.Core.RetainerAutomation.Services;
@@ -17,6 +16,8 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
     private IInventoryService inventoryService;
     private ILocalizationService localization;
     private IFramework framework;
+    private IInventorySnapshotService snapshotService;
+    private IInventoryDiffService diffService;
     private ILoggerService logger;
 
     private bool isProcessing;
@@ -26,22 +27,25 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
     private uint targetItemId;
     private int sourceUiIndex;
 
-    private Dictionary<InventoryType, List<InventorySlotInfo>> snapshotBefore;
+    private InventorySnapshot? initialSnapshot;
 
     public ItemCancelAndSellService(
         IRetainerUiInteractionService uiInteraction,
         IInventoryService inventoryService,
         ILocalizationService localization,
         IFramework framework,
+        IInventorySnapshotService snapshotService,
+        IInventoryDiffService diffService,
         ILoggerService logger) {
 
         this.uiInteraction = uiInteraction;
         this.inventoryService = inventoryService;
         this.localization = localization;
         this.framework = framework;
+        this.snapshotService = snapshotService;
+        this.diffService = diffService;
         this.logger = logger;
 
-        this.snapshotBefore = new Dictionary<InventoryType, List<InventorySlotInfo>>();
         this.isProcessing = false;
 
         this.framework.Update += this.OnFrameworkUpdate;
@@ -69,26 +73,11 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
             return;
         }
 
-        this.TakeInventorySnapshot();
+        this.initialSnapshot = this.snapshotService.CreateSnapshot();
 
         this.isProcessing = true;
         this.stateMachineIndex = 0;
         this.nextActionAt = DateTime.Now;
-    }
-
-    private void TakeInventorySnapshot() {
-        this.snapshotBefore.Clear();
-
-        InventoryType[] playerBags = {
-            InventoryType.Inventory1,
-            InventoryType.Inventory2,
-            InventoryType.Inventory3,
-            InventoryType.Inventory4
-        };
-
-        foreach (var bag in playerBags) {
-            this.snapshotBefore[bag] = this.inventoryService.GetInventorySlots(bag).ToList();
-        }
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -123,64 +112,37 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
     }
 
     private void LocateTransferredItemsAndLog() {
-        var locations = new List<TransferredItemStack>();
-        uint foundQuantity = 0;
+        if (this.initialSnapshot == null) {
+            return;
+        }
 
-        InventoryType[] playerBags = {
-            InventoryType.Inventory1,
-            InventoryType.Inventory2,
-            InventoryType.Inventory3,
-            InventoryType.Inventory4
-        };
+        var newSnapshot = this.snapshotService.CreateSnapshot();
+        var diff = this.diffService.Compare(this.initialSnapshot, newSnapshot);
 
-        foreach (var bag in playerBags) {
-            var currentSlots = this.inventoryService.GetInventorySlots(bag);
-            if (!this.snapshotBefore.TryGetValue(bag, out var oldSlots)) {
+        foreach (var added in diff.Added) {
+            if (added.ItemId != this.targetItemId && added.ItemId != this.targetItemId + 1000000u) {
+                continue;
+            }
+            // Native 0-based memory coordinates logged
+            this.logger.Info($"[CancelAndSell] Item {added.ItemId} transferred to inventory -> Bag {added.ContainerId}, Slot {added.SlotIndex} | Quantity to sell: {added.Quantity}");
+        }
+
+        foreach (var changed in diff.QuantityChanged) {
+            if (changed.ItemId != this.targetItemId && changed.ItemId != this.targetItemId + 1000000u) {
                 continue;
             }
 
-            foreach (var currentSlot in currentSlots) {
-                if (!currentSlot.IsOccupied) {
-                    continue;
-                }
-
-                var normalizedCurrentId = currentSlot.ItemId > 1000000u ? currentSlot.ItemId - 1000000u : currentSlot.ItemId;
-                if (normalizedCurrentId != this.targetItemId) {
-                    continue;
-                }
-
-                var oldSlot = oldSlots.FirstOrDefault(s => s.SlotIndex == currentSlot.SlotIndex);
-                uint oldQuantity = 0;
-
-                if (oldSlot != null && oldSlot.IsOccupied) {
-                    var normalizedOldId = oldSlot.ItemId > 1000000u ? oldSlot.ItemId - 1000000u : oldSlot.ItemId;
-                    if (normalizedOldId == this.targetItemId) {
-                        oldQuantity = oldSlot.Quantity;
-                    }
-                }
-
-                if (currentSlot.Quantity > oldQuantity) {
-                    uint addedQuantity = currentSlot.Quantity - oldQuantity;
-                    locations.Add(new TransferredItemStack {
-                        Bag = bag,
-                        SlotIndex = currentSlot.SlotIndex,
-                        Quantity = addedQuantity
-                    });
-
-                    foundQuantity += addedQuantity;
-                }
+            if (changed.Difference > 0) {
+                // Native 0-based memory coordinates logged
+                this.logger.Info($"[CancelAndSell] Item {changed.ItemId} quantity increased in inventory -> Bag {changed.ContainerId}, Slot {changed.SlotIndex} | Quantity added to sell: {changed.Difference}");
             }
         }
 
-        if (locations.Count > 0) {
-            this.logger.Info($"[CancelAndSell] Cancellation successful. Located {locations.Count} stack(s) of item ID {this.targetItemId}.");
-            foreach (var loc in locations) {
-                this.logger.Info($" -> Target: Bag {loc.Bag}, Slot {loc.SlotIndex} | Quantity: {loc.Quantity} (Would be sold in real conditions)");
-            }
-        }
-        else {
+        if (diff.Added.Count == 0 && diff.QuantityChanged.Count == 0) {
             this.logger.Warning($"[CancelAndSell] Could not locate item ID {this.targetItemId} in player inventory after cancellation.");
         }
+
+        this.initialSnapshot = null;
     }
 
     public void Dispose() {
