@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.InventoryTracking.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
@@ -16,9 +17,11 @@ public class ItemCancelAndSellServiceTests {
         var mockInv = Substitute.For<IInventoryService>();
         var mockLoc = Substitute.For<ILocalizationService>();
         var mockFw = Substitute.For<IFramework>();
+        var mockSnap = Substitute.For<IInventorySnapshotService>();
+        var mockDiff = Substitute.For<IInventoryDiffService>();
         var mockLog = Substitute.For<ILoggerService>();
 
-        using var service = new ItemCancelAndSellService(mockUi, mockInv, mockLoc, mockFw, mockLog);
+        using var service = new ItemCancelAndSellService(mockUi, mockInv, mockLoc, mockFw, mockSnap, mockDiff, mockLog);
 
         Assert.NotNull(service);
     }
