@@ -1,11 +1,12 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.API.MarketWatch.Models;
 using Marketeer.API.SalesHistory.Contracts;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace Marketeer.UI.MarketWatch.UI;
 
@@ -90,11 +91,11 @@ public class MarketWatchMenu : INavigationNode {
 
         if (ImGui.BeginTable("MarketWatchTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColItem"), ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColBuyWatch"), ImGuiTableColumnFlags.WidthFixed, 80f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetBuy"), ImGuiTableColumnFlags.WidthFixed, 120f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColSellWatch"), ImGuiTableColumnFlags.WidthFixed, 80f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetSell"), ImGuiTableColumnFlags.WidthFixed, 120f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColActions"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColBuyWatch"), ImGuiTableColumnFlags.WidthFixed, 60f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetBuy"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColSellWatch"), ImGuiTableColumnFlags.WidthFixed, 60f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetSell"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColActions"), ImGuiTableColumnFlags.WidthFixed, 35f);
             ImGui.TableHeadersRow();
 
             foreach (var item in items) {
@@ -134,9 +135,16 @@ public class MarketWatchMenu : INavigationNode {
                 }
 
                 ImGui.TableNextColumn();
-                if (ImGui.Button($"{this.localization.Translate("MarketWatch_BtnRemove")}##{item.ItemId}", new Vector2(-1, 0))) {
+                ImGui.PushID((int)item.ItemId);
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash)) {
                     this.repository.RemoveItem(item.ItemId);
                 }
+
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(this.localization.Translate("MarketWatch_BtnRemove"));
+                }
+
+                ImGui.PopID();
             }
 
             ImGui.EndTable();
