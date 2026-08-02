@@ -8,6 +8,21 @@ using Xunit;
 
 namespace Marketeer.Tests.Core.RetainerAutomation.Services;
 
+public class TestableRetainerContextMenuService : RetainerContextMenuService {
+    public uint MockedItemId { get; set; } = 1234;
+
+    public TestableRetainerContextMenuService(
+        IContextMenu contextMenu,
+        IPriceUpdateAutomationService priceUpdateService,
+        IItemCancelAndSellService itemCancelAndSellService,
+        ILocalizationService localization)
+        : base(contextMenu, priceUpdateService, itemCancelAndSellService, localization) { }
+
+    protected override uint GetTargetItemId(MenuTarget target) {
+        return this.MockedItemId;
+    }
+}
+
 public class RetainerContextMenuServiceTests {
     [Fact]
     public void OnMenuOpened_WithRetainerSellList_ShouldAddMenuItems() {
@@ -19,10 +34,11 @@ public class RetainerContextMenuServiceTests {
         mockLocalization.Translate("ContextMenu_Compete").Returns("Compete Price");
         mockLocalization.Translate("ContextMenu_CancelAndSell").Returns("Cancel and Sell");
 
-        using var service = new RetainerContextMenuService(mockContextMenu, mockPriceService, mockItemCancelAndSellService, mockLocalization);
+        using var service = new TestableRetainerContextMenuService(mockContextMenu, mockPriceService, mockItemCancelAndSellService, mockLocalization);
 
         var mockArgs = Substitute.For<IMenuOpenedArgs>();
         mockArgs.AddonName.Returns("RetainerSellList");
+        mockArgs.Target.Returns((MenuTarget)null!);
 
         mockContextMenu.OnMenuOpened += Raise.Event<IContextMenu.OnMenuOpenedDelegate>(mockArgs);
 
@@ -36,7 +52,7 @@ public class RetainerContextMenuServiceTests {
         var mockItemCancelAndSellService = Substitute.For<IItemCancelAndSellService>();
         var mockLocalization = Substitute.For<ILocalizationService>();
 
-        using var service = new RetainerContextMenuService(mockContextMenu, mockPriceService, mockItemCancelAndSellService, mockLocalization);
+        using var service = new TestableRetainerContextMenuService(mockContextMenu, mockPriceService, mockItemCancelAndSellService, mockLocalization);
 
         var mockArgs = Substitute.For<IMenuOpenedArgs>();
         mockArgs.AddonName.Returns("Inventory");

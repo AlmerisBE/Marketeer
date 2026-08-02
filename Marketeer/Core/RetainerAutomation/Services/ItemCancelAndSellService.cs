@@ -1,12 +1,15 @@
 ﻿using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.InventoryTracking.Contracts;
 using Marketeer.API.InventoryTracking.Models;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.API.RetainerAutomation.Models;
 using System;
-using System.Reflection;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Marketeer.Core.RetainerAutomation.Services;
 
@@ -64,6 +67,7 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
                 }
             }
         }
+    }
 
         // Take the initial inventory snapshot right before starting the cancellation process
         this.initialSnapshot = this.snapshotService.CreateSnapshot();
