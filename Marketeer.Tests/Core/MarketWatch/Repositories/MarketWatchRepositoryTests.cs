@@ -8,13 +8,14 @@ public class MarketWatchRepositoryTests {
     [Fact]
     public void AddOrUpdateItem_ShouldAddNewItem_WhenItemDoesNotExist() {
         var repository = new MarketWatchRepository();
-        var item = new WatchedItem { ItemId = 1234, TargetBuyPrice = 500, IsBuyWatchEnabled = true };
+        var item = new WatchedItem { ItemId = 1234, TargetBuyPrice = 500 };
 
         repository.AddOrUpdateItem(item);
 
         var items = repository.GetAllWatchedItems();
         Assert.Single(items);
         Assert.Equal(1234u, items.First().ItemId);
+        Assert.True(items.First().IsBuyWatchEnabled);
     }
 
     [Fact]
@@ -22,7 +23,7 @@ public class MarketWatchRepositoryTests {
         var repository = new MarketWatchRepository();
         repository.AddOrUpdateItem(new WatchedItem { ItemId = 1234, TargetBuyPrice = 500 });
 
-        var updatedItem = new WatchedItem { ItemId = 1234, TargetBuyPrice = 1000, IsSellWatchEnabled = true };
+        var updatedItem = new WatchedItem { ItemId = 1234, TargetBuyPrice = 1000, TargetSellPrice = 1500 };
         repository.AddOrUpdateItem(updatedItem);
 
         var items = repository.GetAllWatchedItems();
@@ -49,7 +50,7 @@ public class MarketWatchRepositoryTests {
         var item = new WatchedItem { ItemId = 1234 };
         Assert.False(item.IsEligibleForPolling());
 
-        item.IsBuyWatchEnabled = true;
+        item.TargetBuyPrice = 0;
         Assert.False(item.IsEligibleForPolling());
 
         item.TargetBuyPrice = 100;

@@ -89,12 +89,10 @@ public class MarketWatchMenu : INavigationNode {
             return;
         }
 
-        if (ImGui.BeginTable("MarketWatchTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+        if (ImGui.BeginTable("MarketWatchTable", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColItem"), ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColBuyWatch"), ImGuiTableColumnFlags.WidthFixed, 60f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetBuy"), ImGuiTableColumnFlags.WidthFixed, 80f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColSellWatch"), ImGuiTableColumnFlags.WidthFixed, 60f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetSell"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetBuy"), ImGuiTableColumnFlags.WidthFixed, 100f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetSell"), ImGuiTableColumnFlags.WidthFixed, 100f);
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColActions"), ImGuiTableColumnFlags.WidthFixed, 35f);
             ImGui.TableHeadersRow();
 
@@ -105,24 +103,10 @@ public class MarketWatchMenu : INavigationNode {
                 ImGui.TextUnformatted(this.itemResolver.ResolveItemName(item.ItemId));
 
                 ImGui.TableNextColumn();
-                bool buyEnabled = item.IsBuyWatchEnabled;
-                if (ImGui.Checkbox($"##buyToggle_{item.ItemId}", ref buyEnabled)) {
-                    item.IsBuyWatchEnabled = buyEnabled;
-                    this.repository.AddOrUpdateItem(item);
-                }
-
-                ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);
                 int buyPrice = item.TargetBuyPrice.HasValue ? (int)item.TargetBuyPrice.Value : 0;
                 if (ImGui.InputInt($"##buyPrice_{item.ItemId}", ref buyPrice, 0, 0)) {
                     item.TargetBuyPrice = buyPrice > 0 ? (uint)buyPrice : null;
-                    this.repository.AddOrUpdateItem(item);
-                }
-
-                ImGui.TableNextColumn();
-                bool sellEnabled = item.IsSellWatchEnabled;
-                if (ImGui.Checkbox($"##sellToggle_{item.ItemId}", ref sellEnabled)) {
-                    item.IsSellWatchEnabled = sellEnabled;
                     this.repository.AddOrUpdateItem(item);
                 }
 
