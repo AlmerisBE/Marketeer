@@ -10,5 +10,6 @@
   "MarketWatch_ColSellWatch": "Watch Sell",
   "MarketWatch_ColTargetSell": "Target Sell Price",
   "MarketWatch_ColActions": "Actions",
-  "MarketWatch_BtnRemove": "Remove"
+  "MarketWatch_BtnRemove": "Remove",
+  "MarketWatch_SelectAnItem": "Select an item..."
 }

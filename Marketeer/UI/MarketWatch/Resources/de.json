@@ -1,0 +1,15 @@
+{
+  "Group_MarketWatch": "Marktbeobachtung",
+  "MarketWatch_TabName": "Beobachtete Gegenstände",
+  "MarketWatch_Header": "Beobachtete Gegenstände verwalten",
+  "MarketWatch_BtnAdd": "Hinzufügen",
+  "MarketWatch_NoItems": "Derzeit werden keine Gegenstände beobachtet.",
+  "MarketWatch_ColItem": "Gegenstandsname",
+  "MarketWatch_ColBuyWatch": "Kauf beo.",
+  "MarketWatch_ColTargetBuy": "Ziel-Kaufpreis",
+  "MarketWatch_ColSellWatch": "Verkauf beo.",
+  "MarketWatch_ColTargetSell": "Ziel-Verkaufspreis",
+  "MarketWatch_ColActions": "Aktionen",
+  "MarketWatch_BtnRemove": "Entfernen",
+  "MarketWatch_SelectAnItem": "Gegenstand auswählen..."
+}

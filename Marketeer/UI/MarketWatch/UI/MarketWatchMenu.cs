@@ -13,7 +13,10 @@ public class MarketWatchMenu : INavigationNode {
     private IMarketWatchRepository repository;
     private ILocalizationService localization;
     private IItemResolverService itemResolver;
-    private string newItemName = string.Empty;
+    private IMarketItemSearchProvider searchProvider;
+
+    private string searchInput = string.Empty;
+    private ItemSearchResult? selectedItem;
 
     public string GroupName => this.localization.Translate("Group_MarketWatch");
     public string Name => this.localization.Translate("MarketWatch_TabName");
@@ -24,14 +27,25 @@ public class MarketWatchMenu : INavigationNode {
     public MarketWatchMenu(
         IMarketWatchRepository repository,
         ILocalizationService localization,
-        IItemResolverService itemResolver) {
+        IItemResolverService itemResolver,
+        IMarketItemSearchProvider searchProvider) {
 
         this.repository = repository;
         this.localization = localization;
         this.itemResolver = itemResolver;
+        this.searchProvider = searchProvider;
     }
 
     public IEnumerable<INavigationNode> GetChildren() => [];
+
+    public void AddSelectedItem() {
+        if (this.selectedItem != null) {
+            var item = new WatchedItem { ItemId = this.selectedItem.ItemId };
+            this.repository.AddOrUpdateItem(item);
+            this.selectedItem = null;
+            this.searchInput = string.Empty;
+        }
+    }
 
     public void DrawContent() {
         ImGui.TextUnformatted(this.localization.Translate("MarketWatch_Header"));
@@ -39,16 +53,28 @@ public class MarketWatchMenu : INavigationNode {
         ImGui.Spacing();
 
         ImGui.SetNextItemWidth(250f);
-        ImGui.InputText("##newItemInput", ref this.newItemName, 100);
+        string comboPreview = this.selectedItem != null ? this.selectedItem.Name : this.localization.Translate("MarketWatch_SelectAnItem");
+
+        if (ImGui.BeginCombo("##itemCombo", comboPreview)) {
+            ImGui.SetNextItemWidth(-1);
+            ImGui.InputTextWithHint("##searchInput", "...", ref this.searchInput, 100);
+
+            var results = this.searchProvider.SearchMarketableItems(this.searchInput);
+
+            foreach (var res in results) {
+                if (ImGui.Selectable(res.Name)) {
+                    this.selectedItem = res;
+                    this.searchInput = string.Empty;
+                    ImGui.CloseCurrentPopup();
+                }
+            }
+            ImGui.EndCombo();
+        }
+
         ImGui.SameLine();
 
         if (ImGui.Button(this.localization.Translate("MarketWatch_BtnAdd"))) {
-            var itemId = this.itemResolver.ResolveItemId(this.newItemName.Trim());
-            if (itemId > 0) {
-                var item = new WatchedItem { ItemId = itemId };
-                this.repository.AddOrUpdateItem(item);
-                this.newItemName = string.Empty;
-            }
+            this.AddSelectedItem();
         }
 
         ImGui.Spacing();
@@ -74,11 +100,9 @@ public class MarketWatchMenu : INavigationNode {
             foreach (var item in items) {
                 ImGui.TableNextRow();
 
-                // Column 1: Item Name
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(this.itemResolver.ResolveItemName(item.ItemId));
 
-                // Column 2: Buy Watch Toggle
                 ImGui.TableNextColumn();
                 bool buyEnabled = item.IsBuyWatchEnabled;
                 if (ImGui.Checkbox($"##buyToggle_{item.ItemId}", ref buyEnabled)) {
@@ -86,7 +110,6 @@ public class MarketWatchMenu : INavigationNode {
                     this.repository.AddOrUpdateItem(item);
                 }
 
-                // Column 3: Target Buy Price
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);
                 int buyPrice = item.TargetBuyPrice.HasValue ? (int)item.TargetBuyPrice.Value : 0;
@@ -95,7 +118,6 @@ public class MarketWatchMenu : INavigationNode {
                     this.repository.AddOrUpdateItem(item);
                 }
 
-                // Column 4: Sell Watch Toggle
                 ImGui.TableNextColumn();
                 bool sellEnabled = item.IsSellWatchEnabled;
                 if (ImGui.Checkbox($"##sellToggle_{item.ItemId}", ref sellEnabled)) {
@@ -103,7 +125,6 @@ public class MarketWatchMenu : INavigationNode {
                     this.repository.AddOrUpdateItem(item);
                 }
 
-                // Column 5: Target Sell Price
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);
                 int sellPrice = item.TargetSellPrice.HasValue ? (int)item.TargetSellPrice.Value : 0;
@@ -112,7 +133,6 @@ public class MarketWatchMenu : INavigationNode {
                     this.repository.AddOrUpdateItem(item);
                 }
 
-                // Column 6: Actions
                 ImGui.TableNextColumn();
                 if (ImGui.Button($"{this.localization.Translate("MarketWatch_BtnRemove")}##{item.ItemId}", new Vector2(-1, 0))) {
                     this.repository.RemoveItem(item.ItemId);

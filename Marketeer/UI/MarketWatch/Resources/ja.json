@@ -1,0 +1,15 @@
+{
+  "Group_MarketWatch": "マーケットウォッチ",
+  "MarketWatch_TabName": "監視アイテム",
+  "MarketWatch_Header": "監視アイテムの管理",
+  "MarketWatch_BtnAdd": "追加",
+  "MarketWatch_NoItems": "現在監視しているアイテムはありません。",
+  "MarketWatch_ColItem": "アイテム名",
+  "MarketWatch_ColBuyWatch": "購入監視",
+  "MarketWatch_ColTargetBuy": "目標購入価格",
+  "MarketWatch_ColSellWatch": "販売監視",
+  "MarketWatch_ColTargetSell": "目標販売価格",
+  "MarketWatch_ColActions": "アクション",
+  "MarketWatch_BtnRemove": "削除",
+  "MarketWatch_SelectAnItem": "アイテムを選択..."
+}

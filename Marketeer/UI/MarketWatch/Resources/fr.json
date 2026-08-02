@@ -10,5 +10,6 @@
   "MarketWatch_ColSellWatch": "Veille Vente",
   "MarketWatch_ColTargetSell": "Prix de vente cible",
   "MarketWatch_ColActions": "Actions",
-  "MarketWatch_BtnRemove": "Retirer"
+  "MarketWatch_BtnRemove": "Retirer",
+  "MarketWatch_SelectAnItem": "Sélectionner un objet..."
 }
