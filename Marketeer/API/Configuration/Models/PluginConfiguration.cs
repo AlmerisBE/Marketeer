@@ -1,6 +1,7 @@
 ﻿using Dalamud.Configuration;
 using Marketeer.API.Financials.Models;
 using Marketeer.API.InventoryTracking.Models;
+using Marketeer.API.MarketWatch.Models;
 using Marketeer.API.SalesHistory.Models;
 using System;
 using System.Collections.Generic;
@@ -23,4 +24,7 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool EnableAutomationDelay { get; set; } = false;
     public int AutomationDelayMin { get; set; } = 1;
     public int AutomationDelayMax { get; set; } = 3;
+
+    // Added property to persist market watch data
+    public Dictionary<uint, WatchedItem> WatchedItems { get; set; } = new();
 }

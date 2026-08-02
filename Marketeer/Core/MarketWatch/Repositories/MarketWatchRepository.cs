@@ -1,4 +1,5 @@
-﻿using Marketeer.API.MarketWatch.Contracts;
+﻿using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.API.MarketWatch.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,14 +7,19 @@ using System.Linq;
 namespace Marketeer.Core.MarketWatch.Repositories;
 
 public class MarketWatchRepository : IMarketWatchRepository {
-    private readonly Dictionary<uint, WatchedItem> watchedItems;
+    private IConfigurationService configService;
 
-    public MarketWatchRepository() {
-        this.watchedItems = new Dictionary<uint, WatchedItem>();
+    public MarketWatchRepository(IConfigurationService configService) {
+        this.configService = configService;
+
+        // Guard against null collections when loading old configuration files
+        if (this.configService.GetConfig().WatchedItems == null) {
+            this.configService.GetConfig().WatchedItems = new Dictionary<uint, WatchedItem>();
+        }
     }
 
     public IReadOnlyList<WatchedItem> GetAllWatchedItems() {
-        return this.watchedItems.Values.ToList().AsReadOnly();
+        return this.configService.GetConfig().WatchedItems.Values.ToList().AsReadOnly();
     }
 
     public void AddOrUpdateItem(WatchedItem item) {
@@ -21,12 +27,13 @@ public class MarketWatchRepository : IMarketWatchRepository {
             return;
         }
 
-        this.watchedItems[item.ItemId] = item;
+        this.configService.GetConfig().WatchedItems[item.ItemId] = item;
+        this.configService.Save();
     }
 
     public void RemoveItem(uint itemId) {
-        if (this.watchedItems.ContainsKey(itemId)) {
-            this.watchedItems.Remove(itemId);
+        if (this.configService.GetConfig().WatchedItems.Remove(itemId)) {
+            this.configService.Save();
         }
     }
 }
