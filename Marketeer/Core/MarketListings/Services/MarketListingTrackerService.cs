@@ -113,6 +113,14 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
             bool isModified = oldListings.Count != fetchedListings.Count;
             var modifiedItems = new HashSet<uint>();
 
+            // Identify items that were removed (sold or manually cancelled)
+            var fetchedItemIds = new HashSet<uint>(fetchedListings.Select(f => f.ItemId));
+            foreach (var old in oldListings.Values) {
+                if (!fetchedItemIds.Contains(old.ItemId)) {
+                    modifiedItems.Add(old.ItemId);
+                }
+            }
+
             foreach (var fetched in fetchedListings) {
                 uint finalPrice = fetched.PricePerUnit;
                 DateTime listingDate = DateTime.UtcNow;
