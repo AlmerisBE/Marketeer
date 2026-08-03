@@ -3,6 +3,7 @@ using Marketeer.API.Features;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Repositories;
+using Marketeer.Core.MarketWatch.Services;
 using Marketeer.UI.MarketWatch.Providers;
 using Marketeer.UI.MarketWatch.UI;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,9 @@ public class MarketWatchFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         // Data Repositories
         services.AddSingleton<IMarketWatchRepository, MarketWatchRepository>();
+
+        // Core Business Services
+        services.AddSingleton<IMarketWatchAnalysisService, MarketWatchAnalysisService>();
 
         // Localization Providers
         services.AddSingleton<ILocalizationProvider, MarketWatchLocalizationProvider>();
