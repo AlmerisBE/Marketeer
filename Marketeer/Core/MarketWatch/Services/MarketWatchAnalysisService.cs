@@ -60,7 +60,7 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
             var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, worldId);
 
             foreach (var item in eligibleItems) {
-                var marketData = lowestPrices.FirstOrDefault(p => p.ItemId == item.ItemId);
+                var marketData = lowestPrices.FirstOrDefault(p => p.ItemId == item.ItemId && p.IsHq == item.IsHighQuality);
                 if (marketData == null) {
                     continue;
                 }
@@ -71,6 +71,7 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
                     alerts.Add(new MarketWatchAlert {
                         ItemId = item.ItemId,
                         ItemName = itemName,
+                        IsHighQuality = item.IsHighQuality,
                         AlertType = MarketWatchAlertType.BuyTargetReached,
                         TargetPrice = item.TargetBuyPrice.Value,
                         CurrentPrice = marketData.Price,
@@ -82,6 +83,7 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
                     alerts.Add(new MarketWatchAlert {
                         ItemId = item.ItemId,
                         ItemName = itemName,
+                        IsHighQuality = item.IsHighQuality,
                         AlertType = MarketWatchAlertType.SellTargetReached,
                         TargetPrice = item.TargetSellPrice.Value,
                         CurrentPrice = marketData.Price,

@@ -13,7 +13,7 @@ public class FinancialsMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Financials");
     public string Name => this.localizationService.Translate("Financials_TabName") ?? "Financials";
-    public int Priority => 30;
+    public int Priority => 50;
 
     public bool HasContent => true;
     public bool DefaultExpanded => false;

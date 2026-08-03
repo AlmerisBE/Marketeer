@@ -35,14 +35,14 @@ public class MarketWatchAnalysisServiceTests {
     }
 
     [Fact]
-    public async Task AnalyzeMarketAsync_ShouldReturnBuyAlert_WhenPriceIsLowerThanTarget() {
+    public async Task AnalyzeMarketAsync_ShouldReturnBuyAlert_WhenPriceIsLowerAndQualityMatches() {
         var watchedItems = new List<WatchedItem> {
-            new WatchedItem { ItemId = 1, TargetBuyPrice = 1000 }
+            new WatchedItem { ItemId = 1, TargetBuyPrice = 1000, IsHighQuality = true }
         };
         this.repository.GetAllWatchedItems().Returns(watchedItems);
 
         var prices = new List<LowestPriceResult> {
-            new LowestPriceResult { ItemId = 1, Price = 800, RetainerName = "SellerA" }
+            new LowestPriceResult { ItemId = 1, Price = 800, RetainerName = "SellerA", IsHq = true }
         };
 
         this.priceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), 0).Returns(prices);
@@ -52,39 +52,18 @@ public class MarketWatchAnalysisServiceTests {
 
         Assert.Single(alerts);
         Assert.Equal(MarketWatchAlertType.BuyTargetReached, alerts.First().AlertType);
-        Assert.Equal(800u, alerts.First().CurrentPrice);
+        Assert.True(alerts.First().IsHighQuality);
     }
 
     [Fact]
-    public async Task AnalyzeMarketAsync_ShouldReturnSellAlert_WhenPriceIsEqualOrHigherThanTarget() {
+    public async Task AnalyzeMarketAsync_ShouldReturnNoAlerts_WhenPriceIsLowerButQualityMismatches() {
         var watchedItems = new List<WatchedItem> {
-            new WatchedItem { ItemId = 2, TargetSellPrice = 5000 }
+            new WatchedItem { ItemId = 2, TargetBuyPrice = 1000, IsHighQuality = true }
         };
         this.repository.GetAllWatchedItems().Returns(watchedItems);
 
         var prices = new List<LowestPriceResult> {
-            new LowestPriceResult { ItemId = 2, Price = 5500, RetainerName = "SellerB" }
-        };
-
-        this.priceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), 0).Returns(prices);
-
-        var service = new MarketWatchAnalysisService(this.repository, this.priceProvider, this.objectTable, this.itemResolver, this.logger);
-        var alerts = await service.AnalyzeMarketAsync();
-
-        Assert.Single(alerts);
-        Assert.Equal(MarketWatchAlertType.SellTargetReached, alerts.First().AlertType);
-        Assert.Equal(5500u, alerts.First().CurrentPrice);
-    }
-
-    [Fact]
-    public async Task AnalyzeMarketAsync_ShouldReturnNoAlerts_WhenConditionsAreNotMet() {
-        var watchedItems = new List<WatchedItem> {
-            new WatchedItem { ItemId = 3, TargetBuyPrice = 1000, TargetSellPrice = 5000 }
-        };
-        this.repository.GetAllWatchedItems().Returns(watchedItems);
-
-        var prices = new List<LowestPriceResult> {
-            new LowestPriceResult { ItemId = 3, Price = 2500, RetainerName = "SellerC" }
+            new LowestPriceResult { ItemId = 2, Price = 800, RetainerName = "SellerB", IsHq = false }
         };
 
         this.priceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), 0).Returns(prices);

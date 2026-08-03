@@ -18,6 +18,7 @@ public class MarketWatchMenu : INavigationNode {
 
     private string searchInput = string.Empty;
     private ItemSearchResult? selectedItem;
+    private bool isHqSearch = false;
 
     public string GroupName => this.localization.Translate("Group_MarketWatch");
     public string Name => this.localization.Translate("MarketWatch_TabName");
@@ -41,7 +42,10 @@ public class MarketWatchMenu : INavigationNode {
 
     public void AddSelectedItem() {
         if (this.selectedItem != null) {
-            var item = new WatchedItem { ItemId = this.selectedItem.ItemId };
+            var item = new WatchedItem {
+                ItemId = this.selectedItem.ItemId,
+                IsHighQuality = this.isHqSearch
+            };
             this.repository.AddOrUpdateItem(item);
             this.selectedItem = null;
             this.searchInput = string.Empty;
@@ -73,7 +77,9 @@ public class MarketWatchMenu : INavigationNode {
         }
 
         ImGui.SameLine();
+        ImGui.Checkbox("HQ", ref this.isHqSearch);
 
+        ImGui.SameLine();
         if (ImGui.Button(this.localization.Translate("MarketWatch_BtnAdd"))) {
             this.AddSelectedItem();
         }
@@ -100,7 +106,8 @@ public class MarketWatchMenu : INavigationNode {
                 ImGui.TableNextRow();
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted(this.itemResolver.ResolveItemName(item.ItemId));
+                string hqSymbol = item.IsHighQuality ? " \uE03C" : "";
+                ImGui.TextUnformatted($"{this.itemResolver.ResolveItemName(item.ItemId)}{hqSymbol}");
 
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);

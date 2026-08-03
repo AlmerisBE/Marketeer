@@ -16,7 +16,7 @@ public class SalesStatisticsMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_Statistics");
     public string Name => this.localization.Translate("SalesStatistics_TabName");
-    public int Priority => 25;
+    public int Priority => 35;
 
     public bool HasContent => true;
     public bool DefaultExpanded => false;

@@ -24,7 +24,7 @@ public class SalesMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_Market");
     public string Name => this.localization.Translate("SalesTab_Title");
-    public int Priority => 20;
+    public int Priority => 30;
 
     public bool HasContent => true;
     public bool DefaultExpanded => false;
