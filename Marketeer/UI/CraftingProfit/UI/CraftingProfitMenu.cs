@@ -1,6 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Plugin.Services;
 using Marketeer.API.CraftingProfit.Contracts;
 using Marketeer.API.CraftingProfit.Models;
 using Marketeer.API.Dashboard.Contracts;
@@ -11,6 +12,7 @@ using Marketeer.API.SalesHistory.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Marketeer.UI.CraftingProfit.UI;
 
@@ -21,9 +23,12 @@ public class CraftingProfitMenu : INavigationNode {
     private IMarketItemSearchProvider searchProvider;
     private IRecipeDataService recipeDataService;
     private ILocalizationService localization;
+    private IObjectTable objectTable;
 
     private string searchInput = string.Empty;
     private ItemSearchResult? selectedItem;
+    private Dictionary<uint, CraftingProfitResult> evaluationCache = new();
+    private bool isEvaluating;
 
     public string GroupName => this.localization.Translate("Group_Crafting");
     public string Name => this.localization.Translate("CraftingProfit_TabName");
@@ -37,7 +42,8 @@ public class CraftingProfitMenu : INavigationNode {
         IItemResolverService itemResolver,
         IMarketItemSearchProvider searchProvider,
         IRecipeDataService recipeDataService,
-        ILocalizationService localization) {
+        ILocalizationService localization,
+        IObjectTable objectTable) {
 
         this.repository = repository;
         this.stateService = stateService;
@@ -45,6 +51,7 @@ public class CraftingProfitMenu : INavigationNode {
         this.searchProvider = searchProvider;
         this.recipeDataService = recipeDataService;
         this.localization = localization;
+        this.objectTable = objectTable;
     }
 
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -54,10 +61,38 @@ public class CraftingProfitMenu : INavigationNode {
             if (this.repository.GetConfig(this.selectedItem.ItemId) == null) {
                 var config = new CraftingItemConfig { ItemId = this.selectedItem.ItemId };
                 this.repository.SaveConfig(config);
-                _ = this.stateService.EvaluateItemAsync(config.ItemId);
+                _ = this.EvaluateItemAsync(config);
             }
             this.selectedItem = null;
             this.searchInput = string.Empty;
+        }
+    }
+
+    private async Task EvaluateItemAsync(CraftingItemConfig config) {
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null) {
+            return;
+        }
+
+        var worldId = localPlayer.CurrentWorld.RowId;
+        var result = await this.evaluator.EvaluateAsync(config, worldId);
+        this.evaluationCache[config.ItemId] = result;
+    }
+
+    private async Task EvaluateAllAsync() {
+        if (this.isEvaluating) {
+            return;
+        }
+
+        this.isEvaluating = true;
+
+        try {
+            var configs = this.repository.GetAllConfigs();
+            var tasks = configs.Select(c => this.EvaluateItemAsync(c));
+            await Task.WhenAll(tasks);
+        }
+        finally {
+            this.isEvaluating = false;
         }
     }
 
@@ -126,17 +161,27 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.Indent();
             ImGui.Spacing();
 
+            // Ligne 1 : Prix du marché (Gauche) & Bouton Supprimer (Droite alignée)
+            if (evalResult != null) {
+                ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", evalResult.CurrentMarketPrice));
+            }
+            else {
+                ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", "-"));
+            }
+
+            var removeText = this.localization.Translate("CraftingProfit_BtnRemove");
+            var removeWidth = ImGui.CalcTextSize(removeText).X + 35f;
+            ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - removeWidth);
+
             if (ImGuiComponents.IconButton((int)config.ItemId, FontAwesomeIcon.Trash)) {
                 this.repository.RemoveConfig(config.ItemId);
                 return;
             }
             ImGui.SameLine();
-            ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_BtnRemove"));
+            ImGui.TextUnformatted(removeText);
 
-            ImGui.Spacing();
-
+            // Reste des informations
             if (evalResult != null) {
-                ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", evalResult.CurrentMarketPrice));
                 ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_CraftCost", evalResult.TotalCraftingCost));
 
                 if (yieldQty > 1) {
@@ -189,6 +234,7 @@ public class CraftingProfitMenu : INavigationNode {
             return;
         }
 
+        // LIGNE 1 : Nom de l'ingrédient (occupe la colonne 0)
         ImGui.TableNextRow();
         ImGui.TableNextColumn();
 
@@ -196,19 +242,23 @@ public class CraftingProfitMenu : INavigationNode {
         bool isNodeExpanded = false;
 
         if (eval.SubComponents != null && eval.SubComponents.Count > 0) {
-            isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", ImGuiTreeNodeFlags.DefaultOpen);
+            isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
         }
         else {
-            ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen);
+            ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen | ImGuiTreeNodeFlags.SpanFullWidth);
         }
 
-        ImGui.TableNextColumn();
+        // LIGNE 2 : Valeurs (colonnes 1 à 6)
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn(); // Col 0 laissée vide intentionnellement
+
+        ImGui.TableNextColumn(); // Col 1
         ImGui.TextUnformatted(eval.QuantityRequired.ToString());
 
-        ImGui.TableNextColumn();
+        ImGui.TableNextColumn(); // Col 2
         ImGui.TextUnformatted(eval.UnitCost.ToString("N0"));
 
-        ImGui.TableNextColumn();
+        ImGui.TableNextColumn(); // Col 3
         ImGui.TextUnformatted(eval.TotalCost.ToString("N0"));
 
         rootConfig.Components ??= new Dictionary<uint, ComponentConfig>();
@@ -222,7 +272,7 @@ public class CraftingProfitMenu : INavigationNode {
             safeCompConfig = compConfig;
         }
 
-        ImGui.TableNextColumn();
+        ImGui.TableNextColumn(); // Col 4
         if (!safeCompConfig.CraftRecursively && !safeCompConfig.IgnoreCost) {
             ImGui.SetNextItemWidth(-1);
             int maxBuy = (int)safeCompConfig.TargetBuyPrice;
@@ -236,7 +286,7 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.TextDisabled("-");
         }
 
-        ImGui.TableNextColumn();
+        ImGui.TableNextColumn(); // Col 5
         if (this.recipeDataService.IsCraftable(eval.ItemId) && !safeCompConfig.IgnoreCost) {
             bool craftRec = safeCompConfig.CraftRecursively;
             if (ImGui.Checkbox($"##rec_{rootConfig.ItemId}_{eval.ItemId}", ref craftRec)) {
@@ -252,7 +302,7 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.TextDisabled("-");
         }
 
-        ImGui.TableNextColumn();
+        ImGui.TableNextColumn(); // Col 6
         bool ignoreCost = safeCompConfig.IgnoreCost;
         if (ImGui.Checkbox($"##ignore_{rootConfig.ItemId}_{eval.ItemId}", ref ignoreCost)) {
             safeCompConfig.IgnoreCost = ignoreCost;
