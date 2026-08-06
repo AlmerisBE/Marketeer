@@ -200,16 +200,16 @@ public class CraftingProfitMenu : INavigationNode {
         ImGui.TableNextColumn();
 
         var compName = this.itemResolver.ResolveItemName(eval.ItemId);
-        bool hasSubComponents = eval.SubComponents != null && eval.SubComponents.Count > 0;
-        var treeFlags = ImGuiTreeNodeFlags.None;
-        if (hasSubComponents) {
-            treeFlags |= ImGuiTreeNodeFlags.DefaultOpen;
+        bool isNodeExpanded = false;
+
+        if (eval.SubComponents != null && eval.SubComponents.Count > 0) {
+            var treeFlags = ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth;
+            isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", treeFlags);
         }
         else {
-            treeFlags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(compName);
         }
-
-        bool isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", treeFlags);
 
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(eval.QuantityRequired.ToString());
@@ -248,7 +248,6 @@ public class CraftingProfitMenu : INavigationNode {
         ImGui.TableNextColumn();
         ImGui.PushID($"opts_{rootConfig.ItemId}_{eval.ItemId}");
 
-        // Option 1: Free / Stock
         bool ignoreCost = safeCompConfig.IgnoreCost;
         if (ignoreCost) {
             ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.3f, 1.0f, 0.3f, 1.0f));
@@ -271,7 +270,6 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.SetTooltip(this.localization.Translate("CraftingProfit_TooltipFree"));
         }
 
-        // Option 2: Craft Recursively
         if (this.recipeDataService.IsCraftable(eval.ItemId)) {
             ImGui.SameLine();
             bool craftRec = safeCompConfig.CraftRecursively;
@@ -299,7 +297,7 @@ public class CraftingProfitMenu : INavigationNode {
 
         ImGui.PopID();
 
-        if (eval.SubComponents != null && eval.SubComponents.Count > 0 && isNodeExpanded) {
+        if (isNodeExpanded && eval.SubComponents != null && eval.SubComponents.Count > 0) {
             foreach (var sub in eval.SubComponents) {
                 this.DrawComponentRow(sub, rootConfig);
             }
