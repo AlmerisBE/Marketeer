@@ -1,6 +1,8 @@
 ﻿using Dalamud.Plugin;
 using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Configuration.Models;
+using Marketeer.API.MarketWatch.Models;
+using System.Collections.Generic;
 
 namespace Marketeer.Core.Configuration.Services;
 
@@ -12,8 +14,19 @@ public class ConfigurationService : IConfigurationService {
         this.pluginInterface = pluginInterface;
         this.config = this.pluginInterface.GetPluginConfig() as PluginConfiguration ?? new PluginConfiguration();
 
-        // Guard against null collections when loading old configuration files
         this.config.FinancialRecords ??= new();
+
+        if (this.config.WatchedItems != null) {
+            var rekeyed = new Dictionary<string, WatchedItem>();
+            foreach (var kvp in this.config.WatchedItems) {
+                var item = kvp.Value;
+                rekeyed[item.Key] = item;
+            }
+            this.config.WatchedItems = rekeyed;
+        }
+        else {
+            this.config.WatchedItems = new Dictionary<string, WatchedItem>();
+        }
     }
 
     public PluginConfiguration GetConfig() => this.config;

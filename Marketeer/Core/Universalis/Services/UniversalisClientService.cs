@@ -17,7 +17,8 @@ public class UniversalisClientService : IServerPriceProvider {
     private ILoggerService logger;
     private IConfigurationService configService;
 
-    private ConcurrentDictionary<uint, (LowestPriceResult? Result, DateTime FetchTime)> cache = new();
+    // Cache is now storing a list of results (up to 2: Lowest NQ and Lowest HQ)
+    private ConcurrentDictionary<uint, (IReadOnlyList<LowestPriceResult> Results, DateTime FetchTime)> cache = new();
 
     public UniversalisClientService(HttpClient httpClient, ILoggerService logger, IConfigurationService configService) {
         this.httpClient = httpClient;
@@ -31,7 +32,8 @@ public class UniversalisClientService : IServerPriceProvider {
 
     public async Task<LowestPriceResult?> GetLowestPriceAsync(uint itemId, uint worldId) {
         var results = await this.GetLowestPricesAsync(new[] { itemId }, worldId);
-        return results.FirstOrDefault();
+        // Fallback for systems that just want the absolute lowest (e.g. CompetitionMonitorService)
+        return results.OrderBy(r => r.Price).FirstOrDefault();
     }
 
     public async Task<IReadOnlyList<LowestPriceResult>> GetLowestPricesAsync(IEnumerable<uint> itemIds, uint worldId) {
@@ -41,9 +43,7 @@ public class UniversalisClientService : IServerPriceProvider {
 
         foreach (var id in itemIds.Distinct()) {
             if (this.cache.TryGetValue(id, out var cachedData) && (DateTime.UtcNow - cachedData.FetchTime) < cacheDuration) {
-                if (cachedData.Result != null) {
-                    results.Add(cachedData.Result);
-                }
+                results.AddRange(cachedData.Results);
             }
             else {
                 idsToFetch.Add(id);
@@ -69,14 +69,14 @@ public class UniversalisClientService : IServerPriceProvider {
 
                 if (batch.Count == 1) {
                     var data = JsonSerializer.Deserialize<UniversalisResponse>(content);
-                    this.ExtractAndCacheLowestPrice(data, batch[0], results);
+                    this.ExtractAndCacheLowestPrices(data, batch[0], results);
                 }
                 else {
                     var multiData = JsonSerializer.Deserialize<UniversalisMultiResponse>(content);
                     if (multiData?.Items != null) {
                         foreach (var id in batch) {
                             if (multiData.Items.TryGetValue(id, out var data)) {
-                                this.ExtractAndCacheLowestPrice(data, id, results);
+                                this.ExtractAndCacheLowestPrices(data, id, results);
                             }
                             else {
                                 this.CacheEmptyResult(id);
@@ -93,23 +93,27 @@ public class UniversalisClientService : IServerPriceProvider {
         return results;
     }
 
-    private void ExtractAndCacheLowestPrice(UniversalisResponse? data, uint itemId, List<LowestPriceResult> results) {
+    private void ExtractAndCacheLowestPrices(UniversalisResponse? data, uint itemId, List<LowestPriceResult> results) {
+        var overviews = new List<LowestPriceResult>();
+
         if (data != null && data.Listings != null && data.Listings.Count > 0) {
-            var lowest = data.Listings.OrderBy(l => l.PricePerUnit).First();
-            var result = new LowestPriceResult {
-                ItemId = data.ItemId,
-                Price = lowest.PricePerUnit,
-                RetainerName = lowest.RetainerName
-            };
-            this.cache[itemId] = (result, DateTime.UtcNow);
-            results.Add(result);
+            var lowestNq = data.Listings.Where(l => !l.IsHq).OrderBy(l => l.PricePerUnit).FirstOrDefault();
+            var lowestHq = data.Listings.Where(l => l.IsHq).OrderBy(l => l.PricePerUnit).FirstOrDefault();
+
+            if (lowestNq != null) {
+                overviews.Add(new LowestPriceResult { ItemId = itemId, Price = lowestNq.PricePerUnit, RetainerName = lowestNq.RetainerName, IsHq = false });
+            }
+
+            if (lowestHq != null) {
+                overviews.Add(new LowestPriceResult { ItemId = itemId, Price = lowestHq.PricePerUnit, RetainerName = lowestHq.RetainerName, IsHq = true });
+            }
         }
-        else {
-            this.CacheEmptyResult(itemId);
-        }
+
+        this.cache[itemId] = (overviews.AsReadOnly(), DateTime.UtcNow);
+        results.AddRange(overviews);
     }
 
     private void CacheEmptyResult(uint itemId) {
-        this.cache[itemId] = (null, DateTime.UtcNow);
+        this.cache[itemId] = (new List<LowestPriceResult>().AsReadOnly(), DateTime.UtcNow);
     }
 }

@@ -126,9 +126,10 @@ public class MarketWatchMenu : INavigationNode {
                 }
 
                 ImGui.TableNextColumn();
-                ImGui.PushID((int)item.ItemId);
+                // Utilisation de la clé composite pour éviter les conflits d'ID ImGui entre NQ et HQ
+                ImGui.PushID(item.Key);
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash)) {
-                    this.repository.RemoveItem(item.ItemId);
+                    this.repository.RemoveItem(item.ItemId, item.IsHighQuality);
                 }
 
                 if (ImGui.IsItemHovered()) {

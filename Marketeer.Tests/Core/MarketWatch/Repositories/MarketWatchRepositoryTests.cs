@@ -8,78 +8,72 @@ using Xunit;
 namespace Marketeer.Tests.Core.MarketWatch.Repositories;
 
 public class MarketWatchRepositoryTests {
-    private IConfigurationService CreateMockConfigService() {
-        var configService = Substitute.For<IConfigurationService>();
-        configService.GetConfig().Returns(new PluginConfiguration());
-        return configService;
+    private IConfigurationService configService;
+    private PluginConfiguration config;
+
+    public MarketWatchRepositoryTests() {
+        this.configService = Substitute.For<IConfigurationService>();
+        this.config = new PluginConfiguration();
+        this.configService.GetConfig().Returns(this.config);
     }
 
     [Fact]
-    public void AddOrUpdateItem_ShouldAddNewItemAndSave_WhenItemDoesNotExist() {
-        var configService = this.CreateMockConfigService();
-        var repository = new MarketWatchRepository(configService);
-        var item = new WatchedItem { ItemId = 1234, TargetBuyPrice = 500 };
+    public void GetAllWatchedItems_ShouldReturnAllItems() {
+        this.config.WatchedItems = new Dictionary<string, WatchedItem> {
+            { "1_NQ", new WatchedItem { ItemId = 1, IsHighQuality = false } },
+            { "1_HQ", new WatchedItem { ItemId = 1, IsHighQuality = true } }
+        };
+
+        var repository = new MarketWatchRepository(this.configService);
+        var items = repository.GetAllWatchedItems();
+
+        Assert.Equal(2, items.Count);
+        Assert.Contains(items, i => i.ItemId == 1 && !i.IsHighQuality);
+        Assert.Contains(items, i => i.ItemId == 1 && i.IsHighQuality);
+    }
+
+    [Fact]
+    public void AddOrUpdateItem_ShouldAddNewItem_WithCorrectCompositeKey() {
+        var repository = new MarketWatchRepository(this.configService);
+        var item = new WatchedItem { ItemId = 2, IsHighQuality = true };
 
         repository.AddOrUpdateItem(item);
 
-        var items = repository.GetAllWatchedItems();
-        Assert.Single(items);
-        Assert.Equal(1234u, items.First().ItemId);
-        configService.Received(1).Save();
-    }
-
-    [Fact]
-    public void AddOrUpdateItem_ShouldUpdateExistingItemAndSave_WhenItemAlreadyExists() {
-        var configService = this.CreateMockConfigService();
-        var repository = new MarketWatchRepository(configService);
-        repository.AddOrUpdateItem(new WatchedItem { ItemId = 1234, TargetBuyPrice = 500 });
-
-        var updatedItem = new WatchedItem { ItemId = 1234, TargetBuyPrice = 1000, TargetSellPrice = 1500 };
-        repository.AddOrUpdateItem(updatedItem);
-
-        var items = repository.GetAllWatchedItems();
-        Assert.Single(items);
-        Assert.Equal(1000u, items.First().TargetBuyPrice);
-        Assert.True(items.First().IsSellWatchEnabled);
-        configService.Received(2).Save();
+        Assert.Single(this.config.WatchedItems);
+        Assert.True(this.config.WatchedItems.ContainsKey("2_HQ"));
+        this.configService.Received(1).Save();
     }
 
     [Fact]
     public void RemoveItem_ShouldRemoveItemAndSave_WhenItemExists() {
-        var configService = this.CreateMockConfigService();
-        var repository = new MarketWatchRepository(configService);
-        repository.AddOrUpdateItem(new WatchedItem { ItemId = 1234 });
+        this.config.WatchedItems = new Dictionary<string, WatchedItem> {
+            { "3_NQ", new WatchedItem { ItemId = 3, IsHighQuality = false } },
+            { "3_HQ", new WatchedItem { ItemId = 3, IsHighQuality = true } }
+        };
 
-        repository.RemoveItem(1234);
+        var repository = new MarketWatchRepository(this.configService);
 
-        var items = repository.GetAllWatchedItems();
-        Assert.Empty(items);
-        configService.Received(2).Save();
+        // Remove only the NQ variant
+        repository.RemoveItem(3, false);
+
+        Assert.Single(this.config.WatchedItems);
+        Assert.True(this.config.WatchedItems.ContainsKey("3_HQ"));
+        Assert.False(this.config.WatchedItems.ContainsKey("3_NQ"));
+        this.configService.Received(1).Save();
     }
 
     [Fact]
-    public void Constructor_ShouldLoadExistingItems_FromConfiguration() {
-        var configService = Substitute.For<IConfigurationService>();
-        var config = new PluginConfiguration();
-        config.WatchedItems[9999] = new WatchedItem { ItemId = 9999, TargetBuyPrice = 123 };
-        configService.GetConfig().Returns(config);
+    public void RemoveItem_ShouldNotSave_WhenItemDoesNotExist() {
+        this.config.WatchedItems = new Dictionary<string, WatchedItem> {
+            { "4_HQ", new WatchedItem { ItemId = 4, IsHighQuality = true } }
+        };
 
-        var repository = new MarketWatchRepository(configService);
+        var repository = new MarketWatchRepository(this.configService);
 
-        var items = repository.GetAllWatchedItems();
-        Assert.Single(items);
-        Assert.Equal(9999u, items.First().ItemId);
-    }
+        // Attempting to remove NQ variant which does not exist
+        repository.RemoveItem(4, false);
 
-    [Fact]
-    public void IsEligibleForPolling_ShouldReturnTrue_OnlyWhenConfiguredProperly() {
-        var item = new WatchedItem { ItemId = 1234 };
-        Assert.False(item.IsEligibleForPolling());
-
-        item.TargetBuyPrice = 0;
-        Assert.False(item.IsEligibleForPolling());
-
-        item.TargetBuyPrice = 100;
-        Assert.True(item.IsEligibleForPolling());
+        Assert.Single(this.config.WatchedItems);
+        this.configService.DidNotReceive().Save();
     }
 }

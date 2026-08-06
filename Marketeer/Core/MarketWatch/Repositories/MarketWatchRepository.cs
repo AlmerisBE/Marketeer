@@ -12,9 +12,8 @@ public class MarketWatchRepository : IMarketWatchRepository {
     public MarketWatchRepository(IConfigurationService configService) {
         this.configService = configService;
 
-        // Guard against null collections when loading old configuration files
         if (this.configService.GetConfig().WatchedItems == null) {
-            this.configService.GetConfig().WatchedItems = new Dictionary<uint, WatchedItem>();
+            this.configService.GetConfig().WatchedItems = new Dictionary<string, WatchedItem>();
         }
     }
 
@@ -27,12 +26,13 @@ public class MarketWatchRepository : IMarketWatchRepository {
             return;
         }
 
-        this.configService.GetConfig().WatchedItems[item.ItemId] = item;
+        this.configService.GetConfig().WatchedItems[item.Key] = item;
         this.configService.Save();
     }
 
-    public void RemoveItem(uint itemId) {
-        if (this.configService.GetConfig().WatchedItems.Remove(itemId)) {
+    public void RemoveItem(uint itemId, bool isHighQuality) {
+        var key = $"{itemId}_{(isHighQuality ? "HQ" : "NQ")}";
+        if (this.configService.GetConfig().WatchedItems.Remove(key)) {
             this.configService.Save();
         }
     }

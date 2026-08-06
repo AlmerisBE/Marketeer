@@ -13,12 +13,12 @@ public class PluginConfiguration : IPluginConfiguration {
     public int Version { get; set; } = 0;
 
     public Dictionary<string, CharacterFinancialData> FinancialRecords { get; set; } = [];
-    public List<SaleRecord> SalesHistory { get; set; } = new();
-    public Dictionary<string, InventorySnapshot> InventorySnapshots { get; set; } = new();
-    public Dictionary<ulong, InventorySnapshot> RetainerInventorySnapshots { get; set; } = new();
+    public List<SaleRecord> SalesHistory { get; set; } = [];
+    public Dictionary<string, InventorySnapshot> InventorySnapshots { get; set; } = [];
+    public Dictionary<ulong, InventorySnapshot> RetainerInventorySnapshots { get; set; } = [];
 
     public int UniversalisCacheMinutes { get; set; } = 30;
-    public List<string> CompetitorWhitelist { get; set; } = new();
+    public List<string> CompetitorWhitelist { get; set; } = [];
     public bool AutoWhitelistOwnRetainers { get; set; } = true;
 
     public bool EnableAutomationDelay { get; set; } = false;
@@ -28,5 +28,5 @@ public class PluginConfiguration : IPluginConfiguration {
     public int MarketWatchPollingIntervalMinutes { get; set; } = 30;
 
     // Added property to persist market watch data
-    public Dictionary<uint, WatchedItem> WatchedItems { get; set; } = new();
+    public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
 }

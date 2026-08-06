@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Marketeer.Core.CompetitionTracking.Services;
 
-public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable {
+public class CompetitionMonitorService : ICompetitionMonitorService {
     private IRetainerStateService retainerState;
     private IServerPriceProvider priceProvider;
     private ICompetitionStateService competitionState;
@@ -106,11 +106,11 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
             var newUndercuts = new List<UndercutItem>();
 
             var config = this.configService.GetConfig();
-            var whitelist = config.CompetitorWhitelist;
+            var whitelist = config.CompetitorWhitelist ?? new List<string>();
             var autoWhitelistOwn = config.AutoWhitelistOwnRetainers;
             var ownRetainers = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
 
-            if (autoWhitelistOwn) {
+            if (autoWhitelistOwn && config.FinancialRecords != null) {
                 foreach (var cData in config.FinancialRecords.Values) {
                     foreach (var rData in cData.Retainers.Values) {
                         ownRetainers.Add(rData.Name);
@@ -123,20 +123,23 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
                     continue;
                 }
 
-                var lowestPriceResult = await this.priceProvider.GetLowestPriceAsync(itemId, character.HomeWorldId);
-                if (lowestPriceResult == null) {
+                // Unification : on utilise GetLowestPricesAsync même pour un seul item
+                var lowestPrices = await this.priceProvider.GetLowestPricesAsync(new[] { itemId }, character.HomeWorldId);
+                var marketLowest = lowestPrices.OrderBy(p => p.Price).FirstOrDefault();
+
+                if (marketLowest == null) {
                     continue;
                 }
 
                 var itemListings = character.Listings.Where(l => l.ItemId == itemId);
                 foreach (var listing in itemListings) {
-                    if (lowestPriceResult.Price < listing.CurrentPrice && lowestPriceResult.RetainerName != listing.RetainerName) {
+                    if (marketLowest.Price < listing.CurrentPrice && marketLowest.RetainerName != listing.RetainerName) {
 
-                        if (whitelist.Contains(lowestPriceResult.RetainerName, StringComparer.InvariantCultureIgnoreCase)) {
+                        if (whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase)) {
                             continue;
                         }
 
-                        if (autoWhitelistOwn && ownRetainers.Contains(lowestPriceResult.RetainerName)) {
+                        if (autoWhitelistOwn && ownRetainers.Contains(marketLowest.RetainerName)) {
                             continue;
                         }
 
@@ -149,8 +152,8 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
                             Quantity = listing.Quantity,
                             RetainerName = listing.RetainerName,
                             OurPrice = listing.CurrentPrice,
-                            ServerCheapestPrice = lowestPriceResult.Price,
-                            CompetitorName = lowestPriceResult.RetainerName,
+                            ServerCheapestPrice = marketLowest.Price,
+                            CompetitorName = marketLowest.RetainerName,
                             CharacterName = character.CharacterName
                         });
                     }
@@ -176,11 +179,11 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
             var undercuts = new List<UndercutItem>();
 
             var config = this.configService.GetConfig();
-            var whitelist = config.CompetitorWhitelist;
+            var whitelist = config.CompetitorWhitelist ?? new List<string>();
             var autoWhitelistOwn = config.AutoWhitelistOwnRetainers;
             var ownRetainers = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
 
-            if (autoWhitelistOwn) {
+            if (autoWhitelistOwn && config.FinancialRecords != null) {
                 foreach (var cData in config.FinancialRecords.Values) {
                     foreach (var rData in cData.Retainers.Values) {
                         ownRetainers.Add(rData.Name);
@@ -197,7 +200,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService, IDisposable
                 var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId);
 
                 foreach (var listing in character.Listings) {
-                    var marketLowest = lowestPrices.FirstOrDefault(price => price.ItemId == listing.ItemId);
+                    var marketLowest = lowestPrices.Where(price => price.ItemId == listing.ItemId).OrderBy(p => p.Price).FirstOrDefault();
 
                     if (marketLowest != null && marketLowest.Price < listing.CurrentPrice && marketLowest.RetainerName != listing.RetainerName) {
 

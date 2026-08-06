@@ -5,6 +5,7 @@ using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.API.MarketWatch.Models;
 using Marketeer.API.SalesHistory.Contracts;
 using Marketeer.API.Universalis.Contracts;
+using Marketeer.API.Universalis.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,34 +61,49 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
             var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, worldId);
 
             foreach (var item in eligibleItems) {
-                var marketData = lowestPrices.FirstOrDefault(p => p.ItemId == item.ItemId && p.IsHq == item.IsHighQuality);
-                if (marketData == null) {
+                var itemPrices = lowestPrices.Where(p => p.ItemId == item.ItemId).ToList();
+                if (itemPrices.Count == 0) {
+                    continue;
+                }
+
+                LowestPriceResult? effectiveMarketData = null;
+
+                if (item.IsHighQuality) {
+                    // RULE 2 & 4: If HQ tracked, we only care about HQ competitors/opportunities
+                    effectiveMarketData = itemPrices.FirstOrDefault(p => p.IsHq);
+                }
+                else {
+                    // RULE 1 & 3: If NQ tracked, a cheap HQ is a valid purchase and a dangerous competitor. Use absolute lowest.
+                    effectiveMarketData = itemPrices.OrderBy(p => p.Price).FirstOrDefault();
+                }
+
+                if (effectiveMarketData == null) {
                     continue;
                 }
 
                 var itemName = this.itemResolver.ResolveItemName(item.ItemId);
 
-                if (item.IsBuyWatchEnabled && item.TargetBuyPrice.HasValue && marketData.Price < item.TargetBuyPrice.Value) {
+                if (item.IsBuyWatchEnabled && item.TargetBuyPrice.HasValue && effectiveMarketData.Price < item.TargetBuyPrice.Value) {
                     alerts.Add(new MarketWatchAlert {
                         ItemId = item.ItemId,
                         ItemName = itemName,
-                        IsHighQuality = item.IsHighQuality,
+                        IsHighQuality = effectiveMarketData.IsHq, // Return the actual quality of the found deal
                         AlertType = MarketWatchAlertType.BuyTargetReached,
                         TargetPrice = item.TargetBuyPrice.Value,
-                        CurrentPrice = marketData.Price,
-                        RetainerName = marketData.RetainerName
+                        CurrentPrice = effectiveMarketData.Price,
+                        RetainerName = effectiveMarketData.RetainerName
                     });
                 }
 
-                if (item.IsSellWatchEnabled && item.TargetSellPrice.HasValue && marketData.Price >= item.TargetSellPrice.Value) {
+                if (item.IsSellWatchEnabled && item.TargetSellPrice.HasValue && effectiveMarketData.Price >= item.TargetSellPrice.Value) {
                     alerts.Add(new MarketWatchAlert {
                         ItemId = item.ItemId,
                         ItemName = itemName,
-                        IsHighQuality = item.IsHighQuality,
+                        IsHighQuality = item.IsHighQuality, // Sell alerts concern the tracked item type
                         AlertType = MarketWatchAlertType.SellTargetReached,
                         TargetPrice = item.TargetSellPrice.Value,
-                        CurrentPrice = marketData.Price,
-                        RetainerName = marketData.RetainerName
+                        CurrentPrice = effectiveMarketData.Price,
+                        RetainerName = effectiveMarketData.RetainerName
                     });
                 }
             }

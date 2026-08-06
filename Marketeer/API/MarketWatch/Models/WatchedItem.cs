@@ -1,4 +1,6 @@
-﻿namespace Marketeer.API.MarketWatch.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace Marketeer.API.MarketWatch.Models;
 
 public class WatchedItem {
     public uint ItemId { get; set; }
@@ -6,6 +8,9 @@ public class WatchedItem {
 
     public uint? TargetBuyPrice { get; set; }
     public uint? TargetSellPrice { get; set; }
+
+    [JsonIgnore]
+    public string Key => $"{this.ItemId}_{(this.IsHighQuality ? "HQ" : "NQ")}";
 
     public bool IsBuyWatchEnabled => this.TargetBuyPrice.HasValue && this.TargetBuyPrice.Value > 0;
     public bool IsSellWatchEnabled => this.TargetSellPrice.HasValue && this.TargetSellPrice.Value > 0;

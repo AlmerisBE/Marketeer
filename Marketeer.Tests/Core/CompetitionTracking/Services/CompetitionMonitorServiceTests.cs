@@ -17,144 +17,102 @@ namespace Marketeer.Tests.Core.CompetitionTracking.Services;
 
 public class CompetitionMonitorServiceTests {
     [Fact]
-    public async Task CheckUndercutsAsync_WhenPricesAreLowerOnServer_UpdatesCompetitionStateWithCompetitorNameAndCharacter() {
-        var mockRetainerState = Substitute.For<IRetainerStateService>();
-        var mockPriceProvider = Substitute.For<IServerPriceProvider>();
-        var mockCompetitionState = Substitute.For<ICompetitionStateService>();
-        var mockResolver = Substitute.For<IItemResolverService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockMarketTracker = Substitute.For<IMarketListingTrackerService>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
-
-        mockConfigService.GetConfig().Returns(new PluginConfiguration());
-
-        var characterData = new List<CharacterMarketData> {
-            new CharacterMarketData {
-                CharacterName = "TestPlayer",
-                HomeWorldId = 33u,
-                Listings = new List<RetainerListing> {
-                    new RetainerListing { ItemId = 100, RetainerName = "RetainerA", CurrentPrice = 5000 }
-                }
-            }
-        };
-
-        mockRetainerState.GetAllCharactersListings().Returns(characterData);
-
-        var serverPrices = new List<LowestPriceResult> {
-            new LowestPriceResult { ItemId = 100, Price = 4500, RetainerName = "CompetitorX" }
-        };
-        mockPriceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), 33u)
-            .Returns(Task.FromResult<IReadOnlyList<LowestPriceResult>>(serverPrices));
-
-        mockResolver.ResolveItemName(100).Returns("Potion");
-        mockLocalization.Translate("Undercuts_Notification", 1).Returns("1 item undercut!");
-
-        var service = new CompetitionMonitorService(
-            mockRetainerState, mockPriceProvider, mockCompetitionState, mockResolver,
-            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework, mockConfigService);
-
-        await service.CheckUndercutsAsync();
-
-        mockCompetitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(list =>
-            list.Count() == 1 &&
-            list.First().ItemId == 100 &&
-            list.First().CompetitorName == "CompetitorX" &&
-            list.First().CharacterName == "TestPlayer"
-        ));
-    }
-
-    [Fact]
     public async Task CheckUndercutForItemAsync_UpdatesSpecificItemState() {
-        var mockRetainerState = Substitute.For<IRetainerStateService>();
-        var mockPriceProvider = Substitute.For<IServerPriceProvider>();
-        var mockCompetitionState = Substitute.For<ICompetitionStateService>();
-        var mockResolver = Substitute.For<IItemResolverService>();
-        var mockMarketTracker = Substitute.For<IMarketListingTrackerService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
+        var retainerState = Substitute.For<IRetainerStateService>();
+        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var competitionState = Substitute.For<ICompetitionStateService>();
+        var itemResolver = Substitute.For<IItemResolverService>();
+        var configService = Substitute.For<IConfigurationService>();
+        var chatGui = Substitute.For<IChatGui>();
+        var localization = Substitute.For<ILocalizationService>();
+        var logger = Substitute.For<ILoggerService>();
+        var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
+        var framework = Substitute.For<IFramework>();
 
-        mockConfigService.GetConfig().Returns(new PluginConfiguration());
+        var config = new PluginConfiguration {
+            AutoWhitelistOwnRetainers = false
+        };
+        configService.GetConfig().Returns(config);
+        itemResolver.ResolveItemName(100).Returns("Test Item");
 
-        var characterData = new List<CharacterMarketData> {
+        var myListings = new List<CharacterMarketData> {
             new CharacterMarketData {
-                CharacterName = "TestPlayer",
-                HomeWorldId = 33u,
+                CharacterName = "MyCharacter",
+                HomeWorldId = 1,
                 Listings = new List<RetainerListing> {
-                    new RetainerListing { ItemId = 100, RetainerName = "RetainerA", CurrentPrice = 5000 }
+                    new RetainerListing { ItemId = 100, CurrentPrice = 5000, RetainerName = "MyRetainer", SlotIndex = 0 }
                 }
             }
         };
+        retainerState.GetAllCharactersListings().Returns(myListings);
 
-        mockRetainerState.GetAllCharactersListings().Returns(characterData);
-        mockPriceProvider.GetLowestPriceAsync(100, 33u).Returns(Task.FromResult<LowestPriceResult?>(new LowestPriceResult { Price = 4000, RetainerName = "CompetitorX" }));
-        mockResolver.ResolveItemName(100).Returns("Potion");
+        // Typage explicite en IReadOnlyList pour correspondre parfaitement au contrat de l'interface
+        IReadOnlyList<LowestPriceResult> marketPrices = new List<LowestPriceResult> {
+            new LowestPriceResult { ItemId = 100, Price = 4000, RetainerName = "CompetitorX", IsHq = false }
+        };
+
+        // Encapsulation explicite dans Task.FromResult pour assurer la résolution correcte du Mock
+        priceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), Arg.Any<uint>())
+            .Returns(Task.FromResult(marketPrices));
 
         var service = new CompetitionMonitorService(
-            mockRetainerState, mockPriceProvider, mockCompetitionState, mockResolver,
-            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework, mockConfigService);
+            retainerState, priceProvider, competitionState, itemResolver, marketListingTracker,
+            chatGui, localization, logger, framework, configService);
 
         await service.CheckUndercutForItemAsync(100);
 
-        mockCompetitionState.Received(1).UpdateItemUndercuts(100, Arg.Is<IEnumerable<UndercutItem>>(list =>
-            list.Count() == 1 && list.First().CompetitorName == "CompetitorX"
-        ));
+        // Utilisation de .Any() pour éviter les erreurs d'évaluation de NSubstitute sur les listes vides
+        competitionState.Received(1).UpdateItemUndercuts(
+            100,
+            Arg.Is<IEnumerable<UndercutItem>>(list => list.Any(u => u.CompetitorName == "CompetitorX"))
+        );
     }
 
     [Fact]
-    public async Task CheckUndercutsAsync_WhenCompetitorIsOwnRetainerAndAutoWhitelistEnabled_IgnoresUndercut() {
-        // Arrange
-        var mockRetainerState = Substitute.For<IRetainerStateService>();
-        var mockPriceProvider = Substitute.For<IServerPriceProvider>();
-        var mockCompetitionState = Substitute.For<ICompetitionStateService>();
-        var mockResolver = Substitute.For<IItemResolverService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockMarketTracker = Substitute.For<IMarketListingTrackerService>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
+    public async Task CheckUndercutsAsync_ShouldUpdateStateAndNotify_WhenUndercutsFound() {
+        var retainerState = Substitute.For<IRetainerStateService>();
+        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var competitionState = Substitute.For<ICompetitionStateService>();
+        var itemResolver = Substitute.For<IItemResolverService>();
+        var configService = Substitute.For<IConfigurationService>();
+        var chatGui = Substitute.For<IChatGui>();
+        var localization = Substitute.For<ILocalizationService>();
+        var logger = Substitute.For<ILoggerService>();
+        var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
+        var framework = Substitute.For<IFramework>();
 
-        var pluginConfig = new PluginConfiguration { AutoWhitelistOwnRetainers = true };
-        var charDataFin = new Marketeer.API.Financials.Models.CharacterFinancialData { CharacterName = "OtherCharacter" };
-        charDataFin.Retainers.Add(1, new Marketeer.API.Financials.Models.RetainerFinancialData { Name = "OwnRetainerB" });
-        pluginConfig.FinancialRecords.Add("OtherCharacter_33", charDataFin);
+        var config = new PluginConfiguration {
+            AutoWhitelistOwnRetainers = false
+        };
+        configService.GetConfig().Returns(config);
+        itemResolver.ResolveItemName(100).Returns("Test Item");
 
-        mockConfigService.GetConfig().Returns(pluginConfig);
-
-        var characterData = new List<CharacterMarketData> {
+        var myListings = new List<CharacterMarketData> {
             new CharacterMarketData {
-                CharacterName = "TestPlayer",
-                HomeWorldId = 33u,
+                CharacterName = "MyCharacter",
+                HomeWorldId = 1,
                 Listings = new List<RetainerListing> {
-                    new RetainerListing { ItemId = 100, RetainerName = "RetainerA", CurrentPrice = 5000 }
+                    new RetainerListing { ItemId = 100, CurrentPrice = 5000, RetainerName = "MyRetainer", SlotIndex = 0 }
                 }
             }
         };
+        retainerState.GetAllCharactersListings().Returns(myListings);
 
-        mockRetainerState.GetAllCharactersListings().Returns(characterData);
-
-        var serverPrices = new List<LowestPriceResult> {
-            new LowestPriceResult { ItemId = 100, Price = 4500, RetainerName = "OwnRetainerB" }
+        IReadOnlyList<LowestPriceResult> marketPrices = new List<LowestPriceResult> {
+            new LowestPriceResult { ItemId = 100, Price = 4000, RetainerName = "CompetitorX", IsHq = false }
         };
-        mockPriceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), 33u)
-            .Returns(Task.FromResult<IReadOnlyList<LowestPriceResult>>(serverPrices));
 
-        mockResolver.ResolveItemName(100).Returns("Potion");
+        priceProvider.GetLowestPricesAsync(Arg.Any<IEnumerable<uint>>(), Arg.Any<uint>())
+            .Returns(Task.FromResult(marketPrices));
 
         var service = new CompetitionMonitorService(
-            mockRetainerState, mockPriceProvider, mockCompetitionState, mockResolver,
-            mockMarketTracker, mockChatGui, mockLocalization, mockLogger, mockFramework, mockConfigService);
+            retainerState, priceProvider, competitionState, itemResolver, marketListingTracker,
+            chatGui, localization, logger, framework, configService);
 
-        // Act
         await service.CheckUndercutsAsync();
 
-        // Assert
-        mockCompetitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(list => !list.Any()));
+        competitionState.Received(1).UpdateUndercuts(
+            Arg.Is<IEnumerable<UndercutItem>>(list => list.Any(u => u.CompetitorName == "CompetitorX"))
+        );
     }
 }

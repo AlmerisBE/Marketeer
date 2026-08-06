@@ -8,4 +8,7 @@ public class UniversalisListing {
 
     [JsonPropertyName("retainerName")]
     public string RetainerName { get; set; } = string.Empty;
+
+    [JsonPropertyName("hq")]
+    public bool IsHq { get; set; }
 }
