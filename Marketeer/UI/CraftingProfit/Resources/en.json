@@ -1,0 +1,20 @@
+{
+  "Group_Crafting": "Crafting & Sales",
+  "CraftingProfit_TabName": "Profit Evaluator",
+  "CraftingProfit_Header": "Crafting Opportunities",
+  "CraftingProfit_SelectAnItem": "Select a crafted item...",
+  "CraftingProfit_BtnAdd": "Track Craft",
+  "CraftingProfit_NoItems": "No crafting items are currently being tracked.",
+  "CraftingProfit_BtnRefresh": "Evaluate",
+  "CraftingProfit_BtnRemove": "Remove",
+  "CraftingProfit_Profit": "Profit: {0}g",
+  "CraftingProfit_MarketPrice": "Current Market: {0}g",
+  "CraftingProfit_CraftCost": "Total Craft Cost: {0}g",
+  "CraftingProfit_TargetSell": "Target Sell Price:",
+  "CraftingProfit_ColIngredient": "Ingredient",
+  "CraftingProfit_ColQty": "Qty",
+  "CraftingProfit_ColUnitCost": "Unit Cost",
+  "CraftingProfit_ColTotalCost": "Total Cost",
+  "CraftingProfit_ColMaxBuy": "Max Buy Price",
+  "CraftingProfit_ColRecursion": "Craft It?"
+}
