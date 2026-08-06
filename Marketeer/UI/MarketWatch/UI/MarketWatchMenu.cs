@@ -7,6 +7,7 @@ using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.API.MarketWatch.Models;
 using Marketeer.API.SalesHistory.Contracts;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Marketeer.UI.MarketWatch.UI;
 
@@ -88,7 +89,11 @@ public class MarketWatchMenu : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
-        var items = this.repository.GetAllWatchedItems();
+        // Sort items alphabetically by resolved name, prioritizing High Quality
+        var items = this.repository.GetAllWatchedItems()
+            .OrderBy(i => this.itemResolver.ResolveItemName(i.ItemId))
+            .ThenByDescending(i => i.IsHighQuality)
+            .ToList();
 
         if (items.Count == 0) {
             ImGui.TextDisabled(this.localization.Translate("MarketWatch_NoItems"));
@@ -112,7 +117,6 @@ public class MarketWatchMenu : INavigationNode {
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);
                 int buyPrice = item.TargetBuyPrice.HasValue ? (int)item.TargetBuyPrice.Value : 0;
-                // Utilisation de item.Key pour garantir un ID ImGui unique
                 if (ImGui.InputInt($"##buyPrice_{item.Key}", ref buyPrice, 0, 0)) {
                     item.TargetBuyPrice = buyPrice > 0 ? (uint)buyPrice : null;
                     this.repository.AddOrUpdateItem(item);
@@ -121,14 +125,12 @@ public class MarketWatchMenu : INavigationNode {
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);
                 int sellPrice = item.TargetSellPrice.HasValue ? (int)item.TargetSellPrice.Value : 0;
-                // Utilisation de item.Key pour garantir un ID ImGui unique
                 if (ImGui.InputInt($"##sellPrice_{item.Key}", ref sellPrice, 0, 0)) {
                     item.TargetSellPrice = sellPrice > 0 ? (uint)sellPrice : null;
                     this.repository.AddOrUpdateItem(item);
                 }
 
                 ImGui.TableNextColumn();
-                // Utilisation de item.Key pour isoler le bouton supprimer
                 ImGui.PushID(item.Key);
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash)) {
                     this.repository.RemoveItem(item.ItemId, item.IsHighQuality);

@@ -4,31 +4,23 @@ using Marketeer.API.Localization.Contracts;
 using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.API.MarketWatch.Models;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Marketeer.UI.MarketWatch.UI;
 
 public class MarketWatchAlertsMenu : INavigationNode {
     private IMarketWatchAlertState alertState;
-    private IMarketWatchAnalysisService analysisService;
     private ILocalizationService localization;
 
-    private bool isAnalyzing;
-
-    public string GroupName => this.localization.Translate("Group_MarketWatch");
+    public string GroupName => this.localization.Translate("Group_Market");
     public string Name => this.localization.Translate("MarketWatch_AlertsTabName");
     public int Priority => 51;
     public bool HasContent => true;
-    public bool DefaultExpanded => true;
+    public bool DefaultExpanded => false;
 
-    public MarketWatchAlertsMenu(
-        IMarketWatchAlertState alertState,
-        IMarketWatchAnalysisService analysisService,
-        ILocalizationService localization) {
-
+    public MarketWatchAlertsMenu(IMarketWatchAlertState alertState, ILocalizationService localization) {
         this.alertState = alertState;
-        this.analysisService = analysisService;
         this.localization = localization;
     }
 
@@ -40,37 +32,33 @@ public class MarketWatchAlertsMenu : INavigationNode {
         ImGui.Spacing();
 
         if (this.alertState.LastUpdate != System.DateTime.MinValue) {
-            ImGui.TextDisabled(this.localization.Translate("MarketWatch_LastUpdate", this.alertState.LastUpdate.ToString("T")));
-            ImGui.SameLine();
-        }
-
-        ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 120f);
-        if (this.isAnalyzing) {
-            ImGui.BeginDisabled();
-            ImGui.Button(this.localization.Translate("MarketWatch_BtnScanning"), new Vector2(120f, 0));
-            ImGui.EndDisabled();
+            ImGui.TextDisabled(this.localization.Translate("MarketWatch_LastCheck", this.alertState.LastUpdate.ToString("T")));
         }
         else {
-            if (ImGui.Button(this.localization.Translate("MarketWatch_BtnScanNow"), new Vector2(120f, 0))) {
-                _ = this.TriggerManualAnalysisAsync();
-            }
+            ImGui.TextDisabled(this.localization.Translate("MarketWatch_LastCheck", "-"));
         }
 
         ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
 
-        var alerts = this.alertState.LatestAlerts;
+        // Sort alerts alphabetically by item name, prioritizing High Quality
+        var alerts = this.alertState.LatestAlerts
+            .OrderBy(a => a.ItemName)
+            .ThenByDescending(a => a.IsHighQuality)
+            .ToList();
 
         if (alerts.Count == 0) {
-            ImGui.TextUnformatted(this.localization.Translate("MarketWatch_NoAlerts"));
+            ImGui.TextDisabled(this.localization.Translate("MarketWatch_NoItems"));
             return;
         }
 
-        if (ImGui.BeginTable("MarketWatchAlertsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp)) {
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColItem"));
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColAction"));
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetPrice"));
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColCurrentPrice"));
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColSeller"));
+        if (ImGui.BeginTable("MarketWatchAlertsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColItem"), ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColAction"), ImGuiTableColumnFlags.WidthFixed, 140f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetPrice"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColCurrentPrice"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColRetainer"), ImGuiTableColumnFlags.WidthFixed, 120f);
             ImGui.TableHeadersRow();
 
             foreach (var alert in alerts) {
@@ -89,36 +77,16 @@ public class MarketWatchAlertsMenu : INavigationNode {
                 }
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted($"{alert.TargetPrice:N0}");
+                ImGui.TextUnformatted(alert.TargetPrice.ToString("N0"));
 
                 ImGui.TableNextColumn();
-                // Surligner le prix si l'écart est très intéressant
-                bool isExceptionalDeal = (alert.AlertType == MarketWatchAlertType.BuyTargetReached && alert.CurrentPrice < alert.TargetPrice * 0.8) ||
-                                         (alert.AlertType == MarketWatchAlertType.SellTargetReached && alert.CurrentPrice > alert.TargetPrice * 1.2);
-
-                if (isExceptionalDeal) {
-                    ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.2f, 1.0f), $"{alert.CurrentPrice:N0}");
-                }
-                else {
-                    ImGui.TextUnformatted($"{alert.CurrentPrice:N0}");
-                }
+                ImGui.TextColored(new Vector4(1.0f, 1.0f, 0.4f, 1.0f), alert.CurrentPrice.ToString("N0"));
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(alert.RetainerName);
             }
 
             ImGui.EndTable();
-        }
-    }
-
-    private async Task TriggerManualAnalysisAsync() {
-        this.isAnalyzing = true;
-        try {
-            var newAlerts = await this.analysisService.AnalyzeMarketAsync(bypassCache: true);
-            this.alertState.UpdateAlerts(newAlerts);
-        }
-        finally {
-            this.isAnalyzing = false;
         }
     }
 }
