@@ -1,7 +1,7 @@
 ﻿using Marketeer.API.CraftingProfit.Contracts;
 using Marketeer.API.CraftingProfit.Models;
 using Marketeer.API.GameData.Contracts;
-using Marketeer.API.GameData.Models; // <-- Ajout de la directive manquante
+using Marketeer.API.GameData.Models;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.Universalis.Contracts;
 using System;
@@ -33,14 +33,22 @@ public class CraftingCostEvaluator : ICraftingCostEvaluator {
 
             var recipe = this.recipeDataService.GetPrimaryRecipe(config.ItemId);
             if (recipe != null) {
+                result.ResultQuantity = Math.Max(1u, recipe.ResultQuantity);
                 result.ComponentEvaluations = await this.EvaluateComponentsAsync(recipe.Ingredients, config.Components, worldId);
 
-                uint totalCost = 0;
+                uint batchCost = 0;
+                uint batchTargetCost = 0;
+
                 foreach (var eval in result.ComponentEvaluations) {
-                    totalCost += eval.TotalCost;
+                    batchCost += eval.TotalCost;
+                    batchTargetCost += eval.TotalTargetCost;
                 }
 
-                result.TotalCraftingCost = (uint)Math.Ceiling((double)totalCost / recipe.ResultQuantity);
+                result.BatchCraftingCost = batchCost;
+                result.TotalCraftingCost = (uint)Math.Ceiling((double)batchCost / result.ResultQuantity);
+
+                result.BatchTargetCraftingCost = batchTargetCost;
+                result.TotalTargetCraftingCost = (uint)Math.Ceiling((double)batchTargetCost / result.ResultQuantity);
             }
         }
         catch (Exception ex) {
@@ -66,6 +74,10 @@ public class CraftingCostEvaluator : ICraftingCostEvaluator {
             userConfig.TryGetValue(ingredient.ItemId, out var compConfig);
             bool craftRecursively = compConfig != null && compConfig.CraftRecursively;
 
+            if (compConfig != null && compConfig.TargetBuyPrice > 0) {
+                evaluation.TargetUnitCost = compConfig.TargetBuyPrice;
+            }
+
             if (craftRecursively) {
                 var subRecipe = this.recipeDataService.GetPrimaryRecipe(ingredient.ItemId);
                 if (subRecipe != null) {
@@ -73,10 +85,16 @@ public class CraftingCostEvaluator : ICraftingCostEvaluator {
                     evaluation.SubComponents = await this.EvaluateComponentsAsync(subRecipe.Ingredients, userConfig, worldId);
 
                     uint subTotal = 0;
+                    uint subTargetTotal = 0;
+
                     foreach (var sub in evaluation.SubComponents) {
                         subTotal += sub.TotalCost;
+                        subTargetTotal += sub.TotalTargetCost;
                     }
-                    evaluation.UnitCost = (uint)Math.Ceiling((double)subTotal / subRecipe.ResultQuantity);
+
+                    uint yieldQty = Math.Max(1u, subRecipe.ResultQuantity);
+                    evaluation.UnitCost = (uint)Math.Ceiling((double)subTotal / yieldQty);
+                    evaluation.TargetUnitCost = (uint)Math.Ceiling((double)subTargetTotal / yieldQty);
                 }
                 else {
                     evaluation.UnitCost = await this.GetMarketPriceAsync(ingredient.ItemId, worldId);

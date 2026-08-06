@@ -112,11 +112,14 @@ public class CraftingProfitMenu : INavigationNode {
         var itemName = this.itemResolver.ResolveItemName(config.ItemId);
         this.stateService.Evaluations.TryGetValue(config.ItemId, out var evalResult);
 
+        uint yieldQty = evalResult?.ResultQuantity ?? 1;
+        string headerTitle = yieldQty > 1 ? $"{itemName} (x{yieldQty})" : itemName;
+
         int profit = evalResult?.Profit ?? 0;
         var headerColor = profit > 0 ? new Vector4(0.4f, 1.0f, 0.4f, 1.0f) : new Vector4(1.0f, 0.4f, 0.4f, 1.0f);
 
         ImGui.PushStyleColor(ImGuiCol.Text, headerColor);
-        bool isExpanded = ImGui.CollapsingHeader($"{itemName} - {this.localization.Translate("CraftingProfit_Profit", profit)}###craft_{config.ItemId}");
+        bool isExpanded = ImGui.CollapsingHeader($"{headerTitle} - {this.localization.Translate("CraftingProfit_Profit", profit)}###craft_{config.ItemId}");
         ImGui.PopStyleColor();
 
         if (isExpanded) {
@@ -135,6 +138,14 @@ public class CraftingProfitMenu : INavigationNode {
             if (evalResult != null) {
                 ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", evalResult.CurrentMarketPrice));
                 ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_CraftCost", evalResult.TotalCraftingCost));
+
+                if (yieldQty > 1) {
+                    ImGui.TextDisabled(this.localization.Translate("CraftingProfit_BatchCost", yieldQty, evalResult.BatchCraftingCost));
+                }
+
+                if (evalResult.TotalTargetCraftingCost > 0) {
+                    ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MaxCraftCost", evalResult.TotalTargetCraftingCost));
+                }
             }
 
             ImGui.AlignTextToFramePadding();
@@ -145,7 +156,6 @@ public class CraftingProfitMenu : INavigationNode {
             if (ImGui.InputInt($"##sell_{config.ItemId}", ref targetSell, 0, 0)) {
                 config.TargetSellPrice = targetSell > 0 ? (uint)targetSell : 0;
                 this.repository.SaveConfig(config);
-                // Trigger localized re-evaluation based on structural or goal configuration change
                 _ = this.stateService.EvaluateItemAsync(config.ItemId);
             }
 
