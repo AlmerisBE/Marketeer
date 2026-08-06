@@ -21,7 +21,6 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
     private IConfigurationService configService;
     private IFramework framework;
 
-    // La clé est désormais composite "{worldId}_{itemId}" pour gérer le multi-monde
     private ConcurrentDictionary<string, (IReadOnlyList<LowestPriceResult> Results, DateTime FetchTime)> cache = new();
     private DateTime lastRefreshTime;
     private bool isRefreshing;
@@ -157,8 +156,10 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
             }
 
             if (results.Count > 0) {
-                // Notifie asynchroniquement toutes les features qu'une mise à jour a eu lieu
-                this.PricesUpdated?.Invoke(worldId, idsList);
+                // Ensure thread safety and safely await the framework task to resolve CS4014
+                await this.framework.RunOnFrameworkThread(() => {
+                    this.PricesUpdated?.Invoke(worldId, idsList);
+                });
             }
 
         }
