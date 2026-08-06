@@ -6,6 +6,7 @@ public class ComponentConfig {
     public uint ItemId { get; set; }
     public uint TargetBuyPrice { get; set; }
     public bool CraftRecursively { get; set; }
+    public bool IgnoreCost { get; set; }
 }
 
 public class CraftingItemConfig {
@@ -18,10 +19,13 @@ public class ComponentEvaluation {
     public uint ItemId { get; set; }
     public uint QuantityRequired { get; set; }
     public bool IsCraftedRecursively { get; set; }
+    public bool IsCostIgnored { get; set; }
     public uint UnitCost { get; set; }
     public uint TargetUnitCost { get; set; }
-    public uint TotalCost => this.UnitCost * this.QuantityRequired;
-    public uint TotalTargetCost => (this.TargetUnitCost > 0 ? this.TargetUnitCost : this.UnitCost) * this.QuantityRequired;
+
+    public uint TotalCost => this.IsCostIgnored ? 0u : this.UnitCost * this.QuantityRequired;
+    public uint TotalTargetCost => this.IsCostIgnored ? 0u : (this.TargetUnitCost > 0 ? this.TargetUnitCost : this.UnitCost) * this.QuantityRequired;
+
     public List<ComponentEvaluation> SubComponents { get; set; } = new();
 }
 

@@ -72,13 +72,20 @@ public class CraftingCostEvaluator : ICraftingCostEvaluator {
             };
 
             userConfig.TryGetValue(ingredient.ItemId, out var compConfig);
+            bool ignoreCost = compConfig != null && compConfig.IgnoreCost;
             bool craftRecursively = compConfig != null && compConfig.CraftRecursively;
+
+            evaluation.IsCostIgnored = ignoreCost;
 
             if (compConfig != null && compConfig.TargetBuyPrice > 0) {
                 evaluation.TargetUnitCost = compConfig.TargetBuyPrice;
             }
 
-            if (craftRecursively) {
+            if (ignoreCost) {
+                evaluation.UnitCost = 0;
+                evaluation.TargetUnitCost = 0;
+            }
+            else if (craftRecursively) {
                 var subRecipe = this.recipeDataService.GetPrimaryRecipe(ingredient.ItemId);
                 if (subRecipe != null) {
                     evaluation.IsCraftedRecursively = true;

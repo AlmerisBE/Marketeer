@@ -18,5 +18,6 @@
   "CraftingProfit_ColUnitCost": "Unit Cost",
   "CraftingProfit_ColTotalCost": "Total Cost",
   "CraftingProfit_ColMaxBuy": "Max Buy Price",
-  "CraftingProfit_ColRecursion": "Craft It?"
+  "CraftingProfit_ColRecursion": "Craft It?",
+  "CraftingProfit_ColFree": "Free/Stock"
 }

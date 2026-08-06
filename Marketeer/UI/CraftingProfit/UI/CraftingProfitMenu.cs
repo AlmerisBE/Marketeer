@@ -162,13 +162,14 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.Spacing();
 
             if (evalResult != null && evalResult.ComponentEvaluations != null && evalResult.ComponentEvaluations.Count > 0) {
-                if (ImGui.BeginTable($"CraftingTable_{config.ItemId}", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable)) {
+                if (ImGui.BeginTable($"CraftingTable_{config.ItemId}", 7, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable)) {
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColIngredient"), ImGuiTableColumnFlags.WidthStretch);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColQty"), ImGuiTableColumnFlags.WidthFixed, 40f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColUnitCost"), ImGuiTableColumnFlags.WidthFixed, 80f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColTotalCost"), ImGuiTableColumnFlags.WidthFixed, 80f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColMaxBuy"), ImGuiTableColumnFlags.WidthFixed, 100f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColRecursion"), ImGuiTableColumnFlags.WidthFixed, 80f);
+                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColFree"), ImGuiTableColumnFlags.WidthFixed, 80f);
                     ImGui.TableHeadersRow();
 
                     foreach (var compEval in evalResult.ComponentEvaluations) {
@@ -222,7 +223,7 @@ public class CraftingProfitMenu : INavigationNode {
         }
 
         ImGui.TableNextColumn();
-        if (!safeCompConfig.CraftRecursively) {
+        if (!safeCompConfig.CraftRecursively && !safeCompConfig.IgnoreCost) {
             ImGui.SetNextItemWidth(-1);
             int maxBuy = (int)safeCompConfig.TargetBuyPrice;
             if (ImGui.InputInt($"##buy_{rootConfig.ItemId}_{eval.ItemId}", ref maxBuy, 0, 0)) {
@@ -236,7 +237,7 @@ public class CraftingProfitMenu : INavigationNode {
         }
 
         ImGui.TableNextColumn();
-        if (this.recipeDataService.IsCraftable(eval.ItemId)) {
+        if (this.recipeDataService.IsCraftable(eval.ItemId) && !safeCompConfig.IgnoreCost) {
             bool craftRec = safeCompConfig.CraftRecursively;
             if (ImGui.Checkbox($"##rec_{rootConfig.ItemId}_{eval.ItemId}", ref craftRec)) {
                 safeCompConfig.CraftRecursively = craftRec;
@@ -249,6 +250,18 @@ public class CraftingProfitMenu : INavigationNode {
         }
         else {
             ImGui.TextDisabled("-");
+        }
+
+        ImGui.TableNextColumn();
+        bool ignoreCost = safeCompConfig.IgnoreCost;
+        if (ImGui.Checkbox($"##ignore_{rootConfig.ItemId}_{eval.ItemId}", ref ignoreCost)) {
+            safeCompConfig.IgnoreCost = ignoreCost;
+            if (ignoreCost) {
+                safeCompConfig.CraftRecursively = false;
+                safeCompConfig.TargetBuyPrice = 0;
+            }
+            this.repository.SaveConfig(rootConfig);
+            _ = this.stateService.EvaluateItemAsync(rootConfig.ItemId);
         }
 
         if (eval.SubComponents != null && eval.SubComponents.Count > 0 && isNodeExpanded) {

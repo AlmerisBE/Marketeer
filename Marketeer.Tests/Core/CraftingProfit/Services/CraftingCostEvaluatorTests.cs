@@ -25,20 +25,20 @@ public class CraftingCostEvaluatorTests {
     }
 
     [Fact]
-    public async Task EvaluateAsync_ShouldCalculateDirectPurchaseAndYieldCosts() {
-        // Arrange (Moqueca recipe yield = 3)
+    public async Task EvaluateAsync_ShouldIgnoreCost_WhenIgnoreCostFlagIsTrue() {
+        // Arrange (Item 10 needs 2x Item 11 and 1x Item 12. Item 11 is self-sourced / free)
         var config = new CraftingItemConfig {
             ItemId = 10,
             TargetSellPrice = 1200,
             Components = new Dictionary<uint, ComponentConfig> {
-                { 11, new ComponentConfig { ItemId = 11, TargetBuyPrice = 400 } }
+                { 11, new ComponentConfig { ItemId = 11, IgnoreCost = true } }
             }
         };
 
         var recipe = new RecipeInfo {
             RecipeId = 1,
             ResultItemId = 10,
-            ResultQuantity = 3,
+            ResultQuantity = 1,
             Ingredients = new List<RecipeIngredient> {
                 new RecipeIngredient { ItemId = 11, Quantity = 2 },
                 new RecipeIngredient { ItemId = 12, Quantity = 1 }
@@ -47,28 +47,24 @@ public class CraftingCostEvaluatorTests {
 
         this.recipeDataService.GetPrimaryRecipe(10).Returns(recipe);
 
-        this.priceProvider.GetLowestPriceAsync(10, 1, false).Returns(Task.FromResult<LowestPriceResult?>(new LowestPriceResult { Price = 1001 }));
-        this.priceProvider.GetLowestPriceAsync(11, 1, false).Returns(Task.FromResult<LowestPriceResult?>(new LowestPriceResult { Price = 382 }));
-        this.priceProvider.GetLowestPriceAsync(12, 1, false).Returns(Task.FromResult<LowestPriceResult?>(new LowestPriceResult { Price = 441 }));
+        this.priceProvider.GetLowestPriceAsync(10, 1, false).Returns(Task.FromResult<LowestPriceResult?>(new LowestPriceResult { Price = 1000 }));
+        this.priceProvider.GetLowestPriceAsync(11, 1, false).Returns(Task.FromResult<LowestPriceResult?>(new LowestPriceResult { Price = 500 }));
+        this.priceProvider.GetLowestPriceAsync(12, 1, false).Returns(Task.FromResult<LowestPriceResult?>(new LowestPriceResult { Price = 300 }));
 
         // Act
         var result = await this.evaluator.EvaluateAsync(config, 1);
 
         // Assert
         Assert.Equal(10u, result.ItemId);
-        Assert.Equal(3u, result.ResultQuantity);
-        Assert.Equal(1001u, result.CurrentMarketPrice);
+        Assert.Equal(1000u, result.CurrentMarketPrice);
 
-        // Batch cost: (2 * 382) + (1 * 441) = 764 + 441 = 1205
-        Assert.Equal(1205u, result.BatchCraftingCost);
-        // Unit cost: Ceil(1205 / 3) = 402
-        Assert.Equal(402u, result.TotalCraftingCost);
+        // Batch cost: (2 * 0 [ignored]) + (1 * 300) = 300
+        Assert.Equal(300u, result.BatchCraftingCost);
+        Assert.Equal(300u, result.TotalCraftingCost);
 
-        // Target Batch cost: (2 * 400) + (1 * 441 [fallback]) = 800 + 441 = 1241
-        Assert.Equal(1241u, result.BatchTargetCraftingCost);
-        // Target Unit cost: Ceil(1241 / 3) = 414
-        Assert.Equal(414u, result.TotalTargetCraftingCost);
+        Assert.True(result.ComponentEvaluations[0].IsCostIgnored);
+        Assert.Equal(0u, result.ComponentEvaluations[0].TotalCost);
 
-        Assert.Equal(599, result.Profit); // 1001 - 402
+        Assert.Equal(700, result.Profit); // 1000 - 300
     }
 }
