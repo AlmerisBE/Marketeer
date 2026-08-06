@@ -18,6 +18,7 @@
   "CraftingProfit_ColUnitCost": "Unit Cost",
   "CraftingProfit_ColTotalCost": "Total Cost",
   "CraftingProfit_ColMaxBuy": "Max Buy Price",
-  "CraftingProfit_ColRecursion": "Craft It?",
-  "CraftingProfit_ColFree": "Free/Stock"
+  "CraftingProfit_ColOptions": "Options",
+  "CraftingProfit_TooltipFree": "Use from stock / Free component",
+  "CraftingProfit_TooltipCraft": "Craft this component"
 }

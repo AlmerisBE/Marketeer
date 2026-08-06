@@ -18,6 +18,7 @@
   "CraftingProfit_ColUnitCost": "Stückkosten",
   "CraftingProfit_ColTotalCost": "Gesamtkosten",
   "CraftingProfit_ColMaxBuy": "Max. Kaufpreis",
-  "CraftingProfit_ColRecursion": "Herstellen?",
-  "CraftingProfit_ColFree": "Gratis/Lager"
+  "CraftingProfit_ColOptions": "Optionen",
+  "CraftingProfit_TooltipFree": "Aus dem Lager / Gratis Zutat",
+  "CraftingProfit_TooltipCraft": "Diese Zutat herstellen"
 }

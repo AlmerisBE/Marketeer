@@ -18,6 +18,7 @@
   "CraftingProfit_ColUnitCost": "単価",
   "CraftingProfit_ColTotalCost": "総コスト",
   "CraftingProfit_ColMaxBuy": "最大購入価格",
-  "CraftingProfit_ColRecursion": "製作する？",
-  "CraftingProfit_ColFree": "無料/在庫"
+  "CraftingProfit_ColOptions": "オプション",
+  "CraftingProfit_TooltipFree": "在庫を使用 / 無料素材",
+  "CraftingProfit_TooltipCraft": "この素材を製作する"
 }

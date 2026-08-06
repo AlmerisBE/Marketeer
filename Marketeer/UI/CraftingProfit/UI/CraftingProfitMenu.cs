@@ -170,14 +170,13 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.Spacing();
 
             if (evalResult != null && evalResult.ComponentEvaluations != null && evalResult.ComponentEvaluations.Count > 0) {
-                if (ImGui.BeginTable($"CraftingTable_{config.ItemId}", 7, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable)) {
+                if (ImGui.BeginTable($"CraftingTable_{config.ItemId}", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable)) {
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColIngredient"), ImGuiTableColumnFlags.WidthStretch);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColQty"), ImGuiTableColumnFlags.WidthFixed, 40f);
-                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColUnitCost"), ImGuiTableColumnFlags.WidthFixed, 80f);
-                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColTotalCost"), ImGuiTableColumnFlags.WidthFixed, 80f);
-                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColMaxBuy"), ImGuiTableColumnFlags.WidthFixed, 100f);
-                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColRecursion"), ImGuiTableColumnFlags.WidthFixed, 80f);
-                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColFree"), ImGuiTableColumnFlags.WidthFixed, 80f);
+                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColUnitCost"), ImGuiTableColumnFlags.WidthFixed, 75f);
+                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColTotalCost"), ImGuiTableColumnFlags.WidthFixed, 75f);
+                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColMaxBuy"), ImGuiTableColumnFlags.WidthFixed, 90f);
+                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColOptions"), ImGuiTableColumnFlags.WidthFixed, 70f);
                     ImGui.TableHeadersRow();
 
                     foreach (var compEval in evalResult.ComponentEvaluations) {
@@ -201,17 +200,16 @@ public class CraftingProfitMenu : INavigationNode {
         ImGui.TableNextColumn();
 
         var compName = this.itemResolver.ResolveItemName(eval.ItemId);
-        bool isNodeExpanded = false;
-
-        if (eval.SubComponents != null && eval.SubComponents.Count > 0) {
-            isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+        bool hasSubComponents = eval.SubComponents != null && eval.SubComponents.Count > 0;
+        var treeFlags = ImGuiTreeNodeFlags.None;
+        if (hasSubComponents) {
+            treeFlags |= ImGuiTreeNodeFlags.DefaultOpen;
         }
         else {
-            ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+            treeFlags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
         }
 
-        ImGui.TableNextRow();
-        ImGui.TableNextColumn();
+        bool isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", treeFlags);
 
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(eval.QuantityRequired.ToString());
@@ -248,32 +246,58 @@ public class CraftingProfitMenu : INavigationNode {
         }
 
         ImGui.TableNextColumn();
-        if (this.recipeDataService.IsCraftable(eval.ItemId) && !safeCompConfig.IgnoreCost) {
-            bool craftRec = safeCompConfig.CraftRecursively;
-            if (ImGui.Checkbox($"##rec_{rootConfig.ItemId}_{eval.ItemId}", ref craftRec)) {
-                safeCompConfig.CraftRecursively = craftRec;
-                if (craftRec) {
-                    safeCompConfig.TargetBuyPrice = 0;
-                }
-                this.repository.SaveConfig(rootConfig);
-                _ = this.stateService.EvaluateItemAsync(rootConfig.ItemId);
-            }
+        ImGui.PushID($"opts_{rootConfig.ItemId}_{eval.ItemId}");
+
+        // Option 1: Free / Stock
+        bool ignoreCost = safeCompConfig.IgnoreCost;
+        if (ignoreCost) {
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.3f, 1.0f, 0.3f, 1.0f));
         }
         else {
-            ImGui.TextDisabled("-");
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
         }
 
-        ImGui.TableNextColumn();
-        bool ignoreCost = safeCompConfig.IgnoreCost;
-        if (ImGui.Checkbox($"##ignore_{rootConfig.ItemId}_{eval.ItemId}", ref ignoreCost)) {
-            safeCompConfig.IgnoreCost = ignoreCost;
-            if (ignoreCost) {
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.Box)) {
+            safeCompConfig.IgnoreCost = !ignoreCost;
+            if (safeCompConfig.IgnoreCost) {
                 safeCompConfig.CraftRecursively = false;
                 safeCompConfig.TargetBuyPrice = 0;
             }
             this.repository.SaveConfig(rootConfig);
             _ = this.stateService.EvaluateItemAsync(rootConfig.ItemId);
         }
+        ImGui.PopStyleColor();
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(this.localization.Translate("CraftingProfit_TooltipFree"));
+        }
+
+        // Option 2: Craft Recursively
+        if (this.recipeDataService.IsCraftable(eval.ItemId)) {
+            ImGui.SameLine();
+            bool craftRec = safeCompConfig.CraftRecursively;
+            if (craftRec) {
+                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.3f, 1.0f, 0.3f, 1.0f));
+            }
+            else {
+                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
+            }
+
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Hammer)) {
+                safeCompConfig.CraftRecursively = !craftRec;
+                if (safeCompConfig.CraftRecursively) {
+                    safeCompConfig.IgnoreCost = false;
+                    safeCompConfig.TargetBuyPrice = 0;
+                }
+                this.repository.SaveConfig(rootConfig);
+                _ = this.stateService.EvaluateItemAsync(rootConfig.ItemId);
+            }
+            ImGui.PopStyleColor();
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(this.localization.Translate("CraftingProfit_TooltipCraft"));
+            }
+        }
+
+        ImGui.PopID();
 
         if (eval.SubComponents != null && eval.SubComponents.Count > 0 && isNodeExpanded) {
             foreach (var sub in eval.SubComponents) {
