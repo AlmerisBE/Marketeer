@@ -17,6 +17,7 @@ public class CraftingProfitStateService : ICraftingProfitStateService, IDisposab
     private IServerPriceProvider priceProvider;
     private IObjectTable objectTable;
     private IClientState clientState;
+    private IFramework framework;
     private ILoggerService logger;
 
     private ConcurrentDictionary<uint, CraftingProfitResult> evaluations = new();
@@ -30,6 +31,7 @@ public class CraftingProfitStateService : ICraftingProfitStateService, IDisposab
         IServerPriceProvider priceProvider,
         IObjectTable objectTable,
         IClientState clientState,
+        IFramework framework,
         ILoggerService logger) {
 
         this.repository = repository;
@@ -37,14 +39,18 @@ public class CraftingProfitStateService : ICraftingProfitStateService, IDisposab
         this.priceProvider = priceProvider;
         this.objectTable = objectTable;
         this.clientState = clientState;
+        this.framework = framework;
         this.logger = logger;
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.clientState.Login += this.OnLogin;
 
-        if (this.clientState.IsLoggedIn) {
-            _ = this.EvaluateAllAsync();
-        }
+        // Schedule initial evaluation safely on the framework thread after startup completes
+        this.framework.RunOnFrameworkThread(() => {
+            if (this.clientState.IsLoggedIn) {
+                _ = this.EvaluateAllAsync();
+            }
+        });
     }
 
     public void Dispose() {
@@ -62,7 +68,6 @@ public class CraftingProfitStateService : ICraftingProfitStateService, IDisposab
             return;
         }
 
-        // Whenever Universalis cache updates relevant items, we re-evaluate tracked crafts
         _ = this.EvaluateAllAsync();
     }
 
@@ -78,6 +83,10 @@ public class CraftingProfitStateService : ICraftingProfitStateService, IDisposab
         }
 
         var worldId = localPlayer.CurrentWorld.RowId;
+        if (worldId == 0) {
+            return;
+        }
+
         try {
             var result = await this.evaluator.EvaluateAsync(config, worldId);
             this.evaluations[itemId] = result;
@@ -92,12 +101,20 @@ public class CraftingProfitStateService : ICraftingProfitStateService, IDisposab
             return;
         }
 
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null) {
+            return;
+        }
+
         this.isEvaluating = true;
 
         try {
             var configs = this.repository.GetAllConfigs();
             var tasks = configs.Select(c => this.EvaluateItemAsync(c.ItemId));
             await Task.WhenAll(tasks);
+        }
+        catch (Exception ex) {
+            this.logger.Error(ex, "Failed to complete full crafting profit evaluation pass.");
         }
         finally {
             this.isEvaluating = false;
