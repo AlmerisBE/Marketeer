@@ -114,7 +114,7 @@ public class MarketWatchAlertsMenu : INavigationNode {
     private async Task TriggerManualAnalysisAsync() {
         this.isAnalyzing = true;
         try {
-            var newAlerts = await this.analysisService.AnalyzeMarketAsync();
+            var newAlerts = await this.analysisService.AnalyzeMarketAsync(bypassCache: true);
             this.alertState.UpdateAlerts(newAlerts);
         }
         finally {

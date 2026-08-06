@@ -6,6 +6,8 @@
   "MarketWatch_BtnAdd": "Ajouter",
   "MarketWatch_NoItems": "Aucun objet dans la liste de suivi.",
   "MarketWatch_ColItem": "Objet",
+  "MarketWatch_ColTargetPrice": "Cible",
+  "MarketWatch_ColCurrentPrice": "Actuel",
   "MarketWatch_ColTargetBuy": "Cible Achat",
   "MarketWatch_ColTargetSell": "Cible Vente",
   "MarketWatch_ColActions": "Act",

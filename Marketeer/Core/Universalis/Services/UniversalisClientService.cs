@@ -30,19 +30,19 @@ public class UniversalisClientService : IServerPriceProvider {
         }
     }
 
-    public async Task<LowestPriceResult?> GetLowestPriceAsync(uint itemId, uint worldId) {
-        var results = await this.GetLowestPricesAsync(new[] { itemId }, worldId);
-        // Fallback for systems that just want the absolute lowest (e.g. CompetitionMonitorService)
+    public async Task<LowestPriceResult?> GetLowestPriceAsync(uint itemId, uint worldId, bool bypassCache = false) {
+        var results = await this.GetLowestPricesAsync(new[] { itemId }, worldId, bypassCache);
         return results.OrderBy(r => r.Price).FirstOrDefault();
     }
 
-    public async Task<IReadOnlyList<LowestPriceResult>> GetLowestPricesAsync(IEnumerable<uint> itemIds, uint worldId) {
+    public async Task<IReadOnlyList<LowestPriceResult>> GetLowestPricesAsync(IEnumerable<uint> itemIds, uint worldId, bool bypassCache = false) {
         var results = new List<LowestPriceResult>();
         var idsToFetch = new List<uint>();
         var cacheDuration = TimeSpan.FromMinutes(this.configService.GetConfig().UniversalisCacheMinutes);
 
         foreach (var id in itemIds.Distinct()) {
-            if (this.cache.TryGetValue(id, out var cachedData) && (DateTime.UtcNow - cachedData.FetchTime) < cacheDuration) {
+            // Si bypassCache est vrai, on force l'ajout à idsToFetch
+            if (!bypassCache && this.cache.TryGetValue(id, out var cachedData) && (DateTime.UtcNow - cachedData.FetchTime) < cacheDuration) {
                 results.AddRange(cachedData.Results);
             }
             else {

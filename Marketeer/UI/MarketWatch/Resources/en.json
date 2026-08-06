@@ -6,6 +6,8 @@
   "MarketWatch_BtnAdd": "Add",
   "MarketWatch_NoItems": "No items in watchlist.",
   "MarketWatch_ColItem": "Item",
+  "MarketWatch_ColTargetPrice": "Target",
+  "MarketWatch_ColCurrentPrice": "Current",
   "MarketWatch_ColTargetBuy": "Target Buy",
   "MarketWatch_ColTargetSell": "Target Sell",
   "MarketWatch_ColActions": "Acts",

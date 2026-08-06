@@ -6,6 +6,8 @@
   "MarketWatch_BtnAdd": "Hinzufügen",
   "MarketWatch_NoItems": "Keine Gegenstände in der Beobachtungsliste.",
   "MarketWatch_ColItem": "Gegenstand",
+  "MarketWatch_ColTargetPrice": "Ziel",
+  "MarketWatch_ColCurrentPrice": "Aktuell",
   "MarketWatch_ColTargetBuy": "Ziel Kauf",
   "MarketWatch_ColTargetSell": "Ziel Verkauf",
   "MarketWatch_ColActions": "Akt",

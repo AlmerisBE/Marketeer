@@ -34,7 +34,7 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
         this.logger = logger;
     }
 
-    public async Task<IReadOnlyList<MarketWatchAlert>> AnalyzeMarketAsync() {
+    public async Task<IReadOnlyList<MarketWatchAlert>> AnalyzeMarketAsync(bool bypassCache = false) {
         var alerts = new List<MarketWatchAlert>();
 
         if (this.objectTable.Length == 0) {
@@ -58,7 +58,8 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
         var itemIds = eligibleItems.Select(i => i.ItemId).Distinct().ToList();
 
         try {
-            var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, worldId);
+            // On transmet le bypassCache au provider
+            var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, worldId, bypassCache);
 
             foreach (var item in eligibleItems) {
                 var itemPrices = lowestPrices.Where(p => p.ItemId == item.ItemId).ToList();

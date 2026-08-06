@@ -6,6 +6,8 @@
   "MarketWatch_BtnAdd": "追加",
   "MarketWatch_NoItems": "ウォッチリストにアイテムがありません。",
   "MarketWatch_ColItem": "アイテム",
+  "MarketWatch_ColTargetPrice": "目標額",
+  "MarketWatch_ColCurrentPrice": "現在額",
   "MarketWatch_ColTargetBuy": "目標購入額",
   "MarketWatch_ColTargetSell": "目標売却額",
   "MarketWatch_ColActions": "操作",

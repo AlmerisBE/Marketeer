@@ -16,9 +16,11 @@ public class MarketWatchPoller : IDisposable {
     private IConfigurationService configService;
     private IMarketWatchAlertState alertState;
     private ILoggerService logger;
+    private IObjectTable objectTable;
 
     private DateTime lastRunTime;
     private bool isProcessing;
+    private bool isFirstRun;
 
     public MarketWatchPoller(
         IFramework framework,
@@ -26,7 +28,8 @@ public class MarketWatchPoller : IDisposable {
         IMarketWatchAnalysisService analysisService,
         IConfigurationService configService,
         IMarketWatchAlertState alertState,
-        ILoggerService logger) {
+        ILoggerService logger,
+        IObjectTable objectTable) { // N'oublie pas d'injecter IObjectTable via MarketWatchFeature.cs s'il n'y était pas !
 
         this.framework = framework;
         this.chatGui = chatGui;
@@ -34,8 +37,10 @@ public class MarketWatchPoller : IDisposable {
         this.configService = configService;
         this.alertState = alertState;
         this.logger = logger;
+        this.objectTable = objectTable;
 
         this.lastRunTime = DateTime.Now;
+        this.isFirstRun = true;
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
@@ -54,6 +59,14 @@ public class MarketWatchPoller : IDisposable {
             return;
         }
 
+        if (this.isFirstRun) {
+            if (this.objectTable.Length > 0 && this.objectTable[0] is Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter) {
+                this.isFirstRun = false;
+                _ = this.ProcessMarketAnalysisAsync();
+            }
+            return;
+        }
+
         if ((DateTime.Now - this.lastRunTime).TotalMinutes >= intervalMinutes) {
             _ = this.ProcessMarketAnalysisAsync();
         }
@@ -64,8 +77,7 @@ public class MarketWatchPoller : IDisposable {
         this.lastRunTime = DateTime.Now;
 
         try {
-            var alerts = await this.analysisService.AnalyzeMarketAsync();
-
+            var alerts = await this.analysisService.AnalyzeMarketAsync(bypassCache: true);
             this.alertState.UpdateAlerts(alerts);
 
             foreach (var alert in alerts) {

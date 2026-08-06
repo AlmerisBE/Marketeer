@@ -5,6 +5,7 @@
   "Config_GeneralText": "Les paramètres généraux de configuration seront ajoutés ici.",
   "Command_Config_Description": "Ouvre le menu de configuration. Utilisation : /marketeer config",
   "Config_CacheLabel": "Durée du cache Universalis (Minutes)",
+  "Config_MarketWatchIntervalLabel": "Délai d'analyse de la veille (Minutes)",
   "Config_WhitelistLabel": "Liste blanche des concurrents (Noms des servants)",
   "Config_WhitelistAdd": "Ajouter",
   "Config_WhitelistRemove": "Retirer",

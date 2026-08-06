@@ -112,7 +112,8 @@ public class MarketWatchMenu : INavigationNode {
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);
                 int buyPrice = item.TargetBuyPrice.HasValue ? (int)item.TargetBuyPrice.Value : 0;
-                if (ImGui.InputInt($"##buyPrice_{item.ItemId}", ref buyPrice, 0, 0)) {
+                // Utilisation de item.Key pour garantir un ID ImGui unique
+                if (ImGui.InputInt($"##buyPrice_{item.Key}", ref buyPrice, 0, 0)) {
                     item.TargetBuyPrice = buyPrice > 0 ? (uint)buyPrice : null;
                     this.repository.AddOrUpdateItem(item);
                 }
@@ -120,13 +121,14 @@ public class MarketWatchMenu : INavigationNode {
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(-1);
                 int sellPrice = item.TargetSellPrice.HasValue ? (int)item.TargetSellPrice.Value : 0;
-                if (ImGui.InputInt($"##sellPrice_{item.ItemId}", ref sellPrice, 0, 0)) {
+                // Utilisation de item.Key pour garantir un ID ImGui unique
+                if (ImGui.InputInt($"##sellPrice_{item.Key}", ref sellPrice, 0, 0)) {
                     item.TargetSellPrice = sellPrice > 0 ? (uint)sellPrice : null;
                     this.repository.AddOrUpdateItem(item);
                 }
 
                 ImGui.TableNextColumn();
-                // Utilisation de la clé composite pour éviter les conflits d'ID ImGui entre NQ et HQ
+                // Utilisation de item.Key pour isoler le bouton supprimer
                 ImGui.PushID(item.Key);
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash)) {
                     this.repository.RemoveItem(item.ItemId, item.IsHighQuality);

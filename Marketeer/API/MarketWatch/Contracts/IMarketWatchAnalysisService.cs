@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 namespace Marketeer.API.MarketWatch.Contracts;
 
 public interface IMarketWatchAnalysisService {
-    Task<IReadOnlyList<MarketWatchAlert>> AnalyzeMarketAsync();
+    Task<IReadOnlyList<MarketWatchAlert>> AnalyzeMarketAsync(bool bypassCache = false);
 }
