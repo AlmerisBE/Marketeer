@@ -1,7 +1,7 @@
 {
   "Group_Market": "Markt",
   "Group_Statistics": "Statistiken",
-  "SalesTab_Title": "Verkäufe",
+  "SalesTab_Title": "Abgeschlossene Verkäufe",
   "SalesTab_SearchPlaceholder": "Gegenstände suchen...",
   "SalesTab_ColName": "Name",
   "SalesTab_ColQuantity": "Verkaufte Menge",

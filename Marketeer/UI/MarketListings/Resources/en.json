@@ -1,6 +1,6 @@
 {
   "Group_Market": "Market",
-  "VendorAlerts_TabName": "Vendor Alerts",
+  "VendorAlerts_TabName": "Sales at a Loss",
   "VendorAlerts_NoIssues": "All good! None of your items are listed below their vendor sell price.",
   "VendorAlerts_WarningMessage": "Warning: {0} item(s) are currently listed at or below the price a vendor would immediately give you.",
   "VendorAlerts_ColItem": "Item",

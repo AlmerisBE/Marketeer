@@ -17,6 +17,7 @@ public class MarketWatchPollerTests {
     private IMarketWatchAnalysisService analysisService;
     private IConfigurationService configService;
     private ILoggerService logger;
+    private IMarketWatchAlertState alertState;
 
     public MarketWatchPollerTests() {
         this.framework = Substitute.For<IFramework>();
@@ -24,6 +25,7 @@ public class MarketWatchPollerTests {
         this.analysisService = Substitute.For<IMarketWatchAnalysisService>();
         this.configService = Substitute.For<IConfigurationService>();
         this.logger = Substitute.For<ILoggerService>();
+        this.alertState = Substitute.For<IMarketWatchAlertState>();
 
         var config = new PluginConfiguration { MarketWatchPollingIntervalMinutes = 30 };
         this.configService.GetConfig().Returns(config);
@@ -31,7 +33,7 @@ public class MarketWatchPollerTests {
 
     [Fact]
     public void OnFrameworkUpdate_ShouldNotAnalyze_WhenIntervalHasNotPassed() {
-        var poller = new MarketWatchPoller(this.framework, this.chatGui, this.analysisService, this.configService, this.logger);
+        var poller = new MarketWatchPoller(this.framework, this.chatGui, this.analysisService, this.configService, this.alertState, this.logger);
 
         // Simuler un appel immédiat
         poller.TriggerUpdate();
@@ -41,7 +43,7 @@ public class MarketWatchPollerTests {
 
     [Fact]
     public void TriggerUpdate_ShouldAnalyzeAndPrintToChat_WhenAlertsAreFound() {
-        var poller = new MarketWatchPoller(this.framework, this.chatGui, this.analysisService, this.configService, this.logger);
+        var poller = new MarketWatchPoller(this.framework, this.chatGui, this.analysisService, this.configService, this.alertState, this.logger);
 
         var alerts = new List<MarketWatchAlert> {
             new MarketWatchAlert {

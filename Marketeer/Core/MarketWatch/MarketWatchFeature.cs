@@ -15,12 +15,13 @@ public class MarketWatchFeature : IFeatureModule, IDisposable {
     private MarketWatchPoller? poller;
 
     public void RegisterServices(IServiceCollection services) {
-        // Data Repositories
+        // Data Repositories & State
         services.AddSingleton<IMarketWatchRepository, MarketWatchRepository>();
+        services.AddSingleton<IMarketWatchAlertState, MarketWatchAlertState>();
 
         // Core Business Services
         services.AddSingleton<IMarketWatchAnalysisService, MarketWatchAnalysisService>();
-        services.AddSingleton<MarketWatchPoller>(); // Enregistrer le poller
+        services.AddSingleton<MarketWatchPoller>();
 
         // Localization Providers
         services.AddSingleton<ILocalizationProvider, MarketWatchLocalizationProvider>();
@@ -28,6 +29,9 @@ public class MarketWatchFeature : IFeatureModule, IDisposable {
         // UI & Navigation
         services.AddSingleton<MarketWatchMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<MarketWatchMenu>());
+
+        services.AddSingleton<MarketWatchAlertsMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<MarketWatchAlertsMenu>());
     }
 
     public void Initialize(IServiceProvider provider) {

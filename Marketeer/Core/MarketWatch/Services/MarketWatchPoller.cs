@@ -14,6 +14,7 @@ public class MarketWatchPoller : IDisposable {
     private IChatGui chatGui;
     private IMarketWatchAnalysisService analysisService;
     private IConfigurationService configService;
+    private IMarketWatchAlertState alertState;
     private ILoggerService logger;
 
     private DateTime lastRunTime;
@@ -24,20 +25,22 @@ public class MarketWatchPoller : IDisposable {
         IChatGui chatGui,
         IMarketWatchAnalysisService analysisService,
         IConfigurationService configService,
+        IMarketWatchAlertState alertState,
         ILoggerService logger) {
 
         this.framework = framework;
         this.chatGui = chatGui;
         this.analysisService = analysisService;
         this.configService = configService;
+        this.alertState = alertState;
         this.logger = logger;
 
-        this.lastRunTime = DateTime.Now; // Initialize to now to prevent immediate trigger on startup
-        this.framework.Update += OnFrameworkUpdate;
+        this.lastRunTime = DateTime.Now;
+        this.framework.Update += this.OnFrameworkUpdate;
     }
 
     public void Dispose() {
-        this.framework.Update -= OnFrameworkUpdate;
+        this.framework.Update -= this.OnFrameworkUpdate;
         GC.SuppressFinalize(this);
     }
 
@@ -48,11 +51,11 @@ public class MarketWatchPoller : IDisposable {
 
         var intervalMinutes = this.configService.GetConfig().MarketWatchPollingIntervalMinutes;
         if (intervalMinutes <= 0) {
-            return; // Feature disabled if set to 0 or negative
+            return;
         }
 
         if ((DateTime.Now - this.lastRunTime).TotalMinutes >= intervalMinutes) {
-            _ = ProcessMarketAnalysisAsync();
+            _ = this.ProcessMarketAnalysisAsync();
         }
     }
 
@@ -62,6 +65,8 @@ public class MarketWatchPoller : IDisposable {
 
         try {
             var alerts = await this.analysisService.AnalyzeMarketAsync();
+
+            this.alertState.UpdateAlerts(alerts);
 
             foreach (var alert in alerts) {
                 this.NotifyAlert(alert);
@@ -97,7 +102,6 @@ public class MarketWatchPoller : IDisposable {
         this.chatGui.Print(message);
     }
 
-    // Methods required for TDD to bypass the internal timer and framework payload
     public void TriggerUpdate() => this.OnFrameworkUpdate(this.framework);
     public void ForceLastRunTime(DateTime time) => this.lastRunTime = time;
 }
