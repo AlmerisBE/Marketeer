@@ -1,15 +1,9 @@
 ﻿using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.SalesHistory.Contracts;
-using Marketeer.API.UiInterop.Contracts;
-using Marketeer.Core.Command.Services;
+using Marketeer.API.Features;
 using Marketeer.Core.Dependencies;
-using Marketeer.Core.InventoryTracking.Services;
-using Marketeer.Core.RetainerAutomation.Services;
 using Marketeer.UI.Configuration.UI;
 using Marketeer.UI.Dashboard.UI;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,7 +37,6 @@ public sealed class Plugin : IDalamudPlugin {
 
         var services = new ServiceCollection();
 
-        // 1. Register Dalamud Services
         services.AddSingleton(this.pluginInterface);
         services.AddSingleton(chatGui);
         services.AddSingleton(gameGui);
@@ -58,38 +51,20 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(textureProvider);
         services.AddSingleton(contextMenu);
 
-        // 2. Discover and register all features automatically
         services.AddPluginFeatures();
 
-        // 3. Build the container
         this.serviceProvider = services.BuildServiceProvider();
 
-        // 4. Initialize Core Systems
-        this.serviceProvider.GetRequiredService<CommandDispatcher>();
-        this.serviceProvider.GetRequiredService<RetainerInventoryTrackerService>();
-        this.serviceProvider.GetRequiredService<PlayerInventoryTrackerService>();
+        var features = this.serviceProvider.GetServices<IFeatureModule>();
+        foreach (var feature in features) {
+            feature.Initialize(this.serviceProvider);
+        }
 
-        var windowTracker = this.serviceProvider.GetRequiredService<IWindowTrackerService>();
-        windowTracker.EnableTracking();
-
-        var salesScanner = this.serviceProvider.GetRequiredService<ISalesScannerService>();
-        salesScanner.Enable();
-
-        var monitorService = this.serviceProvider.GetRequiredService<ICompetitionMonitorService>();
-        monitorService.StartMonitoring();
-
-        this.serviceProvider.GetRequiredService<IGameEventService>();
-
-        // Forced instantiation of the Context Menu Hook
-        this.serviceProvider.GetRequiredService<RetainerContextMenuService>();
-
-        // 5. Initialize Window System
         var windows = this.serviceProvider.GetServices<Window>();
         foreach (var window in windows) {
             this.windowSystem.AddWindow(window);
         }
 
-        // 6. Hook UI events
         this.pluginInterface.UiBuilder.Draw += this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi += this.OnOpenConfigUi;
     }
@@ -108,9 +83,6 @@ public sealed class Plugin : IDalamudPlugin {
     public void Dispose() {
         this.pluginInterface.UiBuilder.Draw -= this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi -= this.OnOpenConfigUi;
-
-        var monitorService = this.serviceProvider.GetService<ICompetitionMonitorService>();
-        monitorService?.StopMonitoring();
 
         this.windowSystem.RemoveAllWindows();
         this.serviceProvider.Dispose();

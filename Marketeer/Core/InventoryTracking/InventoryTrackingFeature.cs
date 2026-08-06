@@ -5,23 +5,25 @@ using Marketeer.Core.InventoryTracking.Services;
 using Marketeer.UI.InventoryTracking.Providers;
 using Marketeer.UI.InventoryTracking.UI;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Marketeer.Core.InventoryTracking;
 
 public class InventoryTrackingFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
-        // UI Providers
         services.AddSingleton<ILocalizationProvider, InventoryLocalizationProvider>();
 
-        // Core Tracking
         services.AddSingleton<IInventoryDiffService, InventoryDiffService>();
         services.AddSingleton<IInventorySnapshotService, InventorySnapshotService>();
 
-        // Background automatic scanners
         services.AddSingleton<RetainerInventoryTrackerService>();
         services.AddSingleton<PlayerInventoryTrackerService>();
 
-        // Hidden UI View integration
         services.AddSingleton<InventoryView>();
+    }
+
+    public void Initialize(IServiceProvider provider) {
+        provider.GetRequiredService<RetainerInventoryTrackerService>();
+        provider.GetRequiredService<PlayerInventoryTrackerService>();
     }
 }

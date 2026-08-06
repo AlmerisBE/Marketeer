@@ -9,6 +9,7 @@ using Marketeer.UI.SalesHistory.Providers;
 using Marketeer.UI.SalesHistory.Services;
 using Marketeer.UI.SalesHistory.UI;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Marketeer.Core.SalesHistory;
 
@@ -16,7 +17,6 @@ public class SalesHistoryFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILocalizationProvider, SalesHistoryLocalizationProvider>();
 
-        // Core Business Services
         services.AddSingleton<ISalesAnalysisService, SalesAnalysisService>();
         services.AddSingleton<ISalesHistoryScraper, SalesHistoryScraper>();
         services.AddSingleton<ISalesRepository, SalesRepository>();
@@ -25,10 +25,8 @@ public class SalesHistoryFeature : IFeatureModule {
         services.AddSingleton<ISalesInferenceService, SalesInferenceService>();
         services.AddSingleton<ISalesStatisticsService, SalesStatisticsService>();
 
-        // Consolidated Scanner Service
         services.AddSingleton<ISalesScannerService, SalesScannerService>();
 
-        // UI Services & Commands
         services.AddSingleton<ISalesDataPresenter, SalesDataPresenter>();
         services.AddSingleton<ICommand, HistoryCommand>();
 
@@ -37,5 +35,10 @@ public class SalesHistoryFeature : IFeatureModule {
 
         services.AddSingleton<SalesStatisticsMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<SalesStatisticsMenu>());
+    }
+
+    public void Initialize(IServiceProvider provider) {
+        var salesScanner = provider.GetRequiredService<ISalesScannerService>();
+        salesScanner.Enable();
     }
 }
