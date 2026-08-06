@@ -1,0 +1,106 @@
+﻿using Dalamud.Plugin.Services;
+using Marketeer.API.CraftingProfit.Contracts;
+using Marketeer.API.CraftingProfit.Models;
+using Marketeer.API.Logging.Contracts;
+using Marketeer.API.Universalis.Contracts;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Marketeer.Core.CraftingProfit.Services;
+
+public class CraftingProfitStateService : ICraftingProfitStateService, IDisposable {
+    private ICraftingProfitRepository repository;
+    private ICraftingCostEvaluator evaluator;
+    private IServerPriceProvider priceProvider;
+    private IObjectTable objectTable;
+    private IClientState clientState;
+    private ILoggerService logger;
+
+    private ConcurrentDictionary<uint, CraftingProfitResult> evaluations = new();
+    private bool isEvaluating;
+
+    public IReadOnlyDictionary<uint, CraftingProfitResult> Evaluations => this.evaluations;
+
+    public CraftingProfitStateService(
+        ICraftingProfitRepository repository,
+        ICraftingCostEvaluator evaluator,
+        IServerPriceProvider priceProvider,
+        IObjectTable objectTable,
+        IClientState clientState,
+        ILoggerService logger) {
+
+        this.repository = repository;
+        this.evaluator = evaluator;
+        this.priceProvider = priceProvider;
+        this.objectTable = objectTable;
+        this.clientState = clientState;
+        this.logger = logger;
+
+        this.priceProvider.PricesUpdated += this.OnPricesUpdated;
+        this.clientState.Login += this.OnLogin;
+
+        if (this.clientState.IsLoggedIn) {
+            _ = this.EvaluateAllAsync();
+        }
+    }
+
+    public void Dispose() {
+        this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
+        this.clientState.Login -= this.OnLogin;
+    }
+
+    private void OnLogin() {
+        _ = this.EvaluateAllAsync();
+    }
+
+    private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null || localPlayer.CurrentWorld.RowId != worldId) {
+            return;
+        }
+
+        // Whenever Universalis cache updates relevant items, we re-evaluate tracked crafts
+        _ = this.EvaluateAllAsync();
+    }
+
+    public async Task EvaluateItemAsync(uint itemId) {
+        var localPlayer = this.objectTable.LocalPlayer;
+        if (localPlayer == null) {
+            return;
+        }
+
+        var config = this.repository.GetConfig(itemId);
+        if (config == null) {
+            return;
+        }
+
+        var worldId = localPlayer.CurrentWorld.RowId;
+        try {
+            var result = await this.evaluator.EvaluateAsync(config, worldId);
+            this.evaluations[itemId] = result;
+        }
+        catch (Exception ex) {
+            this.logger.Error(ex, $"Failed to evaluate crafting profit for item {itemId}");
+        }
+    }
+
+    public async Task EvaluateAllAsync() {
+        if (this.isEvaluating) {
+            return;
+        }
+
+        this.isEvaluating = true;
+
+        try {
+            var configs = this.repository.GetAllConfigs();
+            var tasks = configs.Select(c => this.EvaluateItemAsync(c.ItemId));
+            await Task.WhenAll(tasks);
+        }
+        finally {
+            this.isEvaluating = false;
+        }
+    }
+}

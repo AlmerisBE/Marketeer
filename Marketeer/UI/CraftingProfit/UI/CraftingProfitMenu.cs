@@ -1,7 +1,6 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using Dalamud.Plugin.Services;
 using Marketeer.API.CraftingProfit.Contracts;
 using Marketeer.API.CraftingProfit.Models;
 using Marketeer.API.Dashboard.Contracts;
@@ -12,23 +11,19 @@ using Marketeer.API.SalesHistory.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Marketeer.UI.CraftingProfit.UI;
 
 public class CraftingProfitMenu : INavigationNode {
     private ICraftingProfitRepository repository;
-    private ICraftingCostEvaluator evaluator;
+    private ICraftingProfitStateService stateService;
     private IItemResolverService itemResolver;
     private IMarketItemSearchProvider searchProvider;
     private IRecipeDataService recipeDataService;
     private ILocalizationService localization;
-    private IObjectTable objectTable;
 
     private string searchInput = string.Empty;
     private ItemSearchResult? selectedItem;
-    private Dictionary<uint, CraftingProfitResult> evaluationCache = new();
-    private bool isEvaluating;
 
     public string GroupName => this.localization.Translate("Group_Crafting");
     public string Name => this.localization.Translate("CraftingProfit_TabName");
@@ -38,20 +33,18 @@ public class CraftingProfitMenu : INavigationNode {
 
     public CraftingProfitMenu(
         ICraftingProfitRepository repository,
-        ICraftingCostEvaluator evaluator,
+        ICraftingProfitStateService stateService,
         IItemResolverService itemResolver,
         IMarketItemSearchProvider searchProvider,
         IRecipeDataService recipeDataService,
-        ILocalizationService localization,
-        IObjectTable objectTable) {
+        ILocalizationService localization) {
 
         this.repository = repository;
-        this.evaluator = evaluator;
+        this.stateService = stateService;
         this.itemResolver = itemResolver;
         this.searchProvider = searchProvider;
         this.recipeDataService = recipeDataService;
         this.localization = localization;
-        this.objectTable = objectTable;
     }
 
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -61,38 +54,10 @@ public class CraftingProfitMenu : INavigationNode {
             if (this.repository.GetConfig(this.selectedItem.ItemId) == null) {
                 var config = new CraftingItemConfig { ItemId = this.selectedItem.ItemId };
                 this.repository.SaveConfig(config);
-                _ = this.EvaluateItemAsync(config);
+                _ = this.stateService.EvaluateItemAsync(config.ItemId);
             }
             this.selectedItem = null;
             this.searchInput = string.Empty;
-        }
-    }
-
-    private async Task EvaluateItemAsync(CraftingItemConfig config) {
-        var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null) {
-            return;
-        }
-
-        var worldId = localPlayer.CurrentWorld.RowId;
-        var result = await this.evaluator.EvaluateAsync(config, worldId);
-        this.evaluationCache[config.ItemId] = result;
-    }
-
-    private async Task EvaluateAllAsync() {
-        if (this.isEvaluating) {
-            return;
-        }
-
-        this.isEvaluating = true;
-
-        try {
-            var configs = this.repository.GetAllConfigs();
-            var tasks = configs.Select(c => this.EvaluateItemAsync(c));
-            await Task.WhenAll(tasks);
-        }
-        finally {
-            this.isEvaluating = false;
         }
     }
 
@@ -126,11 +91,6 @@ public class CraftingProfitMenu : INavigationNode {
             this.AddSelectedItem();
         }
 
-        ImGui.SameLine();
-        if (ImGui.Button(this.localization.Translate("CraftingProfit_BtnRefresh")) && !this.isEvaluating) {
-            _ = this.EvaluateAllAsync();
-        }
-
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
@@ -150,7 +110,7 @@ public class CraftingProfitMenu : INavigationNode {
 
     private void DrawConfigCard(CraftingItemConfig config) {
         var itemName = this.itemResolver.ResolveItemName(config.ItemId);
-        this.evaluationCache.TryGetValue(config.ItemId, out var evalResult);
+        this.stateService.Evaluations.TryGetValue(config.ItemId, out var evalResult);
 
         int profit = evalResult?.Profit ?? 0;
         var headerColor = profit > 0 ? new Vector4(0.4f, 1.0f, 0.4f, 1.0f) : new Vector4(1.0f, 0.4f, 0.4f, 1.0f);
@@ -165,7 +125,6 @@ public class CraftingProfitMenu : INavigationNode {
 
             if (ImGuiComponents.IconButton((int)config.ItemId, FontAwesomeIcon.Trash)) {
                 this.repository.RemoveConfig(config.ItemId);
-                this.evaluationCache.Remove(config.ItemId);
                 return;
             }
             ImGui.SameLine();
@@ -186,6 +145,8 @@ public class CraftingProfitMenu : INavigationNode {
             if (ImGui.InputInt($"##sell_{config.ItemId}", ref targetSell, 0, 0)) {
                 config.TargetSellPrice = targetSell > 0 ? (uint)targetSell : 0;
                 this.repository.SaveConfig(config);
+                // Trigger localized re-evaluation based on structural or goal configuration change
+                _ = this.stateService.EvaluateItemAsync(config.ItemId);
             }
 
             ImGui.Spacing();
@@ -223,7 +184,6 @@ public class CraftingProfitMenu : INavigationNode {
         var compName = this.itemResolver.ResolveItemName(eval.ItemId);
         bool isNodeExpanded = false;
 
-        // Condition inlinée pour assurer que l'analyseur ne perd pas le fil de la vérification null
         if (eval.SubComponents != null && eval.SubComponents.Count > 0) {
             isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", ImGuiTreeNodeFlags.DefaultOpen);
         }
@@ -258,6 +218,7 @@ public class CraftingProfitMenu : INavigationNode {
             if (ImGui.InputInt($"##buy_{rootConfig.ItemId}_{eval.ItemId}", ref maxBuy, 0, 0)) {
                 safeCompConfig.TargetBuyPrice = maxBuy > 0 ? (uint)maxBuy : 0;
                 this.repository.SaveConfig(rootConfig);
+                _ = this.stateService.EvaluateItemAsync(rootConfig.ItemId);
             }
         }
         else {
@@ -273,14 +234,13 @@ public class CraftingProfitMenu : INavigationNode {
                     safeCompConfig.TargetBuyPrice = 0;
                 }
                 this.repository.SaveConfig(rootConfig);
-                _ = this.EvaluateItemAsync(rootConfig);
+                _ = this.stateService.EvaluateItemAsync(rootConfig.ItemId);
             }
         }
         else {
             ImGui.TextDisabled("-");
         }
 
-        // Vérification explicite de la liste au moment de l'itération
         if (eval.SubComponents != null && eval.SubComponents.Count > 0 && isNodeExpanded) {
             foreach (var sub in eval.SubComponents) {
                 this.DrawComponentRow(sub, rootConfig);

@@ -7,6 +7,7 @@ using Marketeer.Core.CraftingProfit.Services;
 using Marketeer.UI.CraftingProfit.Providers;
 using Marketeer.UI.CraftingProfit.UI;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Marketeer.Core.CraftingProfit;
 
@@ -18,9 +19,15 @@ public class CraftingProfitFeature : IFeatureModule {
         // Core Domain
         services.AddSingleton<ICraftingProfitRepository, CraftingProfitRepository>();
         services.AddSingleton<ICraftingCostEvaluator, CraftingCostEvaluator>();
+        services.AddSingleton<ICraftingProfitStateService, CraftingProfitStateService>();
 
         // UI Node
         services.AddSingleton<CraftingProfitMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CraftingProfitMenu>());
+    }
+
+    public void Initialize(IServiceProvider provider) {
+        // Instantiate the service to trigger the event subscriptions
+        provider.GetRequiredService<ICraftingProfitStateService>();
     }
 }
