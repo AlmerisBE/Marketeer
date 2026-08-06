@@ -23,13 +23,10 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     private IChatGui chatGui;
     private ILocalizationService localization;
     private ILoggerService logger;
-    private IFramework framework;
     private IConfigurationService configService;
 
     private bool isMonitoring;
     private bool isChecking;
-    private DateTime lastScanTime;
-    private readonly TimeSpan scanInterval = TimeSpan.FromMinutes(10);
 
     public CompetitionMonitorService(
         IRetainerStateService retainerState,
@@ -40,7 +37,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         IChatGui chatGui,
         ILocalizationService localization,
         ILoggerService logger,
-        IFramework framework,
         IConfigurationService configService) {
 
         this.retainerState = retainerState;
@@ -51,12 +47,10 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.chatGui = chatGui;
         this.localization = localization;
         this.logger = logger;
-        this.framework = framework;
         this.configService = configService;
 
         this.isMonitoring = false;
         this.isChecking = false;
-        this.lastScanTime = DateTime.MinValue;
     }
 
     public void StartMonitoring() {
@@ -66,10 +60,12 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
         this.retainerState.ListingsUpdated += this.OnListingsUpdated;
         this.marketListingTracker.LocalListingModified += this.OnLocalListingModified;
-        this.framework.Update += this.OnFrameworkUpdate;
+
+        // Abonnement à l'horloge centrale Universalis
+        this.priceProvider.PricesUpdated += this.OnPricesUpdated;
 
         this.isMonitoring = true;
-        this.logger.Info("Undercut monitor service started.");
+        this.logger.Info("Undercut monitor service started (Event-Driven).");
     }
 
     public void StopMonitoring() {
@@ -79,10 +75,15 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
         this.retainerState.ListingsUpdated -= this.OnListingsUpdated;
         this.marketListingTracker.LocalListingModified -= this.OnLocalListingModified;
-        this.framework.Update -= this.OnFrameworkUpdate;
+        this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
 
         this.isMonitoring = false;
         this.logger.Info("Undercut monitor service stopped.");
+    }
+
+    private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
+        // Déclenche une analyse globale basée sur les nouvelles données fraîches en cache
+        Task.Run(async () => await this.CheckUndercutsAsync());
     }
 
     private void OnListingsUpdated(IEnumerable<RetainerListing> newListings) {
@@ -90,82 +91,19 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     private void OnLocalListingModified(uint itemId) {
-        Task.Run(async () => await this.CheckUndercutForItemAsync(itemId));
-    }
-
-    private void OnFrameworkUpdate(IFramework frameworkInstance) {
-        if (DateTime.Now - this.lastScanTime >= this.scanInterval) {
-            this.lastScanTime = DateTime.Now;
-            Task.Run(async () => await this.CheckUndercutsAsync());
-        }
-    }
-
-    public async Task CheckUndercutForItemAsync(uint itemId) {
-        try {
+        // En cas de modification locale, on force l'invalidation du cache Universalis.
+        // Cela provoquera une requête serveur, qui lancera l'event PricesUpdated, qui lancera CheckUndercutsAsync.
+        Task.Run(async () => {
             var allCharacters = this.retainerState.GetAllCharactersListings();
-            var newUndercuts = new List<UndercutItem>();
-
-            var config = this.configService.GetConfig();
-            var whitelist = config.CompetitorWhitelist ?? new List<string>();
-            var autoWhitelistOwn = config.AutoWhitelistOwnRetainers;
-            var ownRetainers = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-
-            if (autoWhitelistOwn && config.FinancialRecords != null) {
-                foreach (var cData in config.FinancialRecords.Values) {
-                    foreach (var rData in cData.Retainers.Values) {
-                        ownRetainers.Add(rData.Name);
-                    }
-                }
+            var worldId = allCharacters.FirstOrDefault(c => c.Listings.Any(l => l.ItemId == itemId))?.HomeWorldId ?? 0;
+            if (worldId > 0) {
+                await this.priceProvider.ForceRefreshAsync(new[] { itemId }, worldId);
             }
-
-            foreach (var character in allCharacters) {
-                if (!character.Listings.Any(l => l.ItemId == itemId)) {
-                    continue;
-                }
-
-                // Unification : on utilise GetLowestPricesAsync même pour un seul item
-                var lowestPrices = await this.priceProvider.GetLowestPricesAsync(new[] { itemId }, character.HomeWorldId);
-                var marketLowest = lowestPrices.OrderBy(p => p.Price).FirstOrDefault();
-
-                if (marketLowest == null) {
-                    continue;
-                }
-
-                var itemListings = character.Listings.Where(l => l.ItemId == itemId);
-                foreach (var listing in itemListings) {
-                    if (marketLowest.Price < listing.CurrentPrice && marketLowest.RetainerName != listing.RetainerName) {
-
-                        if (whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase)) {
-                            continue;
-                        }
-
-                        if (autoWhitelistOwn && ownRetainers.Contains(marketLowest.RetainerName)) {
-                            continue;
-                        }
-
-                        var resolvedItemName = this.itemResolver.ResolveItemName(itemId) ?? "Unknown Item";
-
-                        newUndercuts.Add(new UndercutItem {
-                            SlotIndex = listing.SlotIndex,
-                            ItemId = itemId,
-                            ItemName = resolvedItemName,
-                            Quantity = listing.Quantity,
-                            RetainerName = listing.RetainerName,
-                            OurPrice = listing.CurrentPrice,
-                            ServerCheapestPrice = marketLowest.Price,
-                            CompetitorName = marketLowest.RetainerName,
-                            CharacterName = character.CharacterName
-                        });
-                    }
-                }
-            }
-
-            this.competitionState.UpdateItemUndercuts(itemId, newUndercuts);
-        }
-        catch (Exception ex) {
-            this.logger.Error(ex, $"Failed to check undercut for item {itemId} in background task.");
-        }
+        });
     }
+
+    // Le code de CheckUndercutForItemAsync est supprimé, car OnLocalListingModified utilise la cascade d'événements.
+    public Task CheckUndercutForItemAsync(uint itemId) => Task.CompletedTask;
 
     public async Task CheckUndercutsAsync() {
         if (this.isChecking) {
@@ -197,7 +135,9 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 }
 
                 var itemIds = character.Listings.Select(listing => listing.ItemId).Distinct();
-                var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId);
+
+                // bypassCache est à FALSE. On utilise les données que le timer Universalis vient de rafraîchir.
+                var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId, bypassCache: false);
 
                 foreach (var listing in character.Listings) {
                     var marketLowest = lowestPrices.Where(price => price.ItemId == listing.ItemId).OrderBy(p => p.Price).FirstOrDefault();

@@ -25,8 +25,6 @@ public class PluginConfiguration : IPluginConfiguration {
     public int AutomationDelayMin { get; set; } = 1;
     public int AutomationDelayMax { get; set; } = 3;
 
-    public int MarketWatchPollingIntervalMinutes { get; set; } = 30;
-
     // Added property to persist market watch data
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
 }

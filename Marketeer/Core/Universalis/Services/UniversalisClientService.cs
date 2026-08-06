@@ -1,4 +1,5 @@
-﻿using Marketeer.API.Configuration.Contracts;
+﻿using Dalamud.Plugin.Services;
+using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
@@ -12,22 +13,79 @@ using System.Threading.Tasks;
 
 namespace Marketeer.Core.Universalis.Services;
 
-public class UniversalisClientService : IServerPriceProvider {
+public class UniversalisClientService : IServerPriceProvider, IDisposable {
+    public event Action<uint, IEnumerable<uint>>? PricesUpdated;
+
     private HttpClient httpClient;
     private ILoggerService logger;
     private IConfigurationService configService;
+    private IFramework framework;
 
-    // Cache is now storing a list of results (up to 2: Lowest NQ and Lowest HQ)
-    private ConcurrentDictionary<uint, (IReadOnlyList<LowestPriceResult> Results, DateTime FetchTime)> cache = new();
+    // La clé est désormais composite "{worldId}_{itemId}" pour gérer le multi-monde
+    private ConcurrentDictionary<string, (IReadOnlyList<LowestPriceResult> Results, DateTime FetchTime)> cache = new();
+    private DateTime lastRefreshTime;
+    private bool isRefreshing;
 
-    public UniversalisClientService(HttpClient httpClient, ILoggerService logger, IConfigurationService configService) {
+    public UniversalisClientService(HttpClient httpClient, ILoggerService logger, IConfigurationService configService, IFramework framework) {
         this.httpClient = httpClient;
         this.logger = logger;
         this.configService = configService;
+        this.framework = framework;
 
         if (this.httpClient.BaseAddress == null) {
             this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
         }
+
+        this.lastRefreshTime = DateTime.UtcNow;
+        this.framework.Update += this.OnFrameworkUpdate;
+    }
+
+    public void Dispose() {
+        this.framework.Update -= this.OnFrameworkUpdate;
+    }
+
+    private void OnFrameworkUpdate(IFramework fw) {
+        if (this.isRefreshing) {
+            return;
+        }
+
+        var cacheDuration = TimeSpan.FromMinutes(this.configService.GetConfig().UniversalisCacheMinutes);
+        if (DateTime.UtcNow - this.lastRefreshTime >= cacheDuration) {
+            _ = this.RefreshAllCachedItemsAsync();
+        }
+    }
+
+    private async Task RefreshAllCachedItemsAsync() {
+        this.isRefreshing = true;
+        this.lastRefreshTime = DateTime.UtcNow;
+
+        try {
+            var itemsByWorld = new Dictionary<uint, List<uint>>();
+
+            foreach (var key in this.cache.Keys) {
+                var parts = key.Split('_');
+                if (parts.Length == 2 && uint.TryParse(parts[0], out var worldId) && uint.TryParse(parts[1], out var itemId)) {
+                    if (!itemsByWorld.ContainsKey(worldId)) {
+                        itemsByWorld[worldId] = new List<uint>();
+                    }
+                    itemsByWorld[worldId].Add(itemId);
+                }
+            }
+
+            foreach (var kvp in itemsByWorld) {
+                await this.FetchAndCachePricesAsync(kvp.Value, kvp.Key);
+            }
+        }
+        catch (Exception ex) {
+            this.logger.Error(ex, "Failed to refresh Universalis cache in background.");
+        }
+        finally {
+            this.isRefreshing = false;
+        }
+    }
+
+    public async Task ForceRefreshAsync(IEnumerable<uint> itemIds, uint worldId) {
+        await this.FetchAndCachePricesAsync(itemIds, worldId);
     }
 
     public async Task<LowestPriceResult?> GetLowestPriceAsync(uint itemId, uint worldId, bool bypassCache = false) {
@@ -41,8 +99,8 @@ public class UniversalisClientService : IServerPriceProvider {
         var cacheDuration = TimeSpan.FromMinutes(this.configService.GetConfig().UniversalisCacheMinutes);
 
         foreach (var id in itemIds.Distinct()) {
-            // Si bypassCache est vrai, on force l'ajout à idsToFetch
-            if (!bypassCache && this.cache.TryGetValue(id, out var cachedData) && (DateTime.UtcNow - cachedData.FetchTime) < cacheDuration) {
+            var cacheKey = $"{worldId}_{id}";
+            if (!bypassCache && this.cache.TryGetValue(cacheKey, out var cachedData) && (DateTime.UtcNow - cachedData.FetchTime) < cacheDuration) {
                 results.AddRange(cachedData.Results);
             }
             else {
@@ -50,13 +108,25 @@ public class UniversalisClientService : IServerPriceProvider {
             }
         }
 
-        if (idsToFetch.Count == 0) {
+        if (idsToFetch.Count > 0) {
+            var fetchedResults = await this.FetchAndCachePricesAsync(idsToFetch, worldId);
+            results.AddRange(fetchedResults);
+        }
+
+        return results;
+    }
+
+    private async Task<List<LowestPriceResult>> FetchAndCachePricesAsync(IEnumerable<uint> itemIds, uint worldId) {
+        var results = new List<LowestPriceResult>();
+        var idsList = itemIds.Distinct().ToList();
+
+        if (idsList.Count == 0) {
             return results;
         }
 
         try {
-            for (int i = 0; i < idsToFetch.Count; i += 100) {
-                var batch = idsToFetch.Skip(i).Take(100).ToList();
+            for (int i = 0; i < idsList.Count; i += 100) {
+                var batch = idsList.Skip(i).Take(100).ToList();
                 var idsString = string.Join(",", batch);
                 var response = await this.httpClient.GetAsync($"{worldId}/{idsString}");
 
@@ -69,22 +139,28 @@ public class UniversalisClientService : IServerPriceProvider {
 
                 if (batch.Count == 1) {
                     var data = JsonSerializer.Deserialize<UniversalisResponse>(content);
-                    this.ExtractAndCacheLowestPrices(data, batch[0], results);
+                    this.ExtractAndCacheLowestPrices(data, batch[0], worldId, results);
                 }
                 else {
                     var multiData = JsonSerializer.Deserialize<UniversalisMultiResponse>(content);
                     if (multiData?.Items != null) {
                         foreach (var id in batch) {
                             if (multiData.Items.TryGetValue(id, out var data)) {
-                                this.ExtractAndCacheLowestPrices(data, id, results);
+                                this.ExtractAndCacheLowestPrices(data, id, worldId, results);
                             }
                             else {
-                                this.CacheEmptyResult(id);
+                                this.CacheEmptyResult(id, worldId);
                             }
                         }
                     }
                 }
             }
+
+            if (results.Count > 0) {
+                // Notifie asynchroniquement toutes les features qu'une mise à jour a eu lieu
+                this.PricesUpdated?.Invoke(worldId, idsList);
+            }
+
         }
         catch (Exception ex) {
             this.logger.Error(ex, $"Failed to fetch multi-item data from Universalis for world {worldId}.");
@@ -93,7 +169,7 @@ public class UniversalisClientService : IServerPriceProvider {
         return results;
     }
 
-    private void ExtractAndCacheLowestPrices(UniversalisResponse? data, uint itemId, List<LowestPriceResult> results) {
+    private void ExtractAndCacheLowestPrices(UniversalisResponse? data, uint itemId, uint worldId, List<LowestPriceResult> results) {
         var overviews = new List<LowestPriceResult>();
 
         if (data != null && data.Listings != null && data.Listings.Count > 0) {
@@ -109,11 +185,13 @@ public class UniversalisClientService : IServerPriceProvider {
             }
         }
 
-        this.cache[itemId] = (overviews.AsReadOnly(), DateTime.UtcNow);
+        var cacheKey = $"{worldId}_{itemId}";
+        this.cache[cacheKey] = (overviews.AsReadOnly(), DateTime.UtcNow);
         results.AddRange(overviews);
     }
 
-    private void CacheEmptyResult(uint itemId) {
-        this.cache[itemId] = (new List<LowestPriceResult>().AsReadOnly(), DateTime.UtcNow);
+    private void CacheEmptyResult(uint itemId, uint worldId) {
+        var cacheKey = $"{worldId}_{itemId}";
+        this.cache[cacheKey] = (new List<LowestPriceResult>().AsReadOnly(), DateTime.UtcNow);
     }
 }

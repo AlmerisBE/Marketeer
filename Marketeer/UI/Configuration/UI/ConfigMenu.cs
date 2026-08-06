@@ -43,16 +43,6 @@ public class ConfigMenu : INavigationNode {
             isChanged = true;
         }
 
-        int watchInterval = config.MarketWatchPollingIntervalMinutes;
-        if (ImGui.InputInt(this.localizationService.Translate("Config_MarketWatchIntervalLabel"), ref watchInterval)) {
-            if (watchInterval < 0) {
-                watchInterval = 0;
-            }
-
-            config.MarketWatchPollingIntervalMinutes = watchInterval;
-            isChanged = true;
-        }
-
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();

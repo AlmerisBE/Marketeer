@@ -1,83 +1,85 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.API.MarketWatch.Models;
+using Marketeer.API.Universalis.Contracts;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Marketeer.Core.MarketWatch.Services;
 
 public class MarketWatchPoller : IDisposable {
-    private IFramework framework;
     private IChatGui chatGui;
     private IMarketWatchAnalysisService analysisService;
-    private IConfigurationService configService;
     private IMarketWatchAlertState alertState;
+    private IMarketWatchRepository repository;
+    private IServerPriceProvider priceProvider;
+    private IClientState clientState;
     private ILoggerService logger;
-    private IObjectTable objectTable;
+    private IFramework framework;
 
-    private DateTime lastRunTime;
     private bool isProcessing;
-    private bool isFirstRun;
 
     public MarketWatchPoller(
-        IFramework framework,
         IChatGui chatGui,
         IMarketWatchAnalysisService analysisService,
-        IConfigurationService configService,
         IMarketWatchAlertState alertState,
+        IMarketWatchRepository repository,
+        IServerPriceProvider priceProvider,
+        IClientState clientState,
         ILoggerService logger,
-        IObjectTable objectTable) { // N'oublie pas d'injecter IObjectTable via MarketWatchFeature.cs s'il n'y était pas !
+        IFramework framework) {
 
-        this.framework = framework;
         this.chatGui = chatGui;
         this.analysisService = analysisService;
-        this.configService = configService;
         this.alertState = alertState;
+        this.repository = repository;
+        this.priceProvider = priceProvider;
+        this.clientState = clientState;
         this.logger = logger;
-        this.objectTable = objectTable;
+        this.framework = framework;
 
-        this.lastRunTime = DateTime.Now;
-        this.isFirstRun = true;
-        this.framework.Update += this.OnFrameworkUpdate;
+        // Abonnement aux notifications du cache central
+        this.priceProvider.PricesUpdated += this.OnPricesUpdated;
+        this.clientState.Login += this.OnLogin;
+
+        // Initialisation de la graine du cache au lancement si le joueur est déjà en jeu
+        this.framework.RunOnFrameworkThread(() => {
+            if (this.clientState.IsLoggedIn) {
+                _ = this.ProcessMarketAnalysisAsync(bypassCache: false);
+            }
+        });
     }
 
     public void Dispose() {
-        this.framework.Update -= this.OnFrameworkUpdate;
-        GC.SuppressFinalize(this);
+        this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
+        this.clientState.Login -= this.OnLogin;
     }
 
-    private void OnFrameworkUpdate(IFramework fw) {
+    private void OnLogin() {
+        _ = this.ProcessMarketAnalysisAsync(bypassCache: false);
+    }
+
+    private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
         if (this.isProcessing) {
             return;
         }
 
-        var intervalMinutes = this.configService.GetConfig().MarketWatchPollingIntervalMinutes;
-        if (intervalMinutes <= 0) {
-            return;
-        }
-
-        if (this.isFirstRun) {
-            if (this.objectTable.Length > 0 && this.objectTable[0] is Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter) {
-                this.isFirstRun = false;
-                _ = this.ProcessMarketAnalysisAsync();
-            }
-            return;
-        }
-
-        if ((DateTime.Now - this.lastRunTime).TotalMinutes >= intervalMinutes) {
-            _ = this.ProcessMarketAnalysisAsync();
+        // On vérifie que la notification concerne bien un des objets surveillés
+        var watchedItemIds = this.repository.GetAllWatchedItems().Select(w => w.ItemId);
+        if (watchedItemIds.Any(id => updatedItemIds.Contains(id))) {
+            _ = this.ProcessMarketAnalysisAsync(bypassCache: false);
         }
     }
 
-    private async Task ProcessMarketAnalysisAsync() {
+    private async Task ProcessMarketAnalysisAsync(bool bypassCache) {
         this.isProcessing = true;
-        this.lastRunTime = DateTime.Now;
 
         try {
-            var alerts = await this.analysisService.AnalyzeMarketAsync(bypassCache: true);
+            var alerts = await this.analysisService.AnalyzeMarketAsync(bypassCache);
             this.alertState.UpdateAlerts(alerts);
 
             foreach (var alert in alerts) {
@@ -85,7 +87,7 @@ public class MarketWatchPoller : IDisposable {
             }
         }
         catch (Exception ex) {
-            this.logger.Error(ex, "Failed to process market watch analysis during framework update.");
+            this.logger.Error(ex, "Failed to process market watch analysis on cache update.");
         }
         finally {
             this.isProcessing = false;
@@ -113,7 +115,4 @@ public class MarketWatchPoller : IDisposable {
 
         this.chatGui.Print(message);
     }
-
-    public void TriggerUpdate() => this.OnFrameworkUpdate(this.framework);
-    public void ForceLastRunTime(DateTime time) => this.lastRunTime = time;
 }
