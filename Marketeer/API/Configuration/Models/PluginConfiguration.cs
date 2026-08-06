@@ -1,4 +1,5 @@
 ﻿using Dalamud.Configuration;
+using Marketeer.API.CraftingProfit.Models;
 using Marketeer.API.Financials.Models;
 using Marketeer.API.InventoryTracking.Models;
 using Marketeer.API.MarketWatch.Models;
@@ -27,4 +28,6 @@ public class PluginConfiguration : IPluginConfiguration {
 
     // Added property to persist market watch data
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
+
+    public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];
 }

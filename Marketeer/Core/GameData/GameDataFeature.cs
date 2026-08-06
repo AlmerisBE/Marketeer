@@ -10,5 +10,6 @@ public class GameDataFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IWorldDataPresenter, WorldDataPresenter>();
         services.AddSingleton<IMarketItemSearchProvider, MarketItemSearchProvider>();
+        services.AddSingleton<IRecipeDataService, RecipeDataService>();
     }
 }

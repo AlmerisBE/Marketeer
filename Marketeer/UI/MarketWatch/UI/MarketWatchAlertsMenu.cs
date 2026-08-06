@@ -58,7 +58,7 @@ public class MarketWatchAlertsMenu : INavigationNode {
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColAction"), ImGuiTableColumnFlags.WidthFixed, 140f);
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetPrice"), ImGuiTableColumnFlags.WidthFixed, 80f);
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColCurrentPrice"), ImGuiTableColumnFlags.WidthFixed, 80f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColRetainer"), ImGuiTableColumnFlags.WidthFixed, 120f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColSeller"), ImGuiTableColumnFlags.WidthFixed, 120f);
             ImGui.TableHeadersRow();
 
             foreach (var alert in alerts) {
