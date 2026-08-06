@@ -1,0 +1,20 @@
+{
+  "Group_Crafting": "製作と販売",
+  "CraftingProfit_TabName": "利益評価",
+  "CraftingProfit_Header": "製作チャンス",
+  "CraftingProfit_SelectAnItem": "製作アイテムを選択...",
+  "CraftingProfit_BtnAdd": "製作を追跡",
+  "CraftingProfit_NoItems": "現在追跡中の製作アイテムはありません。",
+  "CraftingProfit_BtnRefresh": "評価",
+  "CraftingProfit_BtnRemove": "削除",
+  "CraftingProfit_Profit": "利益: {0}g",
+  "CraftingProfit_MarketPrice": "現在のマーケット: {0}g",
+  "CraftingProfit_CraftCost": "総製作コスト: {0}g",
+  "CraftingProfit_TargetSell": "目標販売価格:",
+  "CraftingProfit_ColIngredient": "素材",
+  "CraftingProfit_ColQty": "数量",
+  "CraftingProfit_ColUnitCost": "単価",
+  "CraftingProfit_ColTotalCost": "総コスト",
+  "CraftingProfit_ColMaxBuy": "最大購入価格",
+  "CraftingProfit_ColRecursion": "製作する？"
+}

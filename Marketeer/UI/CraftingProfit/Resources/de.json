@@ -1,0 +1,20 @@
+{
+  "Group_Crafting": "Herstellung & Verkauf",
+  "CraftingProfit_TabName": "Profit-Auswerter",
+  "CraftingProfit_Header": "Herstellungschancen",
+  "CraftingProfit_SelectAnItem": "Wähle einen hergestellten Gegenstand...",
+  "CraftingProfit_BtnAdd": "Herstellung verfolgen",
+  "CraftingProfit_NoItems": "Derzeit werden keine Herstellungsgegenstände verfolgt.",
+  "CraftingProfit_BtnRefresh": "Auswerten",
+  "CraftingProfit_BtnRemove": "Entfernen",
+  "CraftingProfit_Profit": "Profit: {0}g",
+  "CraftingProfit_MarketPrice": "Aktueller Markt: {0}g",
+  "CraftingProfit_CraftCost": "Gesamtherstellungskosten: {0}g",
+  "CraftingProfit_TargetSell": "Zielverkaufspreis:",
+  "CraftingProfit_ColIngredient": "Zutat",
+  "CraftingProfit_ColQty": "Menge",
+  "CraftingProfit_ColUnitCost": "Stückkosten",
+  "CraftingProfit_ColTotalCost": "Gesamtkosten",
+  "CraftingProfit_ColMaxBuy": "Max. Kaufpreis",
+  "CraftingProfit_ColRecursion": "Herstellen?"
+}

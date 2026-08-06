@@ -1,0 +1,20 @@
+{
+  "Group_Crafting": "Fabrications et ventes",
+  "CraftingProfit_TabName": "Évaluateur de Profit",
+  "CraftingProfit_Header": "Opportunités d'artisanat",
+  "CraftingProfit_SelectAnItem": "Sélectionnez un objet fabriqué...",
+  "CraftingProfit_BtnAdd": "Suivre la fabrication",
+  "CraftingProfit_NoItems": "Aucun objet fabriqué n'est actuellement suivi.",
+  "CraftingProfit_BtnRefresh": "Évaluer",
+  "CraftingProfit_BtnRemove": "Supprimer",
+  "CraftingProfit_Profit": "Bénéfice : {0}g",
+  "CraftingProfit_MarketPrice": "Marché Actuel : {0}g",
+  "CraftingProfit_CraftCost": "Coût total de fabrication : {0}g",
+  "CraftingProfit_TargetSell": "Prix de vente cible :",
+  "CraftingProfit_ColIngredient": "Ingrédient",
+  "CraftingProfit_ColQty": "Qté",
+  "CraftingProfit_ColUnitCost": "Coût Unitaire",
+  "CraftingProfit_ColTotalCost": "Coût Total",
+  "CraftingProfit_ColMaxBuy": "Prix d'achat Max",
+  "CraftingProfit_ColRecursion": "Le fabriquer ?"
+}
