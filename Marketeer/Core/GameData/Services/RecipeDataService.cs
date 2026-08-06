@@ -2,6 +2,7 @@
 using Lumina.Excel.Sheets;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.API.GameData.Models;
+using System;
 using System.Linq;
 
 namespace Marketeer.Core.GameData.Services;
@@ -24,9 +25,7 @@ public class RecipeDataService : IRecipeDataService {
             return null;
         }
 
-        // Obtient la première recette associée à cet objet
         var recipe = sheet.FirstOrDefault(r => r.ItemResult.RowId == itemId);
-
         if (recipe.RowId == 0 && recipe.ItemResult.RowId != itemId) {
             return null;
         }
@@ -37,8 +36,9 @@ public class RecipeDataService : IRecipeDataService {
             ResultQuantity = recipe.AmountResult
         };
 
-        for (int i = 0; i < 10; i++) {
-            // Lecture directe du RowId pour éviter l'évaluation inutile de la structure
+        // Dynamically evaluate ingredient array bounds from Lumina sheet
+        int maxIngredients = Math.Min(recipe.Ingredient.Count, recipe.AmountIngredient.Count);
+        for (int i = 0; i < maxIngredients; i++) {
             var ingredientRowId = recipe.Ingredient[i].RowId;
             var amount = recipe.AmountIngredient[i];
 
