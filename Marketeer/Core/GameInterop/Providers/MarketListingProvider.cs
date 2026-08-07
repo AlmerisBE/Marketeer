@@ -49,10 +49,8 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
             this.logger.Debug("[MarketListingProvider] No active retainer detected. Aborting scan.");
             return listings;
         }
-        ulong activeRetainerId = activeRetainerIdOpt.Value;
 
-        // Fetch physical inventory slots natively. 
-        // The InventoryService now directly queries InventoryManager for the explicit prices!
+        ulong activeRetainerId = activeRetainerIdOpt.Value;
         var inventorySlots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
 
         foreach (var slot in inventorySlots.Where(s => s.IsOccupied)) {
@@ -73,7 +71,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         }
 
         stopwatch.Stop();
-        this.logger.Info($"[MarketListingProvider] Extracted {listings.Count} listings natively via FFXIVClientStructs in {stopwatch.ElapsedMilliseconds}ms.");
+        this.logger.Debug($"[MarketListingProvider] Extracted {listings.Count} listings natively via FFXIVClientStructs in {stopwatch.ElapsedMilliseconds}ms.");
         return listings;
     }
 

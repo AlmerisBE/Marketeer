@@ -116,7 +116,6 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var menuRows = elements.Where(e => e.Type == NativeUiElementType.Button).ToList();
 
         var targetOption = menuRows.FirstOrDefault(e => e.Text.StartsWith(optionText, StringComparison.OrdinalIgnoreCase));
-
         if (targetOption == null) {
             return false;
         }
@@ -192,11 +191,11 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var values = stackalloc AtkValue[2];
 
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 0; // Event ID 0 is Left-Click (opens the contextual menu directly on RetainerSellList)
+        values[0].Int = 0; // Event ID 0 is Left-Click
         values[1].Type = AtkValueType.Int;
         values[1].Int = uiIndex;
 
-        this.logger.Info($"[RetainerUiInteractionService] Firing Event ID 0 (Left-Click) on RetainerSellList at UI index {uiIndex}.");
+        this.logger.Debug($"[RetainerUiInteractionService] Firing Event ID 0 (Left-Click) on RetainerSellList at UI index {uiIndex}.");
         addon->FireCallback(2u, values, true);
     }
 
