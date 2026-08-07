@@ -4,7 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using Marketeer.API.CraftingProfit.Contracts;
 using Marketeer.API.GameData.Contracts;
-using System.Linq;
+using System.Collections.Concurrent;
 
 namespace Marketeer.Core.GameData.Services;
 
@@ -12,6 +12,7 @@ public class ItemActionProvider : IItemActionProvider {
     private IDataManager dataManager;
     private IGameGui gameGui;
     private IRecipeDataService recipeDataService;
+    private ConcurrentDictionary<uint, (uint TerritoryId, uint MapId)?> gatheringLocationCache = new();
 
     public ItemActionProvider(IDataManager dataManager, IGameGui gameGui, IRecipeDataService recipeDataService) {
         this.dataManager = dataManager;
@@ -46,6 +47,17 @@ public class ItemActionProvider : IItemActionProvider {
     }
 
     private (uint TerritoryId, uint MapId)? GetGatheringLocation(uint itemId) {
+        if (this.gatheringLocationCache.TryGetValue(itemId, out var cached)) {
+            return cached;
+        }
+
+        var loc = this.ResolveGatheringLocation(itemId);
+        this.gatheringLocationCache[itemId] = loc;
+
+        return loc;
+    }
+
+    private (uint TerritoryId, uint MapId)? ResolveGatheringLocation(uint itemId) {
         var gatheringItemSheet = this.dataManager.GetExcelSheet<GatheringItem>();
         var gatheringPointBaseSheet = this.dataManager.GetExcelSheet<GatheringPointBase>();
         var gatheringPointSheet = this.dataManager.GetExcelSheet<GatheringPoint>();
@@ -55,33 +67,49 @@ public class ItemActionProvider : IItemActionProvider {
             return null;
         }
 
-        var gatheringItem = gatheringItemSheet.FirstOrDefault(g => g.Item.RowId == itemId);
-        if (gatheringItem.RowId == 0 && gatheringItem.Item.RowId != itemId) {
+        uint? gatherItemId = null;
+        foreach (var g in gatheringItemSheet) {
+            if (g.Item.RowId == itemId) {
+                gatherItemId = g.RowId;
+                break;
+            }
+        }
+        if (gatherItemId == null) {
             return null;
         }
 
-        uint gatherItemId = gatheringItem.RowId;
-        // Correction ici : utilisation de i.RowId au lieu de i pour extraire l'ID de la structure RowRef
-        var pointBase = gatheringPointBaseSheet.FirstOrDefault(b => b.Item.Any(i => i.RowId == gatherItemId));
-        if (pointBase.RowId == 0 && !pointBase.Item.Any(i => i.RowId == gatherItemId)) {
+        uint? pointBaseId = null;
+        foreach (var b in gatheringPointBaseSheet) {
+            foreach (var i in b.Item) {
+                if (i.RowId == gatherItemId.Value) {
+                    pointBaseId = b.RowId;
+                    break;
+                }
+            }
+            if (pointBaseId != null) {
+                break;
+            }
+        }
+        if (pointBaseId == null) {
             return null;
         }
 
-        var point = gatheringPointSheet.FirstOrDefault(p => p.GatheringPointBase.RowId == pointBase.RowId);
-        if (point.RowId == 0 && point.GatheringPointBase.RowId != pointBase.RowId) {
+        uint? territoryId = null;
+        foreach (var p in gatheringPointSheet) {
+            if (p.GatheringPointBase.RowId == pointBaseId.Value) {
+                territoryId = p.TerritoryType.RowId;
+                break;
+            }
+        }
+        if (territoryId == null || territoryId.Value == 0) {
             return null;
         }
 
-        uint territoryId = point.TerritoryType.RowId;
-        if (territoryId == 0) {
-            return null;
-        }
-
-        var terr = territorySheet.GetRowOrDefault(territoryId);
+        var terr = territorySheet.GetRowOrDefault(territoryId.Value);
         if (terr == null) {
             return null;
         }
 
-        return (territoryId, terr.Value.Map.RowId);
+        return (territoryId.Value, terr.Value.Map.RowId);
     }
 }
