@@ -89,7 +89,6 @@ public class MarketWatchMenu : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
-        // Sort items alphabetically by resolved name, prioritizing High Quality
         var items = this.repository.GetAllWatchedItems()
             .OrderBy(i => this.itemResolver.ResolveItemName(i.ItemId))
             .ThenByDescending(i => i.IsHighQuality)
@@ -100,10 +99,11 @@ public class MarketWatchMenu : INavigationNode {
             return;
         }
 
-        if (ImGui.BeginTable("MarketWatchTable", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+        if (ImGui.BeginTable("MarketWatchTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColItem"), ImGuiTableColumnFlags.WidthStretch);
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetBuy"), ImGuiTableColumnFlags.WidthFixed, 100f);
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetSell"), ImGuiTableColumnFlags.WidthFixed, 100f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColNotify"), ImGuiTableColumnFlags.WidthFixed, 50f);
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColActions"), ImGuiTableColumnFlags.WidthFixed, 35f);
             ImGui.TableHeadersRow();
 
@@ -128,6 +128,16 @@ public class MarketWatchMenu : INavigationNode {
                 if (ImGui.InputInt($"##sellPrice_{item.Key}", ref sellPrice, 0, 0)) {
                     item.TargetSellPrice = sellPrice > 0 ? (uint)sellPrice : null;
                     this.repository.AddOrUpdateItem(item);
+                }
+
+                ImGui.TableNextColumn();
+                bool notify = item.EnableNotifications;
+                if (ImGui.Checkbox($"##notify_{item.Key}", ref notify)) {
+                    item.EnableNotifications = notify;
+                    this.repository.AddOrUpdateItem(item);
+                }
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip(this.localization.Translate("MarketWatch_TooltipNotify"));
                 }
 
                 ImGui.TableNextColumn();
