@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marketeer.Core.Universalis.Services;
@@ -24,12 +25,14 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
     private ConcurrentDictionary<string, (IReadOnlyList<LowestPriceResult> Results, DateTime FetchTime)> cache = new();
     private DateTime lastRefreshTime;
     private bool isRefreshing;
+    private CancellationTokenSource cancellationTokenSource;
 
     public UniversalisClientService(HttpClient httpClient, ILoggerService logger, IConfigurationService configService, IFramework framework) {
         this.httpClient = httpClient;
         this.logger = logger;
         this.configService = configService;
         this.framework = framework;
+        this.cancellationTokenSource = new CancellationTokenSource();
 
         if (this.httpClient.BaseAddress == null) {
             this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
@@ -41,6 +44,8 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
 
     public void Dispose() {
         this.framework.Update -= this.OnFrameworkUpdate;
+        this.cancellationTokenSource.Cancel();
+        this.cancellationTokenSource.Dispose();
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -74,6 +79,9 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
             foreach (var kvp in itemsByWorld) {
                 await this.FetchAndCachePricesAsync(kvp.Value, kvp.Key);
             }
+        }
+        catch (OperationCanceledException) {
+            // Expected during plugin unload, ignore silently
         }
         catch (Exception ex) {
             this.logger.Error(ex, "Failed to refresh Universalis cache in background.");
@@ -127,14 +135,17 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
             for (int i = 0; i < idsList.Count; i += 100) {
                 var batch = idsList.Skip(i).Take(100).ToList();
                 var idsString = string.Join(",", batch);
-                var response = await this.httpClient.GetAsync($"{worldId}/{idsString}");
+
+                // Passing the cancellation token to abort the request if the plugin is unloaded
+                var response = await this.httpClient.GetAsync($"{worldId}/{idsString}", this.cancellationTokenSource.Token);
 
                 if (!response.IsSuccessStatusCode) {
                     this.logger.Warning($"Universalis API returned {response.StatusCode} for batch on world {worldId}.");
                     continue;
                 }
 
-                var content = await response.Content.ReadAsStringAsync();
+                // We can also pass the token to ReadAsStringAsync for deeper cancellation
+                var content = await response.Content.ReadAsStringAsync(this.cancellationTokenSource.Token);
 
                 if (batch.Count == 1) {
                     var data = JsonSerializer.Deserialize<UniversalisResponse>(content);
@@ -155,13 +166,17 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
                 }
             }
 
-            if (results.Count > 0) {
-                // Ensure thread safety and safely await the framework task to resolve CS4014
+            if (results.Count > 0 && !this.cancellationTokenSource.IsCancellationRequested) {
                 await this.framework.RunOnFrameworkThread(() => {
-                    this.PricesUpdated?.Invoke(worldId, idsList);
+                    if (!this.cancellationTokenSource.IsCancellationRequested) {
+                        this.PricesUpdated?.Invoke(worldId, idsList);
+                    }
                 });
             }
 
+        }
+        catch (OperationCanceledException) {
+            // Expected gracefully during plugin unload, ignore silently
         }
         catch (Exception ex) {
             this.logger.Error(ex, $"Failed to fetch multi-item data from Universalis for world {worldId}.");
