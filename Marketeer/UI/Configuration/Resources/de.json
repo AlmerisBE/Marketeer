@@ -16,5 +16,7 @@
   "Config_EnableChatNotifications": "Globale Chat-Benachrichtigungen aktivieren",
   "Config_WhitelistBehaviorLabel": "Verhalten bei Gehilfen auf der Whitelist:",
   "Config_WhitelistBehavior_Ignore": "Deren Preise komplett ignorieren",
-  "Config_WhitelistBehavior_Match": "Preise automatisch anpassen (Match)"
+  "Config_WhitelistBehavior_Match": "Preise automatisch anpassen (Match)",
+  "Config_AdvancedHeader": "Erweiterte Einstellungen",
+  "Config_EnableDebugMode": "Debug-Modus aktivieren (Detaillierte Protokollierung und Entwicklertools)"
 }

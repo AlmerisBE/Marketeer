@@ -16,5 +16,7 @@
   "Config_EnableChatNotifications": "グローバルチャット通知を有効にする",
   "Config_WhitelistBehaviorLabel": "ホワイトリストのリテイナーに対する動作:",
   "Config_WhitelistBehavior_Ignore": "価格を完全に無視する",
-  "Config_WhitelistBehavior_Match": "自動的に同じ価格に合わせる"
+  "Config_WhitelistBehavior_Match": "自動的に同じ価格に合わせる",
+  "Config_AdvancedHeader": "詳細設定",
+  "Config_EnableDebugMode": "デバッグモードを有効にする（詳細なログ記録と開発者ツール）"
 }

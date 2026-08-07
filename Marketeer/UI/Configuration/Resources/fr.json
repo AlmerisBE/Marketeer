@@ -16,5 +16,7 @@
   "Config_EnableChatNotifications": "Activer les notifications globales dans le chat",
   "Config_WhitelistBehaviorLabel": "Comportement vis-à-vis des servants en liste blanche :",
   "Config_WhitelistBehavior_Ignore": "Ignorer complètement leurs prix",
-  "Config_WhitelistBehavior_Match": "S'aligner automatiquement sur leurs prix (Match)"
+  "Config_WhitelistBehavior_Match": "S'aligner automatiquement sur leurs prix (Match)",
+  "Config_AdvancedHeader": "Paramètres Avancés",
+  "Config_EnableDebugMode": "Activer le mode Debug (Journalisation détaillée et outils de développement)"
 }

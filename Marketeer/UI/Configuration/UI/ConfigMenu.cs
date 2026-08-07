@@ -149,6 +149,18 @@ public class ConfigMenu : INavigationNode {
             isChanged = true;
         }
 
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_AdvancedHeader"));
+
+        bool enableDebugMode = config.EnableDebugMode;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableDebugMode"), ref enableDebugMode)) {
+            config.EnableDebugMode = enableDebugMode;
+            isChanged = true;
+        }
+
         if (isChanged) {
             this.configurationService.Save();
         }

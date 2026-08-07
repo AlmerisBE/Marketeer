@@ -34,6 +34,8 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool EnableChatNotifications { get; set; } = true;
 
+    public bool EnableDebugMode { get; set; } = false;
+
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
     public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];
 }

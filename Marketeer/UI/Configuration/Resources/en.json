@@ -16,5 +16,7 @@
   "Config_EnableChatNotifications": "Enable global chat notifications",
   "Config_WhitelistBehaviorLabel": "Whitelisted retainers behavior:",
   "Config_WhitelistBehavior_Ignore": "Completely ignore their prices",
-  "Config_WhitelistBehavior_Match": "Automatically match their prices"
+  "Config_WhitelistBehavior_Match": "Automatically match their prices",
+  "Config_AdvancedHeader": "Advanced Settings",
+  "Config_EnableDebugMode": "Enable Debug mode (Verbose logging and developer tools)"
 }
