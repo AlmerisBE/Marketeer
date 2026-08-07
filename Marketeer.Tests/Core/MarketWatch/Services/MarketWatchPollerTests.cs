@@ -39,25 +39,34 @@ public class MarketWatchPollerTests {
     }
 
     [Fact]
-    public void OnLogin_ShouldTriggerAnalysis_WhenLoggedIn() {
+    public async Task OnLogin_ShouldTriggerAnalysis_WhenLoggedIn() {
+        // Arrange
         this.clientState.IsLoggedIn.Returns(true);
+        var config = new PluginConfiguration { EnableChatNotifications = true };
+        this.configService.GetConfig().Returns(config);
+
         var poller = new MarketWatchPoller(this.chatGui, this.analysisService, this.alertState, this.repository, this.priceProvider, this.clientState, this.logger, this.framework, this.configService);
 
-        // Manually triggers the login event
+        // Act - Manually triggers the login event
         this.clientState.Login += Raise.Event<Action>();
+        await Task.Delay(50); // Wait for the async task to execute
 
-        // 1 call via initialization (IsLoggedIn = true) + 1 call via event = 2
-        this.analysisService.Received(2).AnalyzeMarketAsync(false);
+        // Assert - 1 call via initialization (IsLoggedIn = true) + 1 call via event = 2
+        await this.analysisService.Received(2).AnalyzeMarketAsync(false);
     }
 
     [Fact]
-    public void OnPricesUpdated_ShouldAnalyzeAndPrintToChat_WhenWatchedItemUpdated() {
+    public async Task OnPricesUpdated_ShouldAnalyzeAndPrintToChat_WhenWatchedItemUpdated() {
+        // Arrange
         this.clientState.IsLoggedIn.Returns(false);
+        var config = new PluginConfiguration { EnableChatNotifications = true };
+        this.configService.GetConfig().Returns(config);
+
         var poller = new MarketWatchPoller(this.chatGui, this.analysisService, this.alertState, this.repository, this.priceProvider, this.clientState, this.logger, this.framework, this.configService);
 
         this.repository.GetAllWatchedItems().Returns(new List<WatchedItem> {
-            new WatchedItem { ItemId = 123, IsHighQuality = false, TargetBuyPrice = 1000 }
-        });
+            new WatchedItem { ItemId = 123, IsHighQuality = false, TargetBuyPrice = 1000, EnableNotifications = true }
+        }.AsReadOnly());
 
         var alerts = new List<MarketWatchAlert> {
             new MarketWatchAlert {
@@ -72,27 +81,35 @@ public class MarketWatchPollerTests {
 
         this.analysisService.AnalyzeMarketAsync(false).Returns(Task.FromResult((IReadOnlyList<MarketWatchAlert>)alerts));
 
-        // Triggers price update for watched item (123) on world 1
+        // Act - Triggers price update for watched item (123) on world 1
         this.priceProvider.PricesUpdated += Raise.Event<Action<uint, IEnumerable<uint>>>(1u, new List<uint> { 123u });
+        await Task.Delay(50); // Wait for the async task to execute
 
-        this.analysisService.Received(1).AnalyzeMarketAsync(false);
+        // Assert
+        await this.analysisService.Received(1).AnalyzeMarketAsync(false);
         this.chatGui.Received(1).Print(Arg.Any<SeString>());
         this.alertState.Received(1).UpdateAlerts(alerts);
     }
 
     [Fact]
-    public void OnPricesUpdated_ShouldNotAnalyze_WhenUnrelatedItemUpdated() {
+    public async Task OnPricesUpdated_ShouldNotAnalyze_WhenUnrelatedItemUpdated() {
+        // Arrange
         this.clientState.IsLoggedIn.Returns(false);
+        var config = new PluginConfiguration { EnableChatNotifications = true };
+        this.configService.GetConfig().Returns(config);
+
         var poller = new MarketWatchPoller(this.chatGui, this.analysisService, this.alertState, this.repository, this.priceProvider, this.clientState, this.logger, this.framework, this.configService);
 
         this.repository.GetAllWatchedItems().Returns(new List<WatchedItem> {
             new WatchedItem { ItemId = 123, IsHighQuality = false, TargetBuyPrice = 1000 }
-        });
+        }.AsReadOnly());
 
-        // Triggers price update for an UNWATCHED item (456)
+        // Act - Triggers price update for an UNWATCHED item (456)
         this.priceProvider.PricesUpdated += Raise.Event<Action<uint, IEnumerable<uint>>>(1u, new List<uint> { 456u });
+        await Task.Delay(50);
 
-        this.analysisService.DidNotReceive().AnalyzeMarketAsync(Arg.Any<bool>());
+        // Assert
+        await this.analysisService.DidNotReceive().AnalyzeMarketAsync(Arg.Any<bool>());
     }
 
     [Fact]
@@ -108,14 +125,11 @@ public class MarketWatchPollerTests {
 
         var poller = new MarketWatchPoller(this.chatGui, this.analysisService, this.alertState, this.repository, this.priceProvider, this.clientState, this.logger, this.framework, this.configService);
 
-        // Act
-        // Simulating the event trigger which fires the private Task
+        // Act - Simulating the event trigger which fires the private Task
         this.priceProvider.PricesUpdated += Raise.Event<Action<uint, IEnumerable<uint>>>(1u, new[] { 1u });
-
-        // Await minimal delay for the Task to synchronously process our mock
         await Task.Delay(50);
 
-        // Assert (CS8625 resolved by using Arg.Any<SeString>())
+        // Assert
         this.chatGui.DidNotReceive().Print(Arg.Any<SeString>());
     }
 
@@ -139,7 +153,7 @@ public class MarketWatchPollerTests {
         this.priceProvider.PricesUpdated += Raise.Event<Action<uint, IEnumerable<uint>>>(1u, new[] { 1u });
         await Task.Delay(50);
 
-        // Assert (CS8625 resolved by using Arg.Any<SeString>())
+        // Assert
         this.chatGui.DidNotReceive().Print(Arg.Any<SeString>());
     }
 }
