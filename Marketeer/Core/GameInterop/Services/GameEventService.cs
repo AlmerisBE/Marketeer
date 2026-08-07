@@ -39,7 +39,7 @@ public class GameEventService : IGameEventService, IDisposable {
             return;
         }
 
-        this.logger.Info($"[Dev UI Logger] RetainerSellList Event Received | Type: {eventArgs.AtkEventType} | Param: {eventArgs.EventParam}");
+        this.logger.Debug($"[Dev UI Logger] RetainerSellList Event Received | Type: {eventArgs.AtkEventType} | Param: {eventArgs.EventParam}");
     }
 
     private void OnRetainerListOpened(AddonEvent type, AddonArgs args) {

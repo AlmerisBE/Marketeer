@@ -112,7 +112,7 @@ public unsafe class NativeWindow : INativeWindow {
             }
         }
 
-        this.logger.Info($"[NativeWindow] Sending callback to '{this.Name}' with {args.Length} arguments (Event ID: {args[0]}).");
+        this.logger.Debug($"[NativeWindow] Sending callback to '{this.Name}' with {args.Length} arguments (Event ID: {args[0]}).");
         addon->FireCallback((uint)args.Length, values, updateState);
     }
 

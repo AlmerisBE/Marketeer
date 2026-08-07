@@ -156,7 +156,7 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
             if (isModified || isFirstScan) {
                 this.configService.Save();
-                this.logger.Info($"[MarketListingTrackerService] State modified. Saved {fetchedListings.Count} listings for retainer {retainerId}.");
+                this.logger.Debug($"[MarketListingTrackerService] State modified. Saved {fetchedListings.Count} listings for retainer {retainerId}.");
 
                 foreach (var itemId in modifiedItems) {
                     this.LocalListingModified?.Invoke(itemId);

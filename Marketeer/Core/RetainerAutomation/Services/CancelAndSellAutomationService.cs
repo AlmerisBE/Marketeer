@@ -95,7 +95,7 @@ public class CancelAndSellAutomationService : ICancelAndSellAutomationService, I
 
             case 2:
                 if (this.LocateTransferredItems()) {
-                    this.logger.Info($"[CancelAndSell] Successfully located {this.pendingSells.Count} stack(s) for item {this.targetItemId} to re-list.");
+                    this.logger.Debug($"[CancelAndSell] Successfully located {this.pendingSells.Count} stack(s) for item {this.targetItemId} to re-list.");
                     this.stateMachineIndex++;
                     this.SetDelay(0.5);
                 }
@@ -107,7 +107,7 @@ public class CancelAndSellAutomationService : ICancelAndSellAutomationService, I
                 }
 
                 var stackToSell = this.pendingSells.Peek();
-                this.logger.Info($"[CancelAndSell] Triggering sell for {stackToSell.Quantity} units from Bag {stackToSell.Bag}, Slot {stackToSell.SlotIndex}.");
+                this.logger.Debug($"[CancelAndSell] Triggering sell for {stackToSell.Quantity} units from Bag {stackToSell.Bag}, Slot {stackToSell.SlotIndex}.");
 
                 // Native UI logic to right-click the bag slot and select "Sell" goes here.
                 // For now, we simulate processing and pop the queue.

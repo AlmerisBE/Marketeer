@@ -52,7 +52,7 @@ public unsafe class NativeUiElement : INativeUiElement {
         values[0].Type = AtkValueType.UInt;
         values[0].UInt = this.NodeId;
 
-        this.logger.Info($"[NativeUiElement] Firing generic click callback for NodeId {this.NodeId} on '{this.parentAddonName}'.");
+        this.logger.Debug($"[NativeUiElement] Firing generic click callback for NodeId {this.NodeId} on '{this.parentAddonName}'.");
         addon->FireCallback(1, values);
     }
 }

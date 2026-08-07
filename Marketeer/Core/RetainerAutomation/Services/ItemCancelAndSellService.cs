@@ -124,7 +124,7 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
                 continue;
             }
             // Native 0-based memory coordinates logged
-            this.logger.Info($"[CancelAndSell] Item {added.ItemId} transferred to inventory -> Bag {added.ContainerId}, Slot {added.SlotIndex} | Quantity to sell: {added.Quantity}");
+            this.logger.Debug($"[CancelAndSell] Item {added.ItemId} transferred to inventory -> Bag {added.ContainerId}, Slot {added.SlotIndex} | Quantity to sell: {added.Quantity}");
         }
 
         foreach (var changed in diff.QuantityChanged) {
@@ -134,7 +134,7 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
 
             if (changed.Difference > 0) {
                 // Native 0-based memory coordinates logged
-                this.logger.Info($"[CancelAndSell] Item {changed.ItemId} quantity increased in inventory -> Bag {changed.ContainerId}, Slot {changed.SlotIndex} | Quantity added to sell: {changed.Difference}");
+                this.logger.Debug($"[CancelAndSell] Item {changed.ItemId} quantity increased in inventory -> Bag {changed.ContainerId}, Slot {changed.SlotIndex} | Quantity added to sell: {changed.Difference}");
             }
         }
 

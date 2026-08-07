@@ -35,7 +35,7 @@ public class SalesInferenceService : ISalesInferenceService {
             }
 
             if (isFirstScan) {
-                this.logger.Info($"Inferred sale for Item ID {previousListing.ItemId} on Slot {previousListing.SlotIndex}. Price: {previousListing.UnitPrice}.");
+                this.logger.Debug($"Inferred sale for Item ID {previousListing.ItemId} on Slot {previousListing.SlotIndex}. Price: {previousListing.UnitPrice}.");
 
                 inferredSales.Add(new SaleRecord {
                     RetainerId = retainerId,
@@ -49,7 +49,7 @@ public class SalesInferenceService : ISalesInferenceService {
             }
             else {
                 // Step 11: Subsequent scan. The retainer is currently summoned, so a disappearance is a manual cancellation.
-                this.logger.Info($"Manual cancellation detected for Item ID {previousListing.ItemId} on Slot {previousListing.SlotIndex}. No sale inferred.");
+                this.logger.Debug($"Manual cancellation detected for Item ID {previousListing.ItemId} on Slot {previousListing.SlotIndex}. No sale inferred.");
             }
         }
 

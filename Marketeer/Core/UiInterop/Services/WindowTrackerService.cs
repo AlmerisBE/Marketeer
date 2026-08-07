@@ -54,12 +54,12 @@ public unsafe class WindowTrackerService : IWindowTrackerService, IDisposable {
 
     private void OnWindowOpened(AddonEvent type, AddonArgs args) {
         var context = this.GetVisibleWindowsContext();
-        this.logger.Info($"[Window Tracker] Opened: {args.AddonName} | Context (Visible): [{context}]");
+        this.logger.Debug($"[Window Tracker] Opened: {args.AddonName} | Context (Visible): [{context}]");
     }
 
     private void OnWindowClosed(AddonEvent type, AddonArgs args) {
         var context = this.GetVisibleWindowsContext();
-        this.logger.Info($"[Window Tracker] Closed: {args.AddonName} | Context (Remaining): [{context}]");
+        this.logger.Debug($"[Window Tracker] Closed: {args.AddonName} | Context (Remaining): [{context}]");
     }
 
     private string GetVisibleWindowsContext() {
@@ -109,12 +109,12 @@ public unsafe class WindowTrackerService : IWindowTrackerService, IDisposable {
                 // Log only when the active focus switches to a new window
                 if (currentFocusedName != this.lastFocusedWindowName && !string.IsNullOrEmpty(currentFocusedName)) {
                     this.lastFocusedWindowName = currentFocusedName;
-                    this.logger.Info($"[Window Tracker] Focused: {currentFocusedName}");
+                    this.logger.Debug($"[Window Tracker] Focused: {currentFocusedName}");
                 }
             }
         }
         else if (this.lastFocusedWindowName != null) {
-            this.logger.Info($"[Window Tracker] Focus Lost: {this.lastFocusedWindowName}");
+            this.logger.Debug($"[Window Tracker] Focus Lost: {this.lastFocusedWindowName}");
             this.lastFocusedWindowName = null;
         }
     }

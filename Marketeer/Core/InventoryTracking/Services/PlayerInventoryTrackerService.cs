@@ -61,7 +61,7 @@ public class PlayerInventoryTrackerService : IDisposable {
 
         if (diff.Added.Any() || diff.Removed.Any() || diff.Moved.Any() || diff.QuantityChanged.Any()) {
             this.snapshotService.SaveSnapshot(newSnapshot);
-            this.logger.Debug("[PlayerInventoryTracker] Player inventory changes detected and snapshot saved.");
+            this.logger.Info("[PlayerInventoryTracker] Player inventory changes detected and snapshot saved.");
         }
     }
 

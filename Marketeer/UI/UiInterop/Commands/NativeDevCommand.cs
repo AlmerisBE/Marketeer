@@ -48,18 +48,18 @@ public class NativeDevCommand : ICommand {
         }
 
         window.Close();
-        this.logger.Info($"Native window '{windowId}' closed via dev command.");
+        this.logger.Debug($"Native window '{windowId}' closed via dev command.");
         this.chatGui.Print($"[Marketeer] Closed native window: {windowId}");
     }
 
     private void HandleDump() {
         var openWindows = this.nativeWindowService.GetOpenWindows().ToList();
 
-        this.logger.Info("--- Active Native Windows Dump ---");
+        this.logger.Debug("--- Active Native Windows Dump ---");
         foreach (var win in openWindows) {
-            this.logger.Info($"- {win.Name} (Type: {win.Type})");
+            this.logger.Debug($"- {win.Name} (Type: {win.Type})");
         }
-        this.logger.Info("----------------------------------");
+        this.logger.Debug("----------------------------------");
 
         this.chatGui.Print($"[Marketeer] Dumped {openWindows.Count} visible windows to the Dalamud log.");
     }
@@ -75,11 +75,11 @@ public class NativeDevCommand : ICommand {
 
         var elements = focusedWindow.GetElements().ToList();
 
-        this.logger.Info($"--- UI Elements for '{focusedWindow.Name}' ---");
+        this.logger.Debug($"--- UI Elements for '{focusedWindow.Name}' ---");
         foreach (var element in elements) {
-            this.logger.Info($"[{element.Type}] NodeID: {element.NodeId} | Text: \"{element.Text}\"");
+            this.logger.Debug($"[{element.Type}] NodeID: {element.NodeId} | Text: \"{element.Text}\"");
         }
-        this.logger.Info("---------------------------------------------");
+        this.logger.Debug("---------------------------------------------");
 
         this.chatGui.Print($"[Marketeer] Dumped {elements.Count} elements from '{focusedWindow.Name}' to /xllog.");
     }
