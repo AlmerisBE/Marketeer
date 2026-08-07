@@ -73,8 +73,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         this.IsActive = true;
         this.logger.Info($"Starting Retainer Orchestration for {this.retainerQueue.Count} retainers. Target Menu: {targetMenu}.");
 
-        var window = this.windowService.GetWindow("RetainerList");
-        if (window == null || !window.IsVisible) {
+        if (!this.uiInteractionService.IsAddonReady("RetainerList")) {
             this.SetState(OrchestrationStep.OpenBell, 0);
         }
         else {
@@ -155,8 +154,13 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (this.uiInteractionService.IsRetainerAvailable(this.currentRetainerName)) {
             if (this.uiInteractionService.SelectRetainer(this.currentRetainerName)) {
                 this.SetState(OrchestrationStep.WaitSelectStringOpen, 0);
+                return;
             }
         }
+
+        // Skip to next if not found or interaction failed
+        this.logger.Warning($"Skipping retainer {this.currentRetainerName} as it is not available.");
+        this.AdvanceToNextRetainerOrFinish();
     }
 
     private void ProcessWaitSelectStringOpen() {
@@ -173,8 +177,12 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (this.uiInteractionService.IsMenuOptionAvailable(optionText)) {
             if (this.uiInteractionService.SelectMenuOption(optionText)) {
                 this.SetState(OrchestrationStep.WaitMenu, 0);
+                return;
             }
         }
+
+        this.logger.Warning($"Skipping interaction, menu option '{optionText}' not available.");
+        this.AdvanceToNextRetainerOrFinish();
     }
 
     private void ProcessWaitMenu() {
@@ -207,6 +215,9 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             this.currentTask?.OnMenuClosed(this.currentRetainerName);
             this.SetState(OrchestrationStep.WaitMenuClosed, 0);
         }
+        else {
+            this.AdvanceToNextRetainerOrFinish();
+        }
     }
 
     private void ProcessWaitMenuClosed() {
@@ -219,7 +230,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessWaitSelectStringReturn() {
-        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
+        if (this.uiInteractionService.IsAddonReady("SelectString")) {
             this.SetState(OrchestrationStep.CloseSelectString, this.GetRandomDelay());
         }
     }
@@ -228,15 +239,14 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (this.uiInteractionService.CloseSelectString()) {
             this.SetState(OrchestrationStep.WaitRetainerListReturn, 0);
         }
+        else {
+            this.AdvanceToNextRetainerOrFinish();
+        }
     }
 
     private void ProcessWaitRetainerListReturn() {
-        var selectString = this.windowService.GetWindow("SelectString");
-
-        if (selectString == null || !selectString.IsVisible) {
-            if (this.uiInteractionService.IsAddonReady("RetainerList")) {
-                this.AdvanceToNextRetainerOrFinish();
-            }
+        if (this.uiInteractionService.IsAddonReady("RetainerList")) {
+            this.AdvanceToNextRetainerOrFinish();
         }
     }
 

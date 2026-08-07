@@ -30,6 +30,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
     private DateTime actionAvailableAt;
     private DateTime currentItemStartTime;
     private string currentRetainerName;
+    private int step;
 
     public bool IsCancelling => this.orchestrator.IsActive;
 
@@ -144,43 +145,54 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
             return this.ProcessNextItem();
         }
 
-        if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
-            this.uiInteraction.ConfirmYesNo();
-            this.SetDelay(0.5);
-            return false;
-        }
+        switch (this.step) {
+            case 0: // Select Item
+                var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem((int)targetSlot.SlotIndex);
+                if (uiIndex != -1) {
+                    this.uiInteraction.SelectItemInSellList(uiIndex);
+                    this.step = 1;
+                    this.SetDelay(0.2); // Brief pause to allow the context menu to spawn
+                }
+                else {
+                    return this.ProcessNextItem();
+                }
 
-        if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-            var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
-            var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
+                break;
 
-            if (menuIndex != -1) {
-                this.uiInteraction.SelectContextMenuItem(menuIndex);
-                this.SetDelay(0.5);
-                return false;
-            }
+            case 1: // Interact with Context Menu or Yes/No dialog
+                if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
+                    this.uiInteraction.ConfirmYesNo();
+                    this.step = 2; // Wait for item to disappear
+                    this.SetDelay(0.5);
+                }
+                else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+                    var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
+                    var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
 
-            var stopText = this.localization.Translate("RetainerMenu_StopRetaining");
-            menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopText);
+                    if (menuIndex != -1) {
+                        this.uiInteraction.SelectContextMenuItem(menuIndex);
+                        this.SetDelay(0.2); // Remain in step 1 to catch SelectYesNo
+                    }
+                    else {
+                        var stopText = this.localization.Translate("RetainerMenu_StopRetaining");
+                        menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopText);
 
-            if (menuIndex != -1) {
-                this.uiInteraction.SelectContextMenuItem(menuIndex);
-                this.SetDelay(0.2);
-                return false;
-            }
+                        if (menuIndex != -1) {
+                            this.uiInteraction.SelectContextMenuItem(menuIndex);
+                            this.SetDelay(0.2); // Remain in step 1 to catch SelectYesNo
+                        }
+                        else {
+                            this.uiInteraction.CloseUnexpectedWindows();
+                            this.step = 0;
+                            this.SetDelay(0.5);
+                        }
+                    }
+                }
+                break;
 
-            this.uiInteraction.CloseUnexpectedWindows();
-            this.SetDelay(0.5);
-            return false;
-        }
-
-        var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem((int)targetSlot.SlotIndex);
-        if (uiIndex != -1) {
-            this.uiInteraction.SelectItemInSellList(uiIndex);
-            this.SetDelay(0.5);
-        }
-        else {
-            return this.ProcessNextItem();
+            case 2: // Awaiting server response and item disappearance
+                // Automatically handled at the beginning of the tick (targetSlot == null)
+                break;
         }
 
         return false;
@@ -194,6 +206,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
 
         this.currentItemTask = queue.Dequeue();
         this.currentItemStartTime = DateTime.Now;
+        this.step = 0;
         this.SetDelay(0.5);
         return false;
     }

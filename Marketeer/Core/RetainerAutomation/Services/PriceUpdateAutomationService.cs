@@ -29,6 +29,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     private DateTime actionAvailableAt;
     private DateTime currentItemStartTime;
     private string currentRetainerName;
+    private int step;
 
     public bool IsUpdating => this.orchestrator.IsActive;
 
@@ -144,35 +145,45 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             return this.ProcessNextItem();
         }
 
-        if (this.uiInteraction.IsAddonReady("RetainerSell")) {
-            this.uiInteraction.ConfirmPriceUpdate(targetPrice);
-            this.SetDelay(0.5);
-            return false;
-        }
+        switch (this.step) {
+            case 0: // Select Item
+                var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
+                if (uiIndex != -1) {
+                    this.uiInteraction.SelectItemInSellList(uiIndex);
+                    this.step = 1;
+                    this.SetDelay(0.2); // Brief pause to allow the context menu to spawn
+                }
+                else {
+                    this.logger.Warning($"Cannot find UI index for {this.currentItemTask.ItemName}. Skipping.");
+                    return this.ProcessNextItem();
+                }
+                break;
 
-        if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-            var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
-            var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
+            case 1: // Interact with Context Menu or RetainerSell dialog
+                if (this.uiInteraction.IsAddonReady("RetainerSell")) {
+                    this.uiInteraction.ConfirmPriceUpdate(targetPrice);
+                    this.step = 2; // Wait for price update
+                    this.SetDelay(0.5);
+                }
+                else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+                    var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
+                    var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
 
-            if (menuIndex != -1) {
-                this.uiInteraction.SelectContextMenuItem(menuIndex);
-                this.SetDelay(0.2);
-            }
-            else {
-                this.uiInteraction.CloseUnexpectedWindows();
-                this.SetDelay(0.5);
-            }
-            return false;
-        }
+                    if (menuIndex != -1) {
+                        this.uiInteraction.SelectContextMenuItem(menuIndex);
+                        this.SetDelay(0.2); // Remain in step 1 to catch RetainerSell
+                    }
+                    else {
+                        this.uiInteraction.CloseUnexpectedWindows();
+                        this.step = 0;
+                        this.SetDelay(0.5);
+                    }
+                }
+                break;
 
-        var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
-        if (uiIndex != -1) {
-            this.uiInteraction.SelectItemInSellList(uiIndex);
-            this.SetDelay(0.5);
-        }
-        else {
-            this.logger.Warning($"Cannot find UI index for {this.currentItemTask.ItemName}. Skipping.");
-            return this.ProcessNextItem();
+            case 2: // Awaiting server response and item price modification
+                // Automatically handled at the beginning of the tick (currentPrice == targetPrice)
+                break;
         }
 
         return false;
@@ -186,6 +197,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
         this.currentItemTask = queue.Dequeue();
         this.currentItemStartTime = DateTime.Now;
+        this.step = 0;
         this.SetDelay(0.5);
         return false;
     }
