@@ -9,7 +9,7 @@
   "Config_WhitelistLabel": "Konkurrenten-Whitelist (Gehilfennamen)",
   "Config_WhitelistAdd": "Hinzufügen",
   "Config_WhitelistRemove": "Entfernen",
-  "Config_AutomationDelayToggle": "Zufällige Verzögerung zwischen Aktionen aktivieren",
+  "Config_AutomationDelayToggle": "Zufällige Verzögerung zwischen automatisierten Aktionen aktivieren",
   "Config_AutomationDelayMin": "Min. Verzögerung (s)",
   "Config_AutomationDelayMax": "Max. Verzögerung (s)",
   "Config_AutoWhitelistOwnRetainers": "Meine eigenen Gehilfen automatisch auf die Whitelist setzen",

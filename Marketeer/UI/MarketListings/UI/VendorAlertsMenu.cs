@@ -35,7 +35,11 @@ public class VendorAlertsMenu : INavigationNode {
             return;
         }
 
-        ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), this.localization.Translate("VendorAlerts_WarningMessage", listings.Count));
+        // Apply color and text wrapping for the warning message
+        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1.0f, 0.4f, 0.4f, 1.0f));
+        ImGui.TextWrapped(this.localization.Translate("VendorAlerts_WarningMessage", listings.Count));
+        ImGui.PopStyleColor();
+
         ImGui.Spacing();
 
         if (this.cancelService.IsCancelling) {
@@ -43,10 +47,8 @@ public class VendorAlertsMenu : INavigationNode {
             ImGui.Button(this.localization.Translate("VendorAlerts_CancelActive"), new Vector2(200f, 24f));
             ImGui.EndDisabled();
         }
-        else {
-            if (ImGui.Button(this.localization.Translate("VendorAlerts_CancelButton"), new Vector2(200f, 24f))) {
-                this.cancelService.TriggerCancellation();
-            }
+        else if (ImGui.Button(this.localization.Translate("VendorAlerts_CancelButton"), new Vector2(200f, 24f))) {
+            this.cancelService.TriggerCancellation();
         }
 
         ImGui.Spacing();

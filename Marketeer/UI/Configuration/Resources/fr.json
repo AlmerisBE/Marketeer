@@ -9,7 +9,7 @@
   "Config_WhitelistLabel": "Liste blanche des concurrents (Noms des servants)",
   "Config_WhitelistAdd": "Ajouter",
   "Config_WhitelistRemove": "Retirer",
-  "Config_AutomationDelayToggle": "Activer un délai aléatoire entre les actions",
+  "Config_AutomationDelayToggle": "Activer un délai aléatoire entre les actions automatiques",
   "Config_AutomationDelayMin": "Délai Min (s)",
   "Config_AutomationDelayMax": "Délai Max (s)",
   "Config_AutoWhitelistOwnRetainers": "Mettre automatiquement mes propres servants sur liste blanche",

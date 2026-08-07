@@ -9,7 +9,7 @@
   "Config_WhitelistLabel": "Competitor Whitelist (Retainer Names)",
   "Config_WhitelistAdd": "Add",
   "Config_WhitelistRemove": "Remove",
-  "Config_AutomationDelayToggle": "Enable randomized delay between actions",
+  "Config_AutomationDelayToggle": "Enable randomized delay between automated actions",
   "Config_AutomationDelayMin": "Min Delay (s)",
   "Config_AutomationDelayMax": "Max Delay (s)",
   "Config_AutoWhitelistOwnRetainers": "Automatically whitelist my own retainers",

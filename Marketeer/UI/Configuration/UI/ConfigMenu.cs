@@ -125,7 +125,6 @@ public class ConfigMenu : INavigationNode {
             ImGui.EndListBox();
         }
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Configuration_Header"));
         ImGui.Separator();
         ImGui.Spacing();
 
