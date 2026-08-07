@@ -9,8 +9,11 @@ public enum AutomationStep {
     CloseSelectString,
     CloseRetainerList
 }
+
 public enum OrchestrationStep {
     Idle,
+    OpenBell,
+    WaitBell,
     SelectRetainer,
     OpenMenu,
     WaitMenu,

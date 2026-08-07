@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
@@ -18,6 +19,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     private ILocalizationService localizationService;
     private IConfigurationService configService;
     private ILoggerService logger;
+    private IWorldInteractionService worldInteractionService;
 
     private Queue<string> retainerQueue;
     private string currentRetainerName;
@@ -37,7 +39,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         INativeWindowService windowService,
         ILocalizationService localizationService,
         IConfigurationService configService,
-        ILoggerService logger) {
+        ILoggerService logger,
+        IWorldInteractionService worldInteractionService) {
 
         this.framework = framework;
         this.uiInteractionService = uiInteractionService;
@@ -45,6 +48,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         this.localizationService = localizationService;
         this.configService = configService;
         this.logger = logger;
+        this.worldInteractionService = worldInteractionService;
 
         this.retainerQueue = new Queue<string>();
         this.currentRetainerName = string.Empty;
@@ -69,7 +73,13 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         this.IsActive = true;
         this.logger.Info($"Starting Retainer Orchestration for {this.retainerQueue.Count} retainers. Target Menu: {targetMenu}.");
 
-        this.AdvanceToNextRetainerOrFinish();
+        var window = this.windowService.GetWindow("RetainerList");
+        if (window == null || !window.IsVisible) {
+            this.SetState(OrchestrationStep.OpenBell, 0.2);
+        }
+        else {
+            this.AdvanceToNextRetainerOrFinish();
+        }
     }
 
     public void Abort() {
@@ -85,7 +95,6 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             return;
         }
 
-        // Globally skip any Talk/Dialogue window that intercepts the automation
         this.uiInteractionService.SkipDialogue();
 
         if (DateTime.Now < this.actionAvailableAt) {
@@ -100,6 +109,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         }
 
         switch (this.currentStep) {
+            case OrchestrationStep.OpenBell: this.ProcessOpenBell(); break;
+            case OrchestrationStep.WaitBell: this.ProcessWaitBell(); break;
             case OrchestrationStep.SelectRetainer: this.ProcessSelectRetainer(); break;
             case OrchestrationStep.OpenMenu: this.ProcessOpenMenu(); break;
             case OrchestrationStep.WaitMenu: this.ProcessWaitMenu(); break;
@@ -108,6 +119,23 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             case OrchestrationStep.WaitMenuClosed: this.ProcessWaitMenuClosed(); break;
             case OrchestrationStep.CloseSelectString: this.ProcessCloseSelectString(); break;
             case OrchestrationStep.CloseRetainerList: this.ProcessCloseRetainerList(); break;
+        }
+    }
+
+    private void ProcessOpenBell() {
+        if (this.worldInteractionService.InteractWithSummoningBell()) {
+            this.SetState(OrchestrationStep.WaitBell, 1.0);
+        }
+        else {
+            this.logger.Warning("Cannot start orchestration: Summoning bell not in range and menu not open.");
+            this.Abort();
+        }
+    }
+
+    private void ProcessWaitBell() {
+        var window = this.windowService.GetWindow("RetainerList");
+        if (window != null && window.IsVisible) {
+            this.AdvanceToNextRetainerOrFinish();
         }
     }
 

@@ -13,6 +13,7 @@ public class GameInteropFeature : IFeatureModule {
         services.AddSingleton<IInventoryService, InventoryService>();
         services.AddSingleton<IRetainerProvider, RetainerProvider>();
         services.AddSingleton<IMarketListingProvider, MarketListingProvider>();
+        services.AddSingleton<IWorldInteractionService, WorldInteractionService>();
     }
 
     public void Initialize(IServiceProvider provider) {
