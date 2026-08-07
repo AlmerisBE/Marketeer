@@ -6,10 +6,10 @@
   "MarketWatch_BtnAdd": "追加",
   "MarketWatch_NoItems": "ウォッチリストにアイテムがありません。",
   "MarketWatch_ColItem": "アイテム",
-  "MarketWatch_ColTargetPrice": "目標額",
-  "MarketWatch_ColCurrentPrice": "現在額",
-  "MarketWatch_ColTargetBuy": "目標購入額",
-  "MarketWatch_ColTargetSell": "目標売却額",
+  "MarketWatch_ColTargetPrice": "目標",
+  "MarketWatch_ColCurrentPrice": "現在",
+  "MarketWatch_ColTargetBuy": "目標購入",
+  "MarketWatch_ColTargetSell": "目標販売",
   "MarketWatch_ColActions": "操作",
   "MarketWatch_BtnRemove": "削除",
   "MarketWatch_AlertsTabName": "チャンス",
@@ -19,7 +19,9 @@
   "MarketWatch_BtnScanning": "スキャン中...",
   "MarketWatch_NoAlerts": "現在、条件に一致するチャンスはありません。",
   "MarketWatch_ColAction": "アクション",
-  "MarketWatch_ColSeller": "出品者",
+  "MarketWatch_ColSeller": "販売者",
   "MarketWatch_ActionBuy": "購入",
-  "MarketWatch_ActionSell": "売却 (値下げ)"
+  "MarketWatch_ActionSell": "販売 (競合)",
+  "MarketWatch_ColNotify": "通知",
+  "MarketWatch_TooltipNotify": "このアイテムのチャット通知を切り替える"
 }

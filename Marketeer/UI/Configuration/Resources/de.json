@@ -5,12 +5,13 @@
   "Config_GeneralText": "Allgemeine Konfigurationseinstellungen werden hier hinzugefügt.",
   "Command_Config_Description": "Öffnet das Konfigurationsmenü. Verwendung: /marketeer config",
   "Config_CacheLabel": "Universalis Cache-Dauer (Minuten)",
-  "Config_MarketWatchIntervalLabel": "Marktbeobachtungs-Intervall (Minuten)",
+  "Config_MarketWatchIntervalLabel": "Marktbeobachtung Scan-Intervall (Minuten)",
   "Config_WhitelistLabel": "Konkurrenten-Whitelist (Gehilfennamen)",
   "Config_WhitelistAdd": "Hinzufügen",
   "Config_WhitelistRemove": "Entfernen",
   "Config_AutomationDelayToggle": "Zufällige Verzögerung zwischen Aktionen aktivieren",
-  "Config_AutomationDelayMin": "Min Verzögerung (s)",
-  "Config_AutomationDelayMax": "Max Verzögerung (s)",
-  "Config_AutoWhitelistOwnRetainers": "Eigene Gehilfen automatisch auf die Whitelist setzen"
+  "Config_AutomationDelayMin": "Min. Verzögerung (s)",
+  "Config_AutomationDelayMax": "Max. Verzögerung (s)",
+  "Config_AutoWhitelistOwnRetainers": "Meine eigenen Gehilfen automatisch auf die Whitelist setzen",
+  "Config_EnableChatNotifications": "Globale Chat-Benachrichtigungen aktivieren"
 }
