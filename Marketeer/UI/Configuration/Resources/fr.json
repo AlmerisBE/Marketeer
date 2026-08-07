@@ -13,5 +13,8 @@
   "Config_AutomationDelayMin": "Délai Min (s)",
   "Config_AutomationDelayMax": "Délai Max (s)",
   "Config_AutoWhitelistOwnRetainers": "Mettre automatiquement mes propres servants sur liste blanche",
-  "Config_EnableChatNotifications": "Activer les notifications globales dans le chat"
+  "Config_EnableChatNotifications": "Activer les notifications globales dans le chat",
+  "Config_WhitelistBehaviorLabel": "Comportement vis-à-vis des servants en liste blanche :",
+  "Config_WhitelistBehavior_Ignore": "Ignorer complètement leurs prix",
+  "Config_WhitelistBehavior_Match": "S'aligner automatiquement sur leurs prix (Match)"
 }

@@ -13,5 +13,8 @@
   "Config_AutomationDelayMin": "Min. Verzögerung (s)",
   "Config_AutomationDelayMax": "Max. Verzögerung (s)",
   "Config_AutoWhitelistOwnRetainers": "Meine eigenen Gehilfen automatisch auf die Whitelist setzen",
-  "Config_EnableChatNotifications": "Globale Chat-Benachrichtigungen aktivieren"
+  "Config_EnableChatNotifications": "Globale Chat-Benachrichtigungen aktivieren",
+  "Config_WhitelistBehaviorLabel": "Verhalten bei Gehilfen auf der Whitelist:",
+  "Config_WhitelistBehavior_Ignore": "Deren Preise komplett ignorieren",
+  "Config_WhitelistBehavior_Match": "Preise automatisch anpassen (Match)"
 }

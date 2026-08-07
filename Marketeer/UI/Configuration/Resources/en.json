@@ -13,5 +13,8 @@
   "Config_AutomationDelayMin": "Min Delay (s)",
   "Config_AutomationDelayMax": "Max Delay (s)",
   "Config_AutoWhitelistOwnRetainers": "Automatically whitelist my own retainers",
-  "Config_EnableChatNotifications": "Enable global chat notifications"
+  "Config_EnableChatNotifications": "Enable global chat notifications",
+  "Config_WhitelistBehaviorLabel": "Whitelisted retainers behavior:",
+  "Config_WhitelistBehavior_Ignore": "Completely ignore their prices",
+  "Config_WhitelistBehavior_Match": "Automatically match their prices"
 }

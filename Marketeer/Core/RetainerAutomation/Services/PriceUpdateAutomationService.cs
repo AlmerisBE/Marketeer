@@ -136,7 +136,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             return this.ProcessNextItem();
         }
 
-        uint targetPrice = Math.Max(1u, this.currentItemTask.ServerCheapestPrice - 1);
+        uint targetPrice = this.currentItemTask.TargetPrice;
         uint currentPrice = this.inventoryService.GetRetainerMarketItemPrice(this.currentItemTask.SlotIndex);
 
         if (currentPrice == targetPrice) {

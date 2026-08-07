@@ -1,5 +1,6 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Configuration.Models;
 using Marketeer.API.Dashboard.Contracts;
 using Marketeer.API.Localization.Contracts;
 using System.Collections.Generic;
@@ -123,6 +124,20 @@ public class ConfigMenu : INavigationNode {
                 }
             }
             ImGui.EndListBox();
+        }
+
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_WhitelistBehaviorLabel"));
+
+        int behavior = (int)config.CompetitorWhitelistBehavior;
+
+        if (ImGui.RadioButton(this.localizationService.Translate("Config_WhitelistBehavior_Ignore"), ref behavior, 0)) {
+            config.CompetitorWhitelistBehavior = WhitelistBehavior.Ignore;
+            isChanged = true;
+        }
+
+        if (ImGui.RadioButton(this.localizationService.Translate("Config_WhitelistBehavior_Match"), ref behavior, 1)) {
+            config.CompetitorWhitelistBehavior = WhitelistBehavior.MatchPrice;
+            isChanged = true;
         }
 
         ImGui.Separator();

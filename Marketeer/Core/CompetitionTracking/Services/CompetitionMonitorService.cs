@@ -2,6 +2,7 @@
 using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.CompetitionTracking.Models;
 using Marketeer.API.Configuration.Contracts;
+using Marketeer.API.Configuration.Models;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.MarketListings.Contracts;
@@ -135,20 +136,33 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 }
 
                 var itemIds = character.Listings.Select(listing => listing.ItemId).Distinct();
-
-                // bypassCache est à FALSE. On utilise les données que le timer Universalis vient de rafraîchir.
                 var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId, bypassCache: false);
 
                 foreach (var listing in character.Listings) {
                     var marketLowest = lowestPrices.Where(price => price.ItemId == listing.ItemId).OrderBy(p => p.Price).FirstOrDefault();
 
-                    if (marketLowest != null && marketLowest.Price < listing.CurrentPrice && marketLowest.RetainerName != listing.RetainerName) {
+                    // Only process if there is a competitor on the market, and it's not the exact same listing
+                    if (marketLowest != null && marketLowest.RetainerName != listing.RetainerName) {
 
-                        if (whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase)) {
-                            continue;
+                        bool isWhitelisted = whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase) ||
+                                             (autoWhitelistOwn && ownRetainers.Contains(marketLowest.RetainerName));
+
+                        uint targetPrice;
+
+                        if (isWhitelisted) {
+                            if (config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore) {
+                                continue;
+                            }
+
+                            // MatchPrice behavior
+                            targetPrice = marketLowest.Price;
+                        }
+                        else {
+                            targetPrice = Math.Max(1u, marketLowest.Price - 1);
                         }
 
-                        if (autoWhitelistOwn && ownRetainers.Contains(marketLowest.RetainerName)) {
+                        // If our current price is already equal to or lower than our computed target, we are good!
+                        if (listing.CurrentPrice <= targetPrice) {
                             continue;
                         }
 
@@ -162,6 +176,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             RetainerName = listing.RetainerName,
                             OurPrice = listing.CurrentPrice,
                             ServerCheapestPrice = marketLowest.Price,
+                            TargetPrice = targetPrice,
                             CompetitorName = marketLowest.RetainerName,
                             CharacterName = character.CharacterName
                         });

@@ -3,7 +3,6 @@ using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Guidance.Models;
 using Marketeer.API.MarketListings.Contracts;
-using System;
 using System.Linq;
 
 namespace Marketeer.Core.Guidance.Services;
@@ -46,7 +45,7 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.UpdatePrice,
                     ItemName = currentUndercut.ItemName,
-                    TargetPrice = Math.Max(1u, currentUndercut.ServerCheapestPrice - 1),
+                    TargetPrice = currentUndercut.TargetPrice,
                     RetainerName = activeRetainerName
                 };
             }

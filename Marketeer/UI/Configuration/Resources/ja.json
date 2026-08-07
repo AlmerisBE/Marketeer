@@ -13,5 +13,8 @@
   "Config_AutomationDelayMin": "最小遅延（秒）",
   "Config_AutomationDelayMax": "最大遅延（秒）",
   "Config_AutoWhitelistOwnRetainers": "自分のリテイナーを自動的にホワイトリストに登録する",
-  "Config_EnableChatNotifications": "グローバルチャット通知を有効にする"
+  "Config_EnableChatNotifications": "グローバルチャット通知を有効にする",
+  "Config_WhitelistBehaviorLabel": "ホワイトリストのリテイナーに対する動作:",
+  "Config_WhitelistBehavior_Ignore": "価格を完全に無視する",
+  "Config_WhitelistBehavior_Match": "自動的に同じ価格に合わせる"
 }
