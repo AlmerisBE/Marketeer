@@ -75,7 +75,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         var window = this.windowService.GetWindow("RetainerList");
         if (window == null || !window.IsVisible) {
-            this.SetState(OrchestrationStep.OpenBell, 0.2);
+            this.SetState(OrchestrationStep.OpenBell, 0);
         }
         else {
             this.AdvanceToNextRetainerOrFinish();
@@ -112,19 +112,22 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             case OrchestrationStep.OpenBell: this.ProcessOpenBell(); break;
             case OrchestrationStep.WaitBell: this.ProcessWaitBell(); break;
             case OrchestrationStep.SelectRetainer: this.ProcessSelectRetainer(); break;
+            case OrchestrationStep.WaitSelectStringOpen: this.ProcessWaitSelectStringOpen(); break;
             case OrchestrationStep.OpenMenu: this.ProcessOpenMenu(); break;
             case OrchestrationStep.WaitMenu: this.ProcessWaitMenu(); break;
             case OrchestrationStep.ExecutingTask: this.ProcessExecutingTask(); break;
             case OrchestrationStep.CloseMenu: this.ProcessCloseMenu(); break;
             case OrchestrationStep.WaitMenuClosed: this.ProcessWaitMenuClosed(); break;
+            case OrchestrationStep.WaitSelectStringReturn: this.ProcessWaitSelectStringReturn(); break;
             case OrchestrationStep.CloseSelectString: this.ProcessCloseSelectString(); break;
+            case OrchestrationStep.WaitRetainerListReturn: this.ProcessWaitRetainerListReturn(); break;
             case OrchestrationStep.CloseRetainerList: this.ProcessCloseRetainerList(); break;
         }
     }
 
     private void ProcessOpenBell() {
         if (this.worldInteractionService.InteractWithSummoningBell()) {
-            this.SetState(OrchestrationStep.WaitBell, 1.0);
+            this.SetState(OrchestrationStep.WaitBell, 0);
         }
         else {
             this.logger.Warning("Cannot start orchestration: Summoning bell not in range and menu not open.");
@@ -142,38 +145,48 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     private void AdvanceToNextRetainerOrFinish() {
         if (this.retainerQueue.Count > 0) {
             this.currentRetainerName = this.retainerQueue.Dequeue();
-            this.SetState(OrchestrationStep.SelectRetainer, 0.5 + this.GetRandomDelay());
+            this.SetState(OrchestrationStep.SelectRetainer, this.GetRandomDelay());
         }
         else {
-            this.SetState(OrchestrationStep.CloseRetainerList, 0.5);
+            this.SetState(OrchestrationStep.CloseRetainerList, this.GetRandomDelay());
         }
     }
 
     private void ProcessSelectRetainer() {
         if (this.uiInteractionService.IsRetainerAvailable(this.currentRetainerName)) {
             if (this.uiInteractionService.SelectRetainer(this.currentRetainerName)) {
-                this.SetState(OrchestrationStep.OpenMenu, 0.5);
+                this.SetState(OrchestrationStep.WaitSelectStringOpen, 0);
             }
             else {
                 this.Abort();
             }
         }
+        else {
+            this.Abort();
+        }
+    }
+
+    private void ProcessWaitSelectStringOpen() {
+        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
+            this.SetState(OrchestrationStep.OpenMenu, this.GetRandomDelay());
+        }
     }
 
     private void ProcessOpenMenu() {
-        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
-            var optionText = this.currentTargetMenu == RetainerTargetMenu.MarketListings
-                ? this.localizationService.Translate("RetainerMenu_SellItems")
-                : this.localizationService.Translate("RetainerMenu_SalesHistory");
+        var optionText = this.currentTargetMenu == RetainerTargetMenu.MarketListings
+            ? this.localizationService.Translate("RetainerMenu_SellItems")
+            : this.localizationService.Translate("RetainerMenu_SalesHistory");
 
-            if (this.uiInteractionService.IsMenuOptionAvailable(optionText)) {
-                if (this.uiInteractionService.SelectMenuOption(optionText)) {
-                    this.SetState(OrchestrationStep.WaitMenu, 1.0);
-                }
-                else {
-                    this.Abort();
-                }
+        if (this.uiInteractionService.IsMenuOptionAvailable(optionText)) {
+            if (this.uiInteractionService.SelectMenuOption(optionText)) {
+                this.SetState(OrchestrationStep.WaitMenu, 0);
             }
+            else {
+                this.Abort();
+            }
+        }
+        else {
+            this.Abort();
         }
     }
 
@@ -183,8 +196,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (window != null && window.IsVisible) {
             this.currentTask?.OnMenuOpened(this.currentRetainerName);
-            this.SetState(OrchestrationStep.ExecutingTask, 0.5 + this.GetRandomDelay());
-            this.timeoutAt = DateTime.MaxValue;
+            this.SetState(OrchestrationStep.ExecutingTask, this.GetRandomDelay());
+            this.timeoutAt = DateTime.MaxValue; // Allow the executing task to handle its own timeout limits
         }
     }
 
@@ -192,11 +205,11 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (this.currentTask != null) {
             bool isDone = this.currentTask.OnTick();
             if (isDone) {
-                this.SetState(OrchestrationStep.CloseMenu, 0.5);
+                this.SetState(OrchestrationStep.CloseMenu, this.GetRandomDelay());
             }
         }
         else {
-            this.SetState(OrchestrationStep.CloseMenu, 0.5);
+            this.SetState(OrchestrationStep.CloseMenu, 0);
         }
     }
 
@@ -207,7 +220,10 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (success) {
             this.currentTask?.OnMenuClosed(this.currentRetainerName);
-            this.SetState(OrchestrationStep.WaitMenuClosed, 1.0);
+            this.SetState(OrchestrationStep.WaitMenuClosed, 0);
+        }
+        else {
+            this.Abort();
         }
     }
 
@@ -216,15 +232,29 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         var window = this.windowService.GetWindow(targetWindowName);
 
         if (window == null || !window.IsVisible) {
-            this.SetState(OrchestrationStep.CloseSelectString, 1.0);
+            this.SetState(OrchestrationStep.WaitSelectStringReturn, 0);
+        }
+    }
+
+    private void ProcessWaitSelectStringReturn() {
+        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
+            this.SetState(OrchestrationStep.CloseSelectString, this.GetRandomDelay());
         }
     }
 
     private void ProcessCloseSelectString() {
-        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
-            if (this.uiInteractionService.CloseSelectString()) {
-                this.AdvanceToNextRetainerOrFinish();
-            }
+        if (this.uiInteractionService.CloseSelectString()) {
+            this.SetState(OrchestrationStep.WaitRetainerListReturn, 0);
+        }
+        else {
+            this.Abort();
+        }
+    }
+
+    private void ProcessWaitRetainerListReturn() {
+        var window = this.windowService.GetWindow("RetainerList");
+        if (window != null && window.IsVisible) {
+            this.AdvanceToNextRetainerOrFinish();
         }
     }
 
@@ -232,14 +262,15 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         var window = this.windowService.GetWindow("RetainerList");
         if (window != null && window.IsVisible) {
             window.SendCallback(-1);
-            this.Abort();
         }
+
+        this.Abort(); // Concludes the sequence gracefully
     }
 
     private void SetState(OrchestrationStep nextStep, double delaySeconds) {
         this.currentStep = nextStep;
         this.actionAvailableAt = DateTime.Now.AddSeconds(delaySeconds);
-        this.timeoutAt = DateTime.Now.AddSeconds(20);
+        this.timeoutAt = DateTime.Now.AddSeconds(15);
     }
 
     private double GetRandomDelay() {

@@ -15,11 +15,14 @@ public enum OrchestrationStep {
     OpenBell,
     WaitBell,
     SelectRetainer,
+    WaitSelectStringOpen,
     OpenMenu,
     WaitMenu,
     ExecutingTask,
     CloseMenu,
     WaitMenuClosed,
+    WaitSelectStringReturn,
     CloseSelectString,
+    WaitRetainerListReturn,
     CloseRetainerList
 }
