@@ -1,4 +1,5 @@
-﻿using Marketeer.API.Features;
+﻿using Marketeer.API.CraftingProfit.Contracts;
+using Marketeer.API.Features;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.Core.GameData.Services;
@@ -11,5 +12,6 @@ public class GameDataFeature : IFeatureModule {
         services.AddSingleton<IWorldDataPresenter, WorldDataPresenter>();
         services.AddSingleton<IMarketItemSearchProvider, MarketItemSearchProvider>();
         services.AddSingleton<IRecipeDataService, RecipeDataService>();
+        services.AddSingleton<IItemActionProvider, ItemActionProvider>();
     }
 }

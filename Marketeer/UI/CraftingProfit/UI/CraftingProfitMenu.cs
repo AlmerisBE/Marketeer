@@ -21,6 +21,7 @@ public class CraftingProfitMenu : INavigationNode {
     private IMarketItemSearchProvider searchProvider;
     private IRecipeDataService recipeDataService;
     private ILocalizationService localization;
+    private IItemActionProvider actionProvider;
 
     private string searchInput = string.Empty;
     private ItemSearchResult? selectedItem;
@@ -37,7 +38,8 @@ public class CraftingProfitMenu : INavigationNode {
         IItemResolverService itemResolver,
         IMarketItemSearchProvider searchProvider,
         IRecipeDataService recipeDataService,
-        ILocalizationService localization) {
+        ILocalizationService localization,
+        IItemActionProvider actionProvider) {
 
         this.repository = repository;
         this.stateService = stateService;
@@ -45,6 +47,7 @@ public class CraftingProfitMenu : INavigationNode {
         this.searchProvider = searchProvider;
         this.recipeDataService = recipeDataService;
         this.localization = localization;
+        this.actionProvider = actionProvider;
     }
 
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -150,7 +153,6 @@ public class CraftingProfitMenu : INavigationNode {
                 if (yieldQty > 1) {
                     ImGui.TextDisabled(this.localization.Translate("CraftingProfit_BatchCost", yieldQty, evalResult.BatchCraftingCost));
                 }
-
                 if (evalResult.TotalTargetCraftingCost > 0) {
                     ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MaxCraftCost", evalResult.TotalTargetCraftingCost));
                 }
@@ -176,7 +178,7 @@ public class CraftingProfitMenu : INavigationNode {
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColUnitCost"), ImGuiTableColumnFlags.WidthFixed, 75f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColTotalCost"), ImGuiTableColumnFlags.WidthFixed, 75f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColMaxBuy"), ImGuiTableColumnFlags.WidthFixed, 90f);
-                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColOptions"), ImGuiTableColumnFlags.WidthFixed, 70f);
+                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColOptions"), ImGuiTableColumnFlags.WidthFixed, 100f);
                     ImGui.TableHeadersRow();
 
                     foreach (var compEval in evalResult.ComponentEvaluations) {
@@ -200,9 +202,10 @@ public class CraftingProfitMenu : INavigationNode {
         ImGui.TableNextColumn();
 
         var compName = this.itemResolver.ResolveItemName(eval.ItemId);
+        bool hasSubComponents = eval.SubComponents != null && eval.SubComponents.Count > 0;
         bool isNodeExpanded = false;
 
-        if (eval.SubComponents != null && eval.SubComponents.Count > 0) {
+        if (hasSubComponents) {
             var treeFlags = ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth;
             isNodeExpanded = ImGui.TreeNodeEx($"{compName}###compNode_{rootConfig.ItemId}_{eval.ItemId}", treeFlags);
         }
@@ -292,6 +295,27 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.PopStyleColor();
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip(this.localization.Translate("CraftingProfit_TooltipCraft"));
+            }
+        }
+
+        if (this.actionProvider.CanOpenRecipe(eval.ItemId)) {
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Book)) {
+                this.actionProvider.OpenRecipe(eval.ItemId);
+            }
+
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(this.localization.Translate("CraftingProfit_TooltipOpenRecipe"));
+            }
+        }
+        else if (this.actionProvider.CanOpenGatheringMap(eval.ItemId)) {
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.MapMarkerAlt)) {
+                this.actionProvider.OpenGatheringMap(eval.ItemId);
+            }
+
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip(this.localization.Translate("CraftingProfit_TooltipOpenMap"));
             }
         }
 

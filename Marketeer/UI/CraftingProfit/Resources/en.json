@@ -20,5 +20,7 @@
   "CraftingProfit_ColMaxBuy": "Max Buy Price",
   "CraftingProfit_ColOptions": "Options",
   "CraftingProfit_TooltipFree": "Use from stock / Free component",
-  "CraftingProfit_TooltipCraft": "Craft this component"
+  "CraftingProfit_TooltipCraft": "Craft this component",
+  "CraftingProfit_TooltipOpenRecipe": "Open Crafting Log",
+  "CraftingProfit_TooltipOpenMap": "Show gathering location on map"
 }

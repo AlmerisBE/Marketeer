@@ -20,5 +20,7 @@
   "CraftingProfit_ColMaxBuy": "Prix d'achat Max",
   "CraftingProfit_ColOptions": "Options",
   "CraftingProfit_TooltipFree": "Utiliser le stock / Composant gratuit",
-  "CraftingProfit_TooltipCraft": "Fabriquer ce composant"
+  "CraftingProfit_TooltipCraft": "Fabriquer ce composant",
+  "CraftingProfit_TooltipOpenRecipe": "Ouvrir le carnet d'artisanat",
+  "CraftingProfit_TooltipOpenMap": "Afficher la zone de récolte sur la carte"
 }
