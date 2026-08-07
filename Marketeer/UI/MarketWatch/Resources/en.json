@@ -21,5 +21,7 @@
   "MarketWatch_ColAction": "Action",
   "MarketWatch_ColSeller": "Seller",
   "MarketWatch_ActionBuy": "Buy",
-  "MarketWatch_ActionSell": "Sell (Undercut)"
+  "MarketWatch_ActionSell": "Sell (Undercut)",
+  "MarketWatch_ColNotify": "Notify",
+  "MarketWatch_TooltipNotify": "Toggle chat notifications for this item"
 }

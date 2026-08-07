@@ -12,5 +12,6 @@
   "Config_AutomationDelayToggle": "Enable Randomized Delay Between Actions",
   "Config_AutomationDelayMin": "Min Delay (s)",
   "Config_AutomationDelayMax": "Max Delay (s)",
-  "Config_AutoWhitelistOwnRetainers": "Automatically whitelist my own retainers"
+  "Config_AutoWhitelistOwnRetainers": "Automatically whitelist my own retainers",
+  "Config_EnableChatNotifications": "Enable global chat notifications"
 }

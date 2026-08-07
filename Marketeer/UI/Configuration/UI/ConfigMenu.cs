@@ -125,6 +125,16 @@ public class ConfigMenu : INavigationNode {
             ImGui.EndListBox();
         }
 
+        ImGui.TextUnformatted(this.localizationService.Translate("Configuration_Header"));
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        bool enableChatNotifications = config.EnableChatNotifications;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableChatNotifications"), ref enableChatNotifications)) {
+            config.EnableChatNotifications = enableChatNotifications;
+            isChanged = true;
+        }
+
         if (isChanged) {
             this.configurationService.Save();
         }

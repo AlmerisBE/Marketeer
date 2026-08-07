@@ -12,5 +12,6 @@
   "Config_AutomationDelayToggle": "Activer un délai aléatoire entre les actions",
   "Config_AutomationDelayMin": "Délai Min (s)",
   "Config_AutomationDelayMax": "Délai Max (s)",
-  "Config_AutoWhitelistOwnRetainers": "Mettre automatiquement mes propres servants sur liste blanche"
+  "Config_AutoWhitelistOwnRetainers": "Mettre automatiquement mes propres servants sur liste blanche",
+  "Config_EnableChatNotifications": "Activer les notifications globales dans le chat"
 }

@@ -172,8 +172,10 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
             this.competitionState.UpdateUndercuts(undercuts);
 
             if (undercuts.Any()) {
-                var notificationMessage = this.localization.Translate("Undercuts_Notification", undercuts.Count);
-                this.chatGui.Print(notificationMessage);
+                if (config.EnableChatNotifications) {
+                    var notificationMessage = this.localization.Translate("Undercuts_Notification", undercuts.Count);
+                    this.chatGui.Print(notificationMessage);
+                }
             }
         }
         catch (Exception ex) {

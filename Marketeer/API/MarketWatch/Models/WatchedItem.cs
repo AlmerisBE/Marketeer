@@ -9,6 +9,9 @@ public class WatchedItem {
     public uint? TargetBuyPrice { get; set; }
     public uint? TargetSellPrice { get; set; }
 
+    // Per-item chat notification toggle
+    public bool EnableNotifications { get; set; } = true;
+
     [JsonIgnore]
     public string Key => $"{this.ItemId}_{(this.IsHighQuality ? "HQ" : "NQ")}";
 

@@ -12,6 +12,7 @@ namespace Marketeer.UI.MarketWatch.UI;
 public class MarketWatchAlertsMenu : INavigationNode {
     private IMarketWatchAlertState alertState;
     private ILocalizationService localization;
+    private IMarketWatchRepository repository;
 
     public string GroupName => this.localization.Translate("Group_MarketWatch");
     public string Name => this.localization.Translate("MarketWatch_AlertsTabName");
@@ -19,9 +20,10 @@ public class MarketWatchAlertsMenu : INavigationNode {
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
-    public MarketWatchAlertsMenu(IMarketWatchAlertState alertState, ILocalizationService localization) {
+    public MarketWatchAlertsMenu(IMarketWatchAlertState alertState, ILocalizationService localization, IMarketWatchRepository repository) {
         this.alertState = alertState;
         this.localization = localization;
+        this.repository = repository;
     }
 
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -53,15 +55,16 @@ public class MarketWatchAlertsMenu : INavigationNode {
             return;
         }
 
-        if (ImGui.BeginTable("MarketWatchAlertsTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) {
+        if (ImGui.BeginTable("MarketWatchAlertsTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable)) {
             ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColItem"), ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColAction"), ImGuiTableColumnFlags.WidthFixed, 140f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTargetPrice"), ImGuiTableColumnFlags.WidthFixed, 80f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColCurrentPrice"), ImGuiTableColumnFlags.WidthFixed, 80f);
-            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColSeller"), ImGuiTableColumnFlags.WidthFixed, 120f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColAction"), ImGuiTableColumnFlags.WidthFixed, 130f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColTarget"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColCurrent"), ImGuiTableColumnFlags.WidthFixed, 80f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColSeller"), ImGuiTableColumnFlags.WidthFixed, 100f);
+            ImGui.TableSetupColumn(this.localization.Translate("MarketWatch_ColNotify"), ImGuiTableColumnFlags.WidthFixed, 50f);
             ImGui.TableHeadersRow();
 
-            foreach (var alert in alerts) {
+            foreach (var alert in this.alertState.LatestAlerts) {
                 ImGui.TableNextRow();
 
                 ImGui.TableNextColumn();
@@ -84,6 +87,22 @@ public class MarketWatchAlertsMenu : INavigationNode {
 
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(alert.RetainerName);
+
+                ImGui.TableNextColumn();
+                var watchedItem = this.repository.GetAllWatchedItems().FirstOrDefault(i => i.ItemId == alert.ItemId && i.IsHighQuality == alert.IsHighQuality);
+                if (watchedItem != null) {
+                    bool enableNotifications = watchedItem.EnableNotifications;
+                    if (ImGui.Checkbox($"##notify_{alert.ItemId}_{alert.IsHighQuality}", ref enableNotifications)) {
+                        watchedItem.EnableNotifications = enableNotifications;
+                        this.repository.AddOrUpdateItem(watchedItem); // Persist state immediately
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip(this.localization.Translate("MarketWatch_TooltipNotify"));
+                    }
+                }
+                else {
+                    ImGui.TextDisabled("-");
+                }
             }
 
             ImGui.EndTable();

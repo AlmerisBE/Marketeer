@@ -26,8 +26,9 @@ public class PluginConfiguration : IPluginConfiguration {
     public int AutomationDelayMin { get; set; } = 1;
     public int AutomationDelayMax { get; set; } = 3;
 
-    // Added property to persist market watch data
-    public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
+    // Global chat notification toggle
+    public bool EnableChatNotifications { get; set; } = true;
 
+    public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
     public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];
 }

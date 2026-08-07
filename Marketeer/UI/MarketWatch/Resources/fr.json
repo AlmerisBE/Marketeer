@@ -21,5 +21,7 @@
   "MarketWatch_ColAction": "Action",
   "MarketWatch_ColSeller": "Vendeur",
   "MarketWatch_ActionBuy": "Acheter",
-  "MarketWatch_ActionSell": "Vendre (Concurrence)"
+  "MarketWatch_ActionSell": "Vendre (Concurrence)",
+  "MarketWatch_ColNotify": "Notif.",
+  "MarketWatch_TooltipNotify": "Activer/désactiver les notifications dans le chat pour cet objet"
 }

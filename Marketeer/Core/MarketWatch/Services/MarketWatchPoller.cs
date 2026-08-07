@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
+using Marketeer.API.Configuration.Contracts;
 using Marketeer.API.Logging.Contracts;
 using Marketeer.API.MarketWatch.Contracts;
 using Marketeer.API.MarketWatch.Models;
@@ -20,6 +21,7 @@ public class MarketWatchPoller : IDisposable {
     private IClientState clientState;
     private ILoggerService logger;
     private IFramework framework;
+    private IConfigurationService configService;
 
     private bool isProcessing;
 
@@ -31,7 +33,8 @@ public class MarketWatchPoller : IDisposable {
         IServerPriceProvider priceProvider,
         IClientState clientState,
         ILoggerService logger,
-        IFramework framework) {
+        IFramework framework,
+        IConfigurationService configService) {
 
         this.chatGui = chatGui;
         this.analysisService = analysisService;
@@ -41,12 +44,11 @@ public class MarketWatchPoller : IDisposable {
         this.clientState = clientState;
         this.logger = logger;
         this.framework = framework;
+        this.configService = configService;
 
-        // Abonnement aux notifications du cache central
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.clientState.Login += this.OnLogin;
 
-        // Initialisation de la graine du cache au lancement si le joueur est déjà en jeu
         this.framework.RunOnFrameworkThread(() => {
             if (this.clientState.IsLoggedIn) {
                 _ = this.ProcessMarketAnalysisAsync(bypassCache: false);
@@ -68,7 +70,6 @@ public class MarketWatchPoller : IDisposable {
             return;
         }
 
-        // On vérifie que la notification concerne bien un des objets surveillés
         var watchedItemIds = this.repository.GetAllWatchedItems().Select(w => w.ItemId);
         if (watchedItemIds.Any(id => updatedItemIds.Contains(id))) {
             _ = this.ProcessMarketAnalysisAsync(bypassCache: false);
@@ -95,6 +96,16 @@ public class MarketWatchPoller : IDisposable {
     }
 
     private void NotifyAlert(MarketWatchAlert alert) {
+        var config = this.configService.GetConfig();
+        if (!config.EnableChatNotifications) {
+            return;
+        }
+
+        var watchedItem = this.repository.GetAllWatchedItems().FirstOrDefault(i => i.ItemId == alert.ItemId && i.IsHighQuality == alert.IsHighQuality);
+        if (watchedItem != null && !watchedItem.EnableNotifications) {
+            return;
+        }
+
         var hqSymbol = alert.IsHighQuality ? " \uE03C" : "";
         var actionText = alert.AlertType == MarketWatchAlertType.BuyTargetReached ? "Buy target reached" : "Sell target reached";
         ushort colorPayload = alert.AlertType == MarketWatchAlertType.BuyTargetReached ? (ushort)45 : (ushort)43;
