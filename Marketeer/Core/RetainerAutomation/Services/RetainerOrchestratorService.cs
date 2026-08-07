@@ -136,8 +136,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessWaitBell() {
-        var window = this.windowService.GetWindow("RetainerList");
-        if (window != null && window.IsVisible) {
+        if (this.uiInteractionService.IsAddonReady("RetainerList")) {
             this.AdvanceToNextRetainerOrFinish();
         }
     }
@@ -157,12 +156,6 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             if (this.uiInteractionService.SelectRetainer(this.currentRetainerName)) {
                 this.SetState(OrchestrationStep.WaitSelectStringOpen, 0);
             }
-            else {
-                this.Abort();
-            }
-        }
-        else {
-            this.Abort();
         }
     }
 
@@ -181,30 +174,22 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             if (this.uiInteractionService.SelectMenuOption(optionText)) {
                 this.SetState(OrchestrationStep.WaitMenu, 0);
             }
-            else {
-                this.Abort();
-            }
-        }
-        else {
-            this.Abort();
         }
     }
 
     private void ProcessWaitMenu() {
         var targetWindowName = this.currentTargetMenu == RetainerTargetMenu.MarketListings ? "RetainerSellList" : "RetainerHistory";
-        var window = this.windowService.GetWindow(targetWindowName);
 
-        if (window != null && window.IsVisible) {
+        if (this.uiInteractionService.IsAddonReady(targetWindowName)) {
             this.currentTask?.OnMenuOpened(this.currentRetainerName);
             this.SetState(OrchestrationStep.ExecutingTask, this.GetRandomDelay());
-            this.timeoutAt = DateTime.MaxValue; // Allow the executing task to handle its own timeout limits
+            this.timeoutAt = DateTime.MaxValue; // Task manages its own timeout bounds
         }
     }
 
     private void ProcessExecutingTask() {
         if (this.currentTask != null) {
-            bool isDone = this.currentTask.OnTick();
-            if (isDone) {
+            if (this.currentTask.OnTick()) {
                 this.SetState(OrchestrationStep.CloseMenu, this.GetRandomDelay());
             }
         }
@@ -221,9 +206,6 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (success) {
             this.currentTask?.OnMenuClosed(this.currentRetainerName);
             this.SetState(OrchestrationStep.WaitMenuClosed, 0);
-        }
-        else {
-            this.Abort();
         }
     }
 
@@ -246,15 +228,15 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         if (this.uiInteractionService.CloseSelectString()) {
             this.SetState(OrchestrationStep.WaitRetainerListReturn, 0);
         }
-        else {
-            this.Abort();
-        }
     }
 
     private void ProcessWaitRetainerListReturn() {
-        var window = this.windowService.GetWindow("RetainerList");
-        if (window != null && window.IsVisible) {
-            this.AdvanceToNextRetainerOrFinish();
+        var selectString = this.windowService.GetWindow("SelectString");
+
+        if (selectString == null || !selectString.IsVisible) {
+            if (this.uiInteractionService.IsAddonReady("RetainerList")) {
+                this.AdvanceToNextRetainerOrFinish();
+            }
         }
     }
 
@@ -264,13 +246,13 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             window.SendCallback(-1);
         }
 
-        this.Abort(); // Concludes the sequence gracefully
+        this.Abort();
     }
 
     private void SetState(OrchestrationStep nextStep, double delaySeconds) {
         this.currentStep = nextStep;
         this.actionAvailableAt = DateTime.Now.AddSeconds(delaySeconds);
-        this.timeoutAt = DateTime.Now.AddSeconds(15);
+        this.timeoutAt = DateTime.Now.AddSeconds(20);
     }
 
     private double GetRandomDelay() {

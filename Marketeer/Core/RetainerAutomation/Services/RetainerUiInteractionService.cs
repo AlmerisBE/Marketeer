@@ -32,6 +32,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool IsRetainerAvailable(string retainerName) {
+        if (!this.IsAddonReady("RetainerList")) {
+            return false;
+        }
+
         var window = this.windowService.GetWindow("RetainerList");
         if (window == null || !window.IsVisible) {
             return false;
@@ -44,9 +48,12 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool SelectRetainer(string retainerName) {
+        if (!this.IsAddonReady("RetainerList")) {
+            return false;
+        }
+
         var window = this.windowService.GetWindow("RetainerList");
         if (window == null || !window.IsVisible) {
-            this.logger.Warning("Cannot select retainer: 'RetainerList' window is not visible.");
             return false;
         }
 
@@ -59,7 +66,6 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var targetRetainer = retainerRows.FirstOrDefault(e => Regex.IsMatch(e.Text, pattern, RegexOptions.IgnoreCase));
 
         if (targetRetainer == null) {
-            this.logger.Warning($"Retainer '{retainerName}' not found in the active RetainerList.");
             return false;
         }
 
@@ -85,6 +91,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool IsMenuReadyForRetainer(string retainerName) {
+        if (!this.IsAddonReady("SelectString")) {
+            return false;
+        }
+
         var window = this.windowService.GetWindow("SelectString");
         if (window == null || !window.IsVisible) {
             return false;
@@ -96,6 +106,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool IsMenuOptionAvailable(string optionText) {
+        if (!this.IsAddonReady("SelectString")) {
+            return false;
+        }
+
         var window = this.windowService.GetWindow("SelectString");
         if (window == null || !window.IsVisible) {
             return false;
@@ -107,6 +121,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool SelectMenuOption(string optionText) {
+        if (!this.IsAddonReady("SelectString")) {
+            return false;
+        }
+
         var window = this.windowService.GetWindow("SelectString");
         if (window == null || !window.IsVisible) {
             return false;
@@ -144,10 +162,14 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     public bool CloseRetainerMarket() {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
         if (addonPtr.Address == IntPtr.Zero) {
-            return false;
+            return true;
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
+        if (!addon->IsVisible) {
+            return true;
+        }
+
         var values = stackalloc AtkValue[1];
         values[0].Type = AtkValueType.Int;
         values[0].Int = -1;
@@ -159,10 +181,14 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     public bool CloseSelectString() {
         var addonPtr = this.gameGui.GetAddonByName("SelectString");
         if (addonPtr.Address == IntPtr.Zero) {
-            return false;
+            return true;
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
+        if (!addon->IsVisible) {
+            return true;
+        }
+
         var values = stackalloc AtkValue[1];
         values[0].Type = AtkValueType.Int;
         values[0].Int = -1;
@@ -174,7 +200,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     public bool CloseSalesHistory() {
         var window = this.windowService.GetWindow("RetainerHistory");
         if (window == null || !window.IsVisible) {
-            return false;
+            return true;
         }
 
         window.SendCallbackWithUpdateState(true, -1);
