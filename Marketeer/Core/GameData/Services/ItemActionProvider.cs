@@ -12,7 +12,9 @@ public class ItemActionProvider : IItemActionProvider {
     private IDataManager dataManager;
     private IGameGui gameGui;
     private IRecipeDataService recipeDataService;
-    private ConcurrentDictionary<uint, (uint TerritoryId, uint MapId)?> gatheringLocationCache = new();
+
+    // We now cache the raw internal X and Y coordinates along with the map IDs
+    private ConcurrentDictionary<uint, (uint TerritoryId, uint MapId, int RawX, int RawY)?> gatheringLocationCache = new();
 
     public ItemActionProvider(IDataManager dataManager, IGameGui gameGui, IRecipeDataService recipeDataService) {
         this.dataManager = dataManager;
@@ -41,12 +43,13 @@ public class ItemActionProvider : IItemActionProvider {
     public void OpenGatheringMap(uint itemId) {
         var loc = this.GetGatheringLocation(itemId);
         if (loc != null) {
-            var payload = new MapLinkPayload(loc.Value.TerritoryId, loc.Value.MapId, 0f, 0f);
+            // Using the raw coordinates extracted from the MapMarker sheet to pinpoint the node with a flag
+            var payload = new MapLinkPayload(loc.Value.TerritoryId, loc.Value.MapId, loc.Value.RawX, loc.Value.RawY);
             this.gameGui.OpenMapWithMapLink(payload);
         }
     }
 
-    private (uint TerritoryId, uint MapId)? GetGatheringLocation(uint itemId) {
+    private (uint TerritoryId, uint MapId, int RawX, int RawY)? GetGatheringLocation(uint itemId) {
         if (this.gatheringLocationCache.TryGetValue(itemId, out var cached)) {
             return cached;
         }
@@ -57,11 +60,12 @@ public class ItemActionProvider : IItemActionProvider {
         return loc;
     }
 
-    private (uint TerritoryId, uint MapId)? ResolveGatheringLocation(uint itemId) {
+    private (uint TerritoryId, uint MapId, int RawX, int RawY)? ResolveGatheringLocation(uint itemId) {
         var gatheringItemSheet = this.dataManager.GetExcelSheet<GatheringItem>();
         var gatheringPointBaseSheet = this.dataManager.GetExcelSheet<GatheringPointBase>();
         var gatheringPointSheet = this.dataManager.GetExcelSheet<GatheringPoint>();
         var territorySheet = this.dataManager.GetExcelSheet<TerritoryType>();
+        var mapMarkerSheet = this.dataManager.GetSubrowExcelSheet<MapMarker>();
 
         if (gatheringItemSheet == null || gatheringPointBaseSheet == null || gatheringPointSheet == null || territorySheet == null) {
             return null;
@@ -95,13 +99,15 @@ public class ItemActionProvider : IItemActionProvider {
         }
 
         uint? territoryId = null;
+        uint? gatheringPointId = null;
         foreach (var p in gatheringPointSheet) {
             if (p.GatheringPointBase.RowId == pointBaseId.Value) {
                 territoryId = p.TerritoryType.RowId;
+                gatheringPointId = p.RowId;
                 break;
             }
         }
-        if (territoryId == null || territoryId.Value == 0) {
+        if (territoryId == null || territoryId.Value == 0 || gatheringPointId == null) {
             return null;
         }
 
@@ -110,6 +116,26 @@ public class ItemActionProvider : IItemActionProvider {
             return null;
         }
 
-        return (territoryId.Value, terr.Value.Map.RowId);
+        int rawX = 0;
+        int rawY = 0;
+
+        if (mapMarkerSheet != null) {
+            // MapMarker is a subrow sheet, we must iterate through the row collections, then the subrows
+            foreach (var markerCollection in mapMarkerSheet) {
+                foreach (var marker in markerCollection) {
+                    // DataType 3 and 4 are typical for fishing and standard gathering. We extract RowId from the DataKey RowRef.
+                    if ((marker.DataType == 3 || marker.DataType == 4) && marker.DataKey.RowId == gatheringPointId.Value) {
+                        rawX = marker.X;
+                        rawY = marker.Y;
+                        break;
+                    }
+                }
+                if (rawX != 0 || rawY != 0) {
+                    break;
+                }
+            }
+        }
+
+        return (territoryId.Value, terr.Value.Map.RowId, rawX, rawY);
     }
 }
