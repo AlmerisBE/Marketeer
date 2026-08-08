@@ -169,24 +169,18 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
                     var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
                     var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
 
-                    if (menuIndex != -1) {
-                        this.uiInteraction.SelectContextMenuItem(menuIndex);
-                        this.SetDelay(0.2); // Remain in step 1 to catch SelectYesNo
-                    }
-                    else {
+                    if (menuIndex == -1) {
                         var stopText = this.localization.Translate("RetainerMenu_StopRetaining");
                         menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopText);
-
-                        if (menuIndex != -1) {
-                            this.uiInteraction.SelectContextMenuItem(menuIndex);
-                            this.SetDelay(0.2); // Remain in step 1 to catch SelectYesNo
-                        }
-                        else {
-                            this.uiInteraction.CloseUnexpectedWindows();
-                            this.step = 0;
-                            this.SetDelay(0.5);
-                        }
                     }
+
+                    // Fallback to hardcoded index 2 ("Remove from Sale") if localization text is not found
+                    if (menuIndex == -1) {
+                        menuIndex = 2;
+                    }
+
+                    this.uiInteraction.SelectContextMenuItem(menuIndex);
+                    this.SetDelay(0.2); // Remain in step 1 to catch SelectYesNo naturally on the next ticks
                 }
                 break;
 

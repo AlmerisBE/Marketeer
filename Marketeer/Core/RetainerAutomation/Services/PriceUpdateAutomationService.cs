@@ -169,15 +169,13 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
                     var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
                     var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
 
-                    if (menuIndex != -1) {
-                        this.uiInteraction.SelectContextMenuItem(menuIndex);
-                        this.SetDelay(0.2); // Remain in step 1 to catch RetainerSell
+                    // Fallback to hardcoded index 1 ("Adjust Price") if localization text is not found
+                    if (menuIndex == -1) {
+                        menuIndex = 1;
                     }
-                    else {
-                        this.uiInteraction.CloseUnexpectedWindows();
-                        this.step = 0;
-                        this.SetDelay(0.5);
-                    }
+
+                    this.uiInteraction.SelectContextMenuItem(menuIndex);
+                    this.SetDelay(0.2); // Remain in step 1 to catch RetainerSell naturally on the next ticks
                 }
                 break;
 
