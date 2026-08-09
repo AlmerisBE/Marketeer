@@ -214,15 +214,17 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        var values = stackalloc AtkValue[2];
+        var values = stackalloc AtkValue[3];
 
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 0; // Event ID 0 is Left-Click
+        values[0].Int = 0; // Event ID 0 is Left-Click/Select
         values[1].Type = AtkValueType.Int;
         values[1].Int = uiIndex;
+        values[2].Type = AtkValueType.Int;
+        values[2].Int = 0; // Button ID or auxiliary param required by newer FFXIV clients
 
-        this.logger.Debug($"[RetainerUiInteractionService] Firing Event ID 0 (Left-Click) on RetainerSellList at UI index {uiIndex}.");
-        addon->FireCallback(2u, values, true);
+        this.logger.Debug($"[RetainerUiInteractionService] Firing Event ID 0 on RetainerSellList at UI index {uiIndex}.");
+        addon->FireCallback(3u, values, true);
     }
 
     public int GetContextMenuItemIndex(string localizedText) {
@@ -236,7 +238,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             return -1;
         }
 
-        var searchString = localizedText.Replace("’", "'");
+        var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant();
 
         for (int i = 7; i < addon->AtkValuesCount; i++) {
             if (addon->AtkValues[i].Type == AtkValueType.String) {
@@ -244,8 +246,8 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
                 if (ptr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (text != null) {
-                        var normalizedText = text.Replace("’", "'");
-                        if (normalizedText.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                        var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant();
+                        if (normalizedText.Contains(searchString)) {
                             return i - 7;
                         }
                     }

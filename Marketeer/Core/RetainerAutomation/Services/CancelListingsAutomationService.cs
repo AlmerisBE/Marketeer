@@ -131,7 +131,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
             return this.ProcessNextItem();
         }
 
-        if (DateTime.Now - this.currentItemStartTime > TimeSpan.FromSeconds(15)) {
+        if (DateTime.Now - this.currentItemStartTime > TimeSpan.FromSeconds(5)) {
             this.logger.Error($"Timeout while cancelling {this.currentItemTask.ItemName}. Attempting recovery.");
             this.uiInteraction.CloseUnexpectedWindows();
             return this.ProcessNextItem();
@@ -146,12 +146,12 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         }
 
         switch (this.step) {
-            case 0: // Select Item
+            case 0:
                 var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem((int)targetSlot.SlotIndex);
                 if (uiIndex != -1) {
                     this.uiInteraction.SelectItemInSellList(uiIndex);
                     this.step = 1;
-                    this.SetDelay(0.2); // Brief pause to allow the context menu to spawn
+                    this.SetDelay(0.2);
                 }
                 else {
                     return this.ProcessNextItem();
@@ -159,10 +159,10 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
 
                 break;
 
-            case 1: // Interact with Context Menu or Yes/No dialog
+            case 1:
                 if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
                     this.uiInteraction.ConfirmYesNo();
-                    this.step = 2; // Wait for item to disappear
+                    this.step = 2; // Move to wait for disappearance
                     this.SetDelay(0.5);
                 }
                 else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
@@ -174,18 +174,19 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
                         menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopText);
                     }
 
-                    // Fallback to hardcoded index 2 ("Remove from Sale") if localization text is not found
                     if (menuIndex == -1) {
                         menuIndex = 2;
                     }
 
                     this.uiInteraction.SelectContextMenuItem(menuIndex);
-                    this.SetDelay(0.2); // Remain in step 1 to catch SelectYesNo naturally on the next ticks
+
+                    // Stay in step 1 so the next tick catches the SelectYesNo dialog
+                    this.SetDelay(0.2);
                 }
                 break;
 
-            case 2: // Awaiting server response and item disappearance
-                // Automatically handled at the beginning of the tick (targetSlot == null)
+            case 2:
+                // Handled implicitly by targetSlot == null at the start of OnTick
                 break;
         }
 

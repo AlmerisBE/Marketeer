@@ -131,7 +131,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
             return this.ProcessNextItem();
         }
 
-        if (DateTime.Now - this.currentItemStartTime > TimeSpan.FromSeconds(15)) {
+        if (DateTime.Now - this.currentItemStartTime > TimeSpan.FromSeconds(5)) {
             this.logger.Error($"Timeout while updating price for {this.currentItemTask.ItemName}. Attempting recovery.");
             this.uiInteraction.CloseUnexpectedWindows();
             return this.ProcessNextItem();

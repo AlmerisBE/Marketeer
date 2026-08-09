@@ -93,15 +93,23 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
                 break;
 
             case 1:
-                var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
-                var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
-                if (menuIndex == -1) {
-                    menuIndex = 2;
+                if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
+                    this.uiInteraction.ConfirmYesNo();
+                    this.stateMachineIndex++; // Move to disappearance logging
+                    this.nextActionAt = DateTime.Now.AddSeconds(1.0);
                 }
+                else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+                    var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
+                    var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
+                    if (menuIndex == -1) {
+                        menuIndex = 2;
+                    }
 
-                this.uiInteraction.SelectContextMenuItem(menuIndex);
-                this.stateMachineIndex++;
-                this.nextActionAt = DateTime.Now.AddSeconds(1.0);
+                    this.uiInteraction.SelectContextMenuItem(menuIndex);
+
+                    // Stay in stateMachineIndex 1 to catch SelectYesNo on the next tick
+                    this.nextActionAt = DateTime.Now.AddSeconds(0.2);
+                }
                 break;
 
             case 2:
@@ -123,7 +131,7 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
             if (added.ItemId != this.targetItemId && added.ItemId != this.targetItemId + 1000000u) {
                 continue;
             }
-            // Native 0-based memory coordinates logged
+
             this.logger.Debug($"[CancelAndSell] Item {added.ItemId} transferred to inventory -> Bag {added.ContainerId}, Slot {added.SlotIndex} | Quantity to sell: {added.Quantity}");
         }
 
@@ -133,7 +141,6 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
             }
 
             if (changed.Difference > 0) {
-                // Native 0-based memory coordinates logged
                 this.logger.Debug($"[CancelAndSell] Item {changed.ItemId} quantity increased in inventory -> Bag {changed.ContainerId}, Slot {changed.SlotIndex} | Quantity added to sell: {changed.Difference}");
             }
         }
