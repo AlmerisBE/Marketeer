@@ -7,6 +7,7 @@ using Marketeer.Core.MarketListings.Services;
 using Marketeer.UI.MarketListings.Providers;
 using Marketeer.UI.MarketListings.UI;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Marketeer.Core.MarketListings;
 
@@ -19,6 +20,9 @@ public class MarketListingsFeature : IFeatureModule {
         services.AddSingleton<IMarketListingTrackerService, MarketListingTrackerService>();
         services.AddSingleton<IListingOptimizationService, ListingOptimizationService>();
 
+        // Native UI Enhancements
+        services.AddSingleton<NativeListingHighlighterService>();
+
         // UI Views
         services.AddSingleton<IRetainerDetailsView, RetainerDetailsView>();
 
@@ -28,5 +32,9 @@ public class MarketListingsFeature : IFeatureModule {
         // Dashboard Nodes
         services.AddSingleton<VendorAlertsMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<VendorAlertsMenu>());
+    }
+
+    public void Initialize(IServiceProvider provider) {
+        provider.GetRequiredService<NativeListingHighlighterService>();
     }
 }
