@@ -1,9 +1,15 @@
 {
-  "Guidance_Waiting": "Waiting for instructions...",
-  "Guidance_Action_UpdatePrice": "Price Adjustment",
+  "Guidance_Waiting": "Waiting for data...",
+  "Guidance_Action_UpdatePrice": "Update Price",
   "Guidance_Action_CancelListing": "Cancel Listing",
-  "Guidance_Action_SwitchRetainer": "Change Retainer",
-  "Guidance_SwitchTo": "Switch to: {0}",
+  "Guidance_Action_SwitchRetainer": "Switch Retainer",
+  "Guidance_Action_SummonRetainer": "Summon Retainer",
+  "Guidance_SwitchTo": "Please switch to: {0}",
+  "Guidance_Summon": "Please summon: {0}",
   "Guidance_ItemName": "Item: {0}",
-  "Guidance_TargetPrice": "New Price: {0} Gil"
+  "Guidance_TargetPrice": "Target Price: {0}",
+  "Guidance_AllClear_Title": "All Clear",
+  "Guidance_AllClear_Desc": "All retainers are fully optimized.",
+  "Guidance_Action_SwitchCharacter": "Switch Character",
+  "Guidance_LogInAs": "Please log in as: {0}"
 }

@@ -1,9 +1,15 @@
 {
-  "Guidance_Waiting": "指示を待機中...",
-  "Guidance_Action_UpdatePrice": "価格調整",
-  "Guidance_Action_CancelListing": "出品取消",
-  "Guidance_Action_SwitchRetainer": "リテイナー変更",
-  "Guidance_SwitchTo": "次へ: {0}",
+  "Guidance_Waiting": "データを待っています...",
+  "Guidance_Action_UpdatePrice": "価格を更新",
+  "Guidance_Action_CancelListing": "出品を取り消す",
+  "Guidance_Action_SwitchRetainer": "リテイナーを切り替える",
+  "Guidance_Action_SummonRetainer": "リテイナーを呼ぶ",
+  "Guidance_SwitchTo": "次へ切り替えてください: {0}",
+  "Guidance_Summon": "次を呼んでください: {0}",
   "Guidance_ItemName": "アイテム: {0}",
-  "Guidance_TargetPrice": "新価格: {0} ギル"
+  "Guidance_TargetPrice": "目標価格: {0}",
+  "Guidance_AllClear_Title": "すべて正常",
+  "Guidance_AllClear_Desc": "すべてのリテイナーが最適化されています。",
+  "Guidance_Action_SwitchCharacter": "キャラクター変更",
+  "Guidance_LogInAs": "次でログインしてください: {0}"
 }

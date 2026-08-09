@@ -14,9 +14,10 @@ public class GameEventServiceTests {
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockFramework = Substitute.For<IFramework>();
         var mockLogger = Substitute.For<ILoggerService>();
+        var mockGameGui = Substitute.For<IGameGui>();
 
         // Act
-        using var service = new GameEventService(mockAddonLifecycle, mockFramework, mockLogger);
+        using var service = new GameEventService(mockAddonLifecycle, mockFramework, mockLogger, mockGameGui);
 
         // Assert
         mockAddonLifecycle.Received().RegisterListener(AddonEvent.PostSetup, "RetainerList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
@@ -31,7 +32,9 @@ public class GameEventServiceTests {
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockFramework = Substitute.For<IFramework>();
         var mockLogger = Substitute.For<ILoggerService>();
-        var service = new GameEventService(mockAddonLifecycle, mockFramework, mockLogger);
+        var mockGameGui = Substitute.For<IGameGui>();
+
+        var service = new GameEventService(mockAddonLifecycle, mockFramework, mockLogger, mockGameGui);
 
         // Act
         service.Dispose();

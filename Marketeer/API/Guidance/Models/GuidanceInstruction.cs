@@ -5,4 +5,5 @@ public class GuidanceInstruction {
     public string ItemName { get; set; } = string.Empty;
     public uint? TargetPrice { get; set; }
     public string RetainerName { get; set; } = string.Empty;
+    public string CharacterName { get; set; } = string.Empty;
 }

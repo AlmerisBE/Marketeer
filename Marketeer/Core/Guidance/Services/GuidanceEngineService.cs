@@ -1,8 +1,11 @@
-﻿using Marketeer.API.CompetitionTracking.Contracts;
+﻿using Dalamud.Plugin.Services;
+using Marketeer.API.CompetitionTracking.Contracts;
+using Marketeer.API.CompetitionTracking.Models;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Guidance.Models;
 using Marketeer.API.MarketListings.Contracts;
+using Marketeer.API.MarketListings.Models;
 using System.Linq;
 
 namespace Marketeer.Core.Guidance.Services;
@@ -12,17 +15,20 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
     private IRetainerProvider retainerProvider;
     private ICompetitionStateService competitionState;
     private IListingOptimizationService optimizationService;
+    private IObjectTable objectTable;
 
     public GuidanceEngineService(
         IMarketListingProvider listingProvider,
         IRetainerProvider retainerProvider,
         ICompetitionStateService competitionState,
-        IListingOptimizationService optimizationService) {
+        IListingOptimizationService optimizationService,
+        IObjectTable objectTable) {
 
         this.listingProvider = listingProvider;
         this.retainerProvider = retainerProvider;
         this.competitionState = competitionState;
         this.optimizationService = optimizationService;
+        this.objectTable = objectTable;
     }
 
     public GuidanceInstruction? GetCurrentInstruction() {
@@ -38,43 +44,69 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
         var allUndercuts = this.competitionState.GetUndercutItems().OrderByDescending(u => u.OurPrice).ToList();
         var allSuboptimal = this.optimizationService.GetVendorPricedListings().OrderByDescending(s => s.VendorPrice).ToList();
 
-        // 1. Evaluate instructions for the CURRENT retainer first
+        var localPlayer = this.objectTable.LocalPlayer;
+        string currentCharacterName = localPlayer?.Name.TextValue ?? string.Empty;
+
+        // 1. Evaluate instructions for the CURRENT active retainer first
         if (!string.IsNullOrEmpty(activeRetainerName)) {
-            var currentUndercut = allUndercuts.FirstOrDefault(u => u.RetainerName == activeRetainerName);
+            var currentUndercut = allUndercuts.FirstOrDefault(u => u.RetainerName == activeRetainerName && u.CharacterName == currentCharacterName);
             if (currentUndercut != null) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.UpdatePrice,
                     ItemName = currentUndercut.ItemName,
                     TargetPrice = currentUndercut.TargetPrice,
-                    RetainerName = activeRetainerName
+                    RetainerName = activeRetainerName,
+                    CharacterName = currentCharacterName
                 };
             }
 
-            var currentSuboptimal = allSuboptimal.FirstOrDefault(s => s.RetainerName == activeRetainerName);
+            var currentSuboptimal = allSuboptimal.FirstOrDefault(s => s.RetainerName == activeRetainerName && s.CharacterName == currentCharacterName);
             if (currentSuboptimal != null) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.CancelListing,
                     ItemName = currentSuboptimal.ItemName,
-                    RetainerName = activeRetainerName
+                    RetainerName = activeRetainerName,
+                    CharacterName = currentCharacterName
                 };
             }
         }
 
-        // 2. If the current retainer is fully optimized (or no retainer is active), suggest the best global switch
-        if (allUndercuts.Count > 0) {
+        // 2. Find the next target globally, prioritizing the currently logged-in character
+        UndercutItem? targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == currentCharacterName);
+        SuboptimalListing? targetSuboptimal = allSuboptimal.FirstOrDefault(s => s.CharacterName == currentCharacterName);
+
+        if (targetUndercut == null && targetSuboptimal == null) {
+            targetUndercut = allUndercuts.FirstOrDefault();
+            targetSuboptimal = allSuboptimal.FirstOrDefault();
+        }
+
+        string? targetRetainer = targetUndercut?.RetainerName ?? targetSuboptimal?.RetainerName;
+        string? targetCharacter = targetUndercut?.CharacterName ?? targetSuboptimal?.CharacterName;
+
+        if (targetRetainer != null && targetCharacter != null) {
+            if (targetCharacter != currentCharacterName) {
+                return new GuidanceInstruction {
+                    ActionType = GuidanceActionType.SwitchCharacter,
+                    CharacterName = targetCharacter
+                };
+            }
+
+            if (string.IsNullOrEmpty(activeRetainerName)) {
+                return new GuidanceInstruction {
+                    ActionType = GuidanceActionType.SummonRetainer,
+                    RetainerName = targetRetainer,
+                    CharacterName = targetCharacter
+                };
+            }
+
             return new GuidanceInstruction {
                 ActionType = GuidanceActionType.SwitchRetainer,
-                RetainerName = allUndercuts[0].RetainerName
+                RetainerName = targetRetainer,
+                CharacterName = targetCharacter
             };
         }
 
-        if (allSuboptimal.Count > 0) {
-            return new GuidanceInstruction {
-                ActionType = GuidanceActionType.SwitchRetainer,
-                RetainerName = allSuboptimal[0].RetainerName
-            };
-        }
-
+        // 3. No target means everything is perfectly optimized across all tracked characters
         return null;
     }
 }

@@ -1,9 +1,15 @@
 {
-  "Guidance_Waiting": "Warte auf Anweisungen...",
-  "Guidance_Action_UpdatePrice": "Preisanpassung",
-  "Guidance_Action_CancelListing": "Angebot stornieren",
+  "Guidance_Waiting": "Warten auf Daten...",
+  "Guidance_Action_UpdatePrice": "Preis aktualisieren",
+  "Guidance_Action_CancelListing": "Verkauf abbrechen",
   "Guidance_Action_SwitchRetainer": "Gehilfen wechseln",
-  "Guidance_SwitchTo": "Wechsle zu: {0}",
+  "Guidance_Action_SummonRetainer": "Gehilfen rufen",
+  "Guidance_SwitchTo": "Bitte wechsle zu: {0}",
+  "Guidance_Summon": "Bitte rufe: {0}",
   "Guidance_ItemName": "Gegenstand: {0}",
-  "Guidance_TargetPrice": "Neuer Preis: {0} Gil"
+  "Guidance_TargetPrice": "Zielpreis: {0}",
+  "Guidance_AllClear_Title": "Alles in Ordnung",
+  "Guidance_AllClear_Desc": "Alle Gehilfen sind vollständig optimiert.",
+  "Guidance_Action_SwitchCharacter": "Charakter wechseln",
+  "Guidance_LogInAs": "Bitte logge dich ein als: {0}"
 }

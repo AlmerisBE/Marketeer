@@ -1,9 +1,15 @@
 {
-  "Guidance_Waiting": "En attente d'instructions...",
-  "Guidance_Action_UpdatePrice": "Gestion de la concurrence",
-  "Guidance_Action_CancelListing": "Annulation de vente",
-  "Guidance_Action_SwitchRetainer": "Changement de servant",
-  "Guidance_SwitchTo": "Passez à : {0}",
+  "Guidance_Waiting": "En attente de données...",
+  "Guidance_Action_UpdatePrice": "Mettre à jour le prix",
+  "Guidance_Action_CancelListing": "Annuler la vente",
+  "Guidance_Action_SwitchRetainer": "Changer de servant",
+  "Guidance_Action_SummonRetainer": "Appeler un servant",
+  "Guidance_SwitchTo": "Veuillez passer à : {0}",
+  "Guidance_Summon": "Veuillez appeler : {0}",
   "Guidance_ItemName": "Objet : {0}",
-  "Guidance_TargetPrice": "Nouveau prix : {0} Gils"
+  "Guidance_TargetPrice": "Prix cible : {0}",
+  "Guidance_AllClear_Title": "Tout est en ordre",
+  "Guidance_AllClear_Desc": "Vos servants sont parfaitement optimisés.",
+  "Guidance_Action_SwitchCharacter": "Changer de personnage",
+  "Guidance_LogInAs": "Veuillez vous connecter avec : {0}"
 }

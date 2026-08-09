@@ -24,11 +24,19 @@ public class MarketeerGuideWindow : Window {
     }
 
     public override bool DrawConditions() {
-        return this.geometryProvider.GetWindowGeometry("RetainerSellList", out _, out _, out _, out _, out _);
+        return this.geometryProvider.GetWindowGeometry("RetainerSellList", out _, out _, out _, out _, out _) ||
+               this.geometryProvider.GetWindowGeometry("SelectString", out _, out _, out _, out _, out _) ||
+               this.geometryProvider.GetWindowGeometry("RetainerList", out _, out _, out _, out _, out _);
     }
 
     public override void PreDraw() {
         if (this.geometryProvider.GetWindowGeometry("RetainerSellList", out var x, out var y, out _, out _, out _)) {
+            ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
+        }
+        else if (this.geometryProvider.GetWindowGeometry("SelectString", out x, out y, out _, out _, out _)) {
+            ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
+        }
+        else if (this.geometryProvider.GetWindowGeometry("RetainerList", out x, out y, out _, out _, out _)) {
             ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
         }
     }
@@ -37,7 +45,8 @@ public class MarketeerGuideWindow : Window {
         var instruction = this.instructionProviders.Select(p => p.GetCurrentInstruction()).FirstOrDefault(i => i != null);
 
         if (instruction == null) {
-            ImGui.TextUnformatted(this.localization.Translate("Guidance_Waiting"));
+            ImGui.TextColored(new Vector4(0.2f, 1.0f, 0.2f, 1.0f), this.localization.Translate("Guidance_AllClear_Title"));
+            ImGui.TextUnformatted(this.localization.Translate("Guidance_AllClear_Desc"));
             return;
         }
 
@@ -45,13 +54,21 @@ public class MarketeerGuideWindow : Window {
             GuidanceActionType.UpdatePrice => this.localization.Translate("Guidance_Action_UpdatePrice"),
             GuidanceActionType.CancelListing => this.localization.Translate("Guidance_Action_CancelListing"),
             GuidanceActionType.SwitchRetainer => this.localization.Translate("Guidance_Action_SwitchRetainer"),
+            GuidanceActionType.SummonRetainer => this.localization.Translate("Guidance_Action_SummonRetainer"),
+            GuidanceActionType.SwitchCharacter => this.localization.Translate("Guidance_Action_SwitchCharacter"),
             _ => "Guidance"
         };
 
         ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.2f, 1.0f), title);
 
-        if (instruction.ActionType == GuidanceActionType.SwitchRetainer) {
+        if (instruction.ActionType == GuidanceActionType.SwitchCharacter) {
+            ImGui.TextUnformatted(this.localization.Translate("Guidance_LogInAs", instruction.CharacterName));
+        }
+        else if (instruction.ActionType == GuidanceActionType.SwitchRetainer) {
             ImGui.TextUnformatted(this.localization.Translate("Guidance_SwitchTo", instruction.RetainerName));
+        }
+        else if (instruction.ActionType == GuidanceActionType.SummonRetainer) {
+            ImGui.TextUnformatted(this.localization.Translate("Guidance_Summon", instruction.RetainerName));
         }
         else {
             ImGui.TextUnformatted(this.localization.Translate("Guidance_ItemName", instruction.ItemName));
