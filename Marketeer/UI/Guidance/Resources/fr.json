@@ -11,5 +11,7 @@
   "Guidance_AllClear_Title": "Tout est en ordre",
   "Guidance_AllClear_Desc": "Vos servants sont parfaitement optimisés.",
   "Guidance_Action_SwitchCharacter": "Changer de personnage",
-  "Guidance_LogInAs": "Veuillez vous connecter avec : {0}"
+  "Guidance_LogInAs": "Veuillez vous connecter avec : {0}",
+  "Guidance_Btn_Summon": "Appeler {0}",
+  "Guidance_Btn_Return": "Retour à la liste"
 }

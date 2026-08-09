@@ -11,5 +11,7 @@
   "Guidance_AllClear_Title": "すべて正常",
   "Guidance_AllClear_Desc": "すべてのリテイナーが最適化されています。",
   "Guidance_Action_SwitchCharacter": "キャラクター変更",
-  "Guidance_LogInAs": "次でログインしてください: {0}"
+  "Guidance_LogInAs": "次でログインしてください: {0}",
+  "Guidance_Btn_Summon": "{0} を呼ぶ",
+  "Guidance_Btn_Return": "リテイナー一覧へ戻る"
 }

@@ -11,5 +11,7 @@
   "Guidance_AllClear_Title": "All Clear",
   "Guidance_AllClear_Desc": "All retainers are fully optimized.",
   "Guidance_Action_SwitchCharacter": "Switch Character",
-  "Guidance_LogInAs": "Please log in as: {0}"
+  "Guidance_LogInAs": "Please log in as: {0}",
+  "Guidance_Btn_Summon": "Summon {0}",
+  "Guidance_Btn_Return": "Return to List"
 }

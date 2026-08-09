@@ -3,6 +3,7 @@ using Dalamud.Interface.Windowing;
 using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Guidance.Models;
 using Marketeer.API.Localization.Contracts;
+using Marketeer.API.RetainerAutomation.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -13,13 +14,19 @@ public class MarketeerGuideWindow : Window {
     private IWindowGeometryProvider geometryProvider;
     private IEnumerable<IGuidanceInstructionProvider> instructionProviders;
     private ILocalizationService localization;
+    private IRetainerUiInteractionService uiInteraction;
 
-    public MarketeerGuideWindow(IWindowGeometryProvider geometryProvider, IEnumerable<IGuidanceInstructionProvider> instructionProviders, ILocalizationService localization)
+    public MarketeerGuideWindow(
+        IWindowGeometryProvider geometryProvider,
+        IEnumerable<IGuidanceInstructionProvider> instructionProviders,
+        ILocalizationService localization,
+        IRetainerUiInteractionService uiInteraction)
         : base("Marketeer Guide", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing) {
 
         this.geometryProvider = geometryProvider;
         this.instructionProviders = instructionProviders;
         this.localization = localization;
+        this.uiInteraction = uiInteraction;
         this.IsOpen = true;
     }
 
@@ -42,6 +49,9 @@ public class MarketeerGuideWindow : Window {
     }
 
     public override void Draw() {
+        // Enforce a slightly larger minimum width for better UX
+        ImGui.Dummy(new Vector2(220f, 0f));
+
         var instruction = this.instructionProviders.Select(p => p.GetCurrentInstruction()).FirstOrDefault(i => i != null);
 
         if (instruction == null) {
@@ -74,6 +84,29 @@ public class MarketeerGuideWindow : Window {
             ImGui.TextUnformatted(this.localization.Translate("Guidance_ItemName", instruction.ItemName));
             if (instruction.ActionType == GuidanceActionType.UpdatePrice && instruction.TargetPrice.HasValue) {
                 ImGui.TextUnformatted(this.localization.Translate("Guidance_TargetPrice", instruction.TargetPrice.Value.ToString("N0")));
+            }
+        }
+
+        // --- Automation Buttons ---
+        if (instruction.ActionType == GuidanceActionType.SummonRetainer || instruction.ActionType == GuidanceActionType.SwitchRetainer) {
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
+
+            if (instruction.ActionType == GuidanceActionType.SummonRetainer) {
+                if (ImGui.Button(this.localization.Translate("Guidance_Btn_Summon", instruction.RetainerName), new Vector2(-1, 0))) {
+                    this.uiInteraction.SelectRetainer(instruction.RetainerName);
+                }
+            }
+            else if (instruction.ActionType == GuidanceActionType.SwitchRetainer) {
+                if (ImGui.Button(this.localization.Translate("Guidance_Btn_Return"), new Vector2(-1, 0))) {
+                    if (this.uiInteraction.IsAddonReady("RetainerSellList")) {
+                        this.uiInteraction.CloseRetainerMarket();
+                    }
+                    else if (this.uiInteraction.IsAddonReady("SelectString")) {
+                        this.uiInteraction.CloseSelectString();
+                    }
+                }
             }
         }
     }
