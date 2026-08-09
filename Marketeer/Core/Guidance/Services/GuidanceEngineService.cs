@@ -6,6 +6,7 @@ using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Guidance.Models;
 using Marketeer.API.MarketListings.Contracts;
 using Marketeer.API.MarketListings.Models;
+using Marketeer.API.UiInterop.Contracts;
 using System.Linq;
 
 namespace Marketeer.Core.Guidance.Services;
@@ -16,19 +17,22 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
     private ICompetitionStateService competitionState;
     private IListingOptimizationService optimizationService;
     private IObjectTable objectTable;
+    private INativeWindowService windowService;
 
     public GuidanceEngineService(
         IMarketListingProvider listingProvider,
         IRetainerProvider retainerProvider,
         ICompetitionStateService competitionState,
         IListingOptimizationService optimizationService,
-        IObjectTable objectTable) {
+        IObjectTable objectTable,
+        INativeWindowService windowService) {
 
         this.listingProvider = listingProvider;
         this.retainerProvider = retainerProvider;
         this.competitionState = competitionState;
         this.optimizationService = optimizationService;
         this.objectTable = objectTable;
+        this.windowService = windowService;
     }
 
     public GuidanceInstruction? GetCurrentInstruction() {
@@ -41,14 +45,17 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
             activeRetainerName = activeRetainer?.Name;
         }
 
+        var retainerListWindow = this.windowService.GetWindow("RetainerList");
+        bool isAtRetainerList = retainerListWindow != null && retainerListWindow.IsVisible;
+
         var allUndercuts = this.competitionState.GetUndercutItems().OrderByDescending(u => u.OurPrice).ToList();
         var allSuboptimal = this.optimizationService.GetVendorPricedListings().OrderByDescending(s => s.VendorPrice).ToList();
 
         var localPlayer = this.objectTable.LocalPlayer;
         string currentCharacterName = localPlayer?.Name.TextValue ?? string.Empty;
 
-        // 1. Evaluate instructions for the CURRENT active retainer first
-        if (!string.IsNullOrEmpty(activeRetainerName)) {
+        // 1. Evaluate instructions for the CURRENT active retainer first (ONLY if we are not looking at the global list)
+        if (!isAtRetainerList && !string.IsNullOrEmpty(activeRetainerName)) {
             var currentUndercut = allUndercuts.FirstOrDefault(u => u.RetainerName == activeRetainerName && u.CharacterName == currentCharacterName);
             if (currentUndercut != null) {
                 return new GuidanceInstruction {
@@ -91,7 +98,7 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                 };
             }
 
-            if (string.IsNullOrEmpty(activeRetainerName)) {
+            if (string.IsNullOrEmpty(activeRetainerName) || isAtRetainerList) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.SummonRetainer,
                     RetainerName = targetRetainer,
