@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.API.Logging.Contracts;
@@ -35,16 +36,37 @@ public class RetainerContextMenuService : IDisposable {
         this.contextMenu.OnMenuOpened += this.OnMenuOpened;
     }
 
-    protected virtual unsafe uint GetTargetItemId() {
+    protected virtual unsafe uint GetTargetItemIdIfInMarket() {
         try {
             var agent = AgentInventoryContext.Instance();
-            if (agent != null && agent->TargetInventorySlot != null) {
-                uint itemId = agent->TargetInventorySlot->ItemId;
+            if (agent == null || agent->TargetInventorySlot == null) {
+                return 0;
+            }
+
+            var inventoryManager = InventoryManager.Instance();
+            if (inventoryManager == null) {
+                return 0;
+            }
+
+            var container = inventoryManager->GetInventoryContainer(InventoryType.RetainerMarket);
+            if (container == null || container->Size == 0) {
+                return 0;
+            }
+
+            var firstSlot = container->GetInventorySlot(0);
+            var lastSlot = container->GetInventorySlot(container->Size - 1);
+
+            var targetSlot = agent->TargetInventorySlot;
+
+            // Validate that the clicked item's memory address falls strictly within the Retainer Market container array.
+            // This pointer arithmetic completely prevents the context menu from appearing on personal inventory items.
+            if (targetSlot >= firstSlot && targetSlot <= lastSlot) {
+                uint itemId = targetSlot->ItemId;
                 return itemId > 1000000u ? itemId - 1000000u : itemId;
             }
         }
         catch (Exception ex) {
-            this.logger.Error(ex, "[ContextMenu] Failed to read AgentInventoryContext memory.");
+            this.logger.Error(ex, "[ContextMenu] Failed to evaluate target item memory boundary.");
         }
 
         return 0;
@@ -52,13 +74,13 @@ public class RetainerContextMenuService : IDisposable {
 
     private void OnMenuOpened(IMenuOpenedArgs args) {
         try {
-            // Strict enforcement: only inject our custom menu when interacting with the Retainer Market Board.
-            // This prevents the menu from erroneously appearing on the player's personal inventory items.
-            if (args.AddonName != "RetainerSellList") {
+            // First, ensure the retainer market board is actually open
+            var window = this.windowService.GetWindow("RetainerSellList");
+            if (window == null || !window.IsVisible) {
                 return;
             }
 
-            uint itemId = this.GetTargetItemId();
+            uint itemId = this.GetTargetItemIdIfInMarket();
 
             if (itemId > 0) {
                 args.AddMenuItem(new MenuItem {

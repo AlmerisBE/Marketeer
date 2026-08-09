@@ -51,7 +51,7 @@ public class RetainerContextMenuServiceTests {
                 contextMenu, priceUpdateService, itemCancelAndSellService,
                 localization, windowService, logger) { }
 
-        protected override uint GetTargetItemId() {
+        protected override uint GetTargetItemIdIfInMarket() {
             return this.MockTargetItemId;
         }
     }
@@ -63,7 +63,10 @@ public class RetainerContextMenuServiceTests {
             this.localization, this.windowService, this.logger);
 
         service.MockTargetItemId = 12345;
-        this.menuArgs.AddonName.Returns("RetainerSellList");
+
+        var mockWindow = Substitute.For<INativeWindow>();
+        mockWindow.IsVisible.Returns(true);
+        this.windowService.GetWindow("RetainerSellList").Returns(mockWindow);
 
         var addedItems = new List<MenuItem>();
         this.menuArgs.When(x => x.AddMenuItem(Arg.Any<MenuItem>()))
@@ -83,7 +86,10 @@ public class RetainerContextMenuServiceTests {
             this.localization, this.windowService, this.logger);
 
         service.MockTargetItemId = 0;
-        this.menuArgs.AddonName.Returns("RetainerSellList");
+
+        var mockWindow = Substitute.For<INativeWindow>();
+        mockWindow.IsVisible.Returns(true);
+        this.windowService.GetWindow("RetainerSellList").Returns(mockWindow);
 
         this.capturedEventHandler?.Invoke(this.menuArgs);
 
@@ -97,7 +103,6 @@ public class RetainerContextMenuServiceTests {
             this.localization, this.windowService, this.logger);
 
         service.MockTargetItemId = 12345;
-        this.menuArgs.AddonName.Returns("Inventory");
 
         var mockWindow = Substitute.For<INativeWindow>();
         mockWindow.IsVisible.Returns(false);
@@ -115,7 +120,10 @@ public class RetainerContextMenuServiceTests {
             this.localization, this.windowService, this.logger);
 
         service.MockTargetItemId = 999;
-        this.menuArgs.AddonName.Returns("RetainerSellList");
+
+        var mockWindow = Substitute.For<INativeWindow>();
+        mockWindow.IsVisible.Returns(true);
+        this.windowService.GetWindow("RetainerSellList").Returns(mockWindow);
 
         var addedItems = new List<MenuItem>();
         this.menuArgs.When(x => x.AddMenuItem(Arg.Any<MenuItem>()))
