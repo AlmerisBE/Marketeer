@@ -105,31 +105,31 @@ public class NativeRetainerListHighlighterService : IDisposable {
                         textNodes = textNodes.OrderBy(this.GetAbsoluteX).ToList();
 
                         var nameNode = (AtkTextNode*)textNodes[0];
-                        var nameText = this.ExtractString(nameNode->NodeText.StringPtr);
+                        var rawNameText = this.ExtractString(nameNode->NodeText.StringPtr);
 
-                        if (actions.TryGetValue(nameText, out var counts)) {
+                        // Clean the name from any previously appended markers to ensure TryGetValue matches perfectly
+                        var marker = "\u200B";
+                        var cleanNameText = rawNameText.Split(marker)[0].Trim();
+
+                        if (actions.TryGetValue(cleanNameText, out var counts)) {
+                            // Highlight the retainer name in yellow
                             nameNode->TextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
 
-                            var marketNode = (AtkTextNode*)textNodes[4];
-                            var marketText = this.ExtractString(marketNode->NodeText.StringPtr);
+                            if (!rawNameText.Contains(marker)) {
+                                int totalActions = counts.Undercuts + counts.Suboptimals;
+                                // Red (17) if cancellations are needed, otherwise Yellow (43)
+                                ushort colorPayload = counts.Suboptimals > 0 ? (ushort)17 : (ushort)43;
 
-                            var marker = "\u200B";
-                            if (!marketText.Contains(marker)) {
                                 var newText = new SeStringBuilder()
-                                    .AddText(marketText + " " + marker + "(")
-                                    .AddUiForeground(17)
-                                    .AddText(counts.Suboptimals.ToString())
+                                    .AddText(cleanNameText + " " + marker)
+                                    .AddUiForeground(colorPayload)
+                                    .AddText($"({totalActions})")
                                     .AddUiForegroundOff()
-                                    .AddText(", ")
-                                    .AddUiForeground(43)
-                                    .AddText(counts.Undercuts.ToString())
-                                    .AddUiForegroundOff()
-                                    .AddText(")")
                                     .Build();
 
                                 var encoded = newText.Encode().Concat(new byte[] { 0 }).ToArray();
                                 fixed (byte* ptr = encoded) {
-                                    marketNode->SetText(ptr);
+                                    nameNode->SetText(ptr);
                                 }
                             }
                         }
