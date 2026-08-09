@@ -18,6 +18,9 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<IRetainerUiInteractionService, RetainerUiInteractionService>();
         services.AddSingleton<IRetainerOrchestratorService, RetainerOrchestratorService>();
 
+        // Injection de notre nouveau service
+        services.AddSingleton<IRetainerSwitcherService, RetainerSwitcherService>();
+
         services.AddSingleton<RetainerContextMenuService>();
 
         services.AddSingleton<RetainerAutomationService>();
@@ -41,5 +44,6 @@ public class RetainerAutomationFeature : IFeatureModule {
 
     public void Initialize(IServiceProvider provider) {
         provider.GetRequiredService<RetainerContextMenuService>();
+        provider.GetRequiredService<IRetainerSwitcherService>();
     }
 }

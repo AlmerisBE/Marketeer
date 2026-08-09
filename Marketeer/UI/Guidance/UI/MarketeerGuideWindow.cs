@@ -14,19 +14,19 @@ public class MarketeerGuideWindow : Window {
     private IWindowGeometryProvider geometryProvider;
     private IEnumerable<IGuidanceInstructionProvider> instructionProviders;
     private ILocalizationService localization;
-    private IRetainerUiInteractionService uiInteraction;
+    private IRetainerSwitcherService switcherService;
 
     public MarketeerGuideWindow(
         IWindowGeometryProvider geometryProvider,
         IEnumerable<IGuidanceInstructionProvider> instructionProviders,
         ILocalizationService localization,
-        IRetainerUiInteractionService uiInteraction)
+        IRetainerSwitcherService switcherService)
         : base("Marketeer Guide", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing) {
 
         this.geometryProvider = geometryProvider;
         this.instructionProviders = instructionProviders;
         this.localization = localization;
-        this.uiInteraction = uiInteraction;
+        this.switcherService = switcherService;
         this.IsOpen = true;
     }
 
@@ -49,7 +49,6 @@ public class MarketeerGuideWindow : Window {
     }
 
     public override void Draw() {
-        // Enforce a slightly larger minimum width for better UX
         ImGui.Dummy(new Vector2(220f, 0f));
 
         var instruction = this.instructionProviders.Select(p => p.GetCurrentInstruction()).FirstOrDefault(i => i != null);
@@ -87,26 +86,14 @@ public class MarketeerGuideWindow : Window {
             }
         }
 
-        // --- Automation Buttons ---
+        // --- Unified Automation Button ---
         if (instruction.ActionType == GuidanceActionType.SummonRetainer || instruction.ActionType == GuidanceActionType.SwitchRetainer) {
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.Spacing();
 
-            if (instruction.ActionType == GuidanceActionType.SummonRetainer) {
-                if (ImGui.Button(this.localization.Translate("Guidance_Btn_Summon", instruction.RetainerName), new Vector2(-1, 0))) {
-                    this.uiInteraction.SelectRetainer(instruction.RetainerName);
-                }
-            }
-            else if (instruction.ActionType == GuidanceActionType.SwitchRetainer) {
-                if (ImGui.Button(this.localization.Translate("Guidance_Btn_Return"), new Vector2(-1, 0))) {
-                    if (this.uiInteraction.IsAddonReady("RetainerSellList")) {
-                        this.uiInteraction.CloseRetainerMarket();
-                    }
-                    else if (this.uiInteraction.IsAddonReady("SelectString")) {
-                        this.uiInteraction.CloseSelectString();
-                    }
-                }
+            if (ImGui.Button(this.localization.Translate("Guidance_Btn_SwitchAuto", instruction.RetainerName), new Vector2(-1, 0))) {
+                this.switcherService.SwitchTo(instruction.RetainerName);
             }
         }
     }

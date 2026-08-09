@@ -13,5 +13,5 @@
   "Guidance_Action_SwitchCharacter": "Switch Character",
   "Guidance_LogInAs": "Please log in as: {0}",
   "Guidance_Btn_Summon": "Summon {0}",
-  "Guidance_Btn_Return": "Return to List"
+  "Guidance_Btn_SwitchAuto": "Switch to {0}"
 }
