@@ -1,8 +1,11 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
+using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Guidance.Models;
 using Marketeer.API.Localization.Contracts;
+using Marketeer.API.MarketListings.Contracts;
 using Marketeer.API.RetainerAutomation.Contracts;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,18 +18,27 @@ public class MarketeerGuideWindow : Window {
     private IEnumerable<IGuidanceInstructionProvider> instructionProviders;
     private ILocalizationService localization;
     private IRetainerSwitcherService switcherService;
+    private ICompetitionStateService competitionState;
+    private IListingOptimizationService optimizationService;
+    private IObjectTable objectTable;
 
     public MarketeerGuideWindow(
         IWindowGeometryProvider geometryProvider,
         IEnumerable<IGuidanceInstructionProvider> instructionProviders,
         ILocalizationService localization,
-        IRetainerSwitcherService switcherService)
+        IRetainerSwitcherService switcherService,
+        ICompetitionStateService competitionState,
+        IListingOptimizationService optimizationService,
+        IObjectTable objectTable)
         : base("Marketeer Guide", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing) {
 
         this.geometryProvider = geometryProvider;
         this.instructionProviders = instructionProviders;
         this.localization = localization;
         this.switcherService = switcherService;
+        this.competitionState = competitionState;
+        this.optimizationService = optimizationService;
+        this.objectTable = objectTable;
         this.IsOpen = true;
     }
 
@@ -86,14 +98,22 @@ public class MarketeerGuideWindow : Window {
             }
         }
 
-        // --- Unified Automation Button ---
         if (instruction.ActionType == GuidanceActionType.SummonRetainer || instruction.ActionType == GuidanceActionType.SwitchRetainer) {
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.Spacing();
 
+            bool hasMarketActions = false;
+            var player = this.objectTable.LocalPlayer;
+
+            if (player != null) {
+                var playerName = player.Name.TextValue;
+                hasMarketActions = this.competitionState.GetUndercutItems().Any(u => u.CharacterName == playerName && u.RetainerName == instruction.RetainerName) ||
+                                   this.optimizationService.GetVendorPricedListings().Any(s => s.CharacterName == playerName && s.RetainerName == instruction.RetainerName);
+            }
+
             if (ImGui.Button(this.localization.Translate("Guidance_Btn_SwitchAuto", instruction.RetainerName), new Vector2(-1, 0))) {
-                this.switcherService.SwitchTo(instruction.RetainerName);
+                this.switcherService.SwitchTo(instruction.RetainerName, hasMarketActions);
             }
         }
     }

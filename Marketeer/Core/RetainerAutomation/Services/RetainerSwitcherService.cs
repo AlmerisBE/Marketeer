@@ -12,6 +12,8 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
 
     private string targetRetainer = string.Empty;
     private bool isSwitching;
+    private bool targetRetainerSelected;
+    private bool shouldOpenMarketList;
     private DateTime nextActionAt;
 
     public RetainerSwitcherService(IFramework framework, IRetainerUiInteractionService uiInteraction, ILoggerService logger) {
@@ -21,15 +23,17 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
-    public void SwitchTo(string retainerName) {
+    public void SwitchTo(string retainerName, bool openMarketList = false) {
         if (this.isSwitching) {
             return;
         }
 
         this.targetRetainer = retainerName;
+        this.shouldOpenMarketList = openMarketList;
         this.isSwitching = true;
+        this.targetRetainerSelected = false;
         this.nextActionAt = this.GetNow();
-        this.logger.Info($"Automated switch initiated for retainer: {retainerName}");
+        this.logger.Info($"Automated switch initiated for retainer: {retainerName}. Open market requested: {openMarketList}");
     }
 
     protected virtual DateTime GetNow() => DateTime.Now;
@@ -43,16 +47,31 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
 
         if (this.uiInteraction.IsAddonReady("RetainerSellList") || this.uiInteraction.IsAddonReady("RetainerHistory")) {
             this.uiInteraction.CloseUnexpectedWindows();
-            this.uiInteraction.CloseRetainerMarket();
-            this.uiInteraction.CloseSalesHistory();
-            this.nextActionAt = this.GetNow().AddSeconds(0.5);
+
+            bool closedMarket = this.uiInteraction.IsAddonReady("RetainerSellList") ? this.uiInteraction.CloseRetainerMarket() : true;
+            bool closedHistory = this.uiInteraction.IsAddonReady("RetainerHistory") ? this.uiInteraction.CloseSalesHistory() : true;
+
+            if (closedMarket && closedHistory) {
+                this.nextActionAt = this.GetNow().AddSeconds(0.5);
+            }
         }
-        else if (this.uiInteraction.IsAddonReady("SelectString")) {
-            this.uiInteraction.CloseSelectString();
-            this.nextActionAt = this.GetNow().AddSeconds(0.5);
+        else if (!this.targetRetainerSelected && this.uiInteraction.IsAddonReady("SelectString")) {
+            if (this.uiInteraction.CloseSelectString()) {
+                this.nextActionAt = this.GetNow().AddSeconds(0.5);
+            }
         }
-        else if (this.uiInteraction.IsAddonReady("RetainerList")) {
-            this.uiInteraction.SelectRetainer(this.targetRetainer);
+        else if (!this.targetRetainerSelected && this.uiInteraction.IsAddonReady("RetainerList")) {
+            if (this.uiInteraction.SelectRetainer(this.targetRetainer)) {
+                this.targetRetainerSelected = true;
+                this.nextActionAt = this.GetNow().AddSeconds(0.5);
+            }
+
+        }
+        else if (this.targetRetainerSelected && this.uiInteraction.IsAddonReady("SelectString")) {
+            if (this.shouldOpenMarketList) {
+                this.uiInteraction.OpenRetainerMarket();
+            }
+
             this.isSwitching = false;
             this.targetRetainer = string.Empty;
         }

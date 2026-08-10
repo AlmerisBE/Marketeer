@@ -18,45 +18,54 @@ public class RetainerSwitcherServiceTests {
     }
 
     [Fact]
-    public void SwitchTo_CascadesWindowClosures_AndSelectsTargetRetainer() {
+    public void SwitchTo_CascadesWindowClosures_SelectsRetainer_AndOpensMarketIfRequested() {
         var framework = Substitute.For<IFramework>();
         var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
         var logger = Substitute.For<ILoggerService>();
 
-        // Fix: Use Dalamud's explicit delegate instead of generic Action<IFramework>
+        // Ensure mock methods return true so the state machine can advance
+        uiInteraction.CloseRetainerMarket().Returns(true);
+        uiInteraction.CloseSalesHistory().Returns(true);
+        uiInteraction.CloseSelectString().Returns(true);
+        uiInteraction.SelectRetainer(Arg.Any<string>()).Returns(true);
+
         IFramework.OnUpdateDelegate? updateCallback = null;
         framework.When(x => x.Update += Arg.Any<IFramework.OnUpdateDelegate>())
             .Do(x => updateCallback = x.Arg<IFramework.OnUpdateDelegate>());
 
         using var service = new TestableRetainerSwitcherService(framework, uiInteraction, logger);
 
-        // Start process
-        service.SwitchTo("MyRetainer");
+        service.SwitchTo("MyRetainer", openMarketList: true);
 
         // Tick 1: Retainer market is open, should close it
         uiInteraction.IsAddonReady("RetainerSellList").Returns(true);
         updateCallback?.Invoke(framework);
-
         uiInteraction.Received(1).CloseRetainerMarket();
 
-        // Advance time to bypass 0.5s delay
         service.MockNow = service.MockNow.AddSeconds(1);
 
         // Tick 2: Retainer menu is open, should close it
         uiInteraction.IsAddonReady("RetainerSellList").Returns(false);
         uiInteraction.IsAddonReady("SelectString").Returns(true);
         updateCallback?.Invoke(framework);
-
         uiInteraction.Received(1).CloseSelectString();
 
-        // Advance time again
         service.MockNow = service.MockNow.AddSeconds(1);
 
-        // Tick 3: Finally at Retainer List, should summon retainer
+        // Tick 3: At Retainer List, should summon retainer
         uiInteraction.IsAddonReady("SelectString").Returns(false);
         uiInteraction.IsAddonReady("RetainerList").Returns(true);
         updateCallback?.Invoke(framework);
-
         uiInteraction.Received(1).SelectRetainer("MyRetainer");
+
+        service.MockNow = service.MockNow.AddSeconds(1);
+
+        // Tick 4: Retainer is summoned (SelectString appears for the targeted retainer)
+        uiInteraction.IsAddonReady("RetainerList").Returns(false);
+        uiInteraction.IsAddonReady("SelectString").Returns(true);
+        updateCallback?.Invoke(framework);
+
+        // Final validation: Market menu should be forcefully opened
+        uiInteraction.Received(1).OpenRetainerMarket();
     }
 }
