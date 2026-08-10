@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.Logging.Contracts;
@@ -19,17 +18,13 @@ public class NativeRetainerListHighlighterServiceTests {
         var optimizationService = Substitute.For<IListingOptimizationService>();
         var objectTable = Substitute.For<IObjectTable>();
         var logger = Substitute.For<ILoggerService>();
-        var pluginInterface = Substitute.For<IDalamudPluginInterface>();
-        var gameGui = Substitute.For<IGameGui>();
 
         var service = new NativeRetainerListHighlighterService(
             addonLifecycle,
             competitionState,
             optimizationService,
             objectTable,
-            logger,
-            pluginInterface,
-            gameGui
+            logger
         );
 
         addonLifecycle.Received(1).RegisterListener(AddonEvent.PostUpdate, "RetainerList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
