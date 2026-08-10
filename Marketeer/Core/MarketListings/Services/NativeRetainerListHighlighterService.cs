@@ -1,7 +1,8 @@
-﻿using Dalamud.Game.Addon.Lifecycle;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Memory;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -11,34 +12,52 @@ using Marketeer.API.MarketListings.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace Marketeer.Core.MarketListings.Services;
 
 public class NativeRetainerListHighlighterService : IDisposable {
+    private struct OverlayTextData {
+        public Vector2 Position;
+        public uint Color;
+        public string Text;
+    }
+
     private IAddonLifecycle addonLifecycle;
     private ICompetitionStateService competitionState;
     private IListingOptimizationService optimizationService;
     private IObjectTable objectTable;
     private ILoggerService logger;
+    private IDalamudPluginInterface pluginInterface;
+    private IGameGui gameGui;
+
+    private List<OverlayTextData> overlayData = new();
 
     public NativeRetainerListHighlighterService(
         IAddonLifecycle addonLifecycle,
         ICompetitionStateService competitionState,
         IListingOptimizationService optimizationService,
         IObjectTable objectTable,
-        ILoggerService logger) {
+        ILoggerService logger,
+        IDalamudPluginInterface pluginInterface,
+        IGameGui gameGui) {
 
         this.addonLifecycle = addonLifecycle;
         this.competitionState = competitionState;
         this.optimizationService = optimizationService;
         this.objectTable = objectTable;
         this.logger = logger;
+        this.pluginInterface = pluginInterface;
+        this.gameGui = gameGui;
 
         this.addonLifecycle.RegisterListener(AddonEvent.PostUpdate, "RetainerList", this.OnRetainerListUpdate);
+        this.pluginInterface.UiBuilder.Draw += this.OnDrawOverlay;
     }
 
     private unsafe void OnRetainerListUpdate(AddonEvent type, AddonArgs args) {
         try {
+            this.overlayData.Clear();
+
             var addon = (AtkUnitBase*)args.Addon.Address;
             if (addon == null || !addon->IsVisible) {
                 return;
@@ -76,14 +95,14 @@ public class NativeRetainerListHighlighterService : IDisposable {
                 return;
             }
 
-            this.TraverseAndHighlight(&addon->UldManager, retainerActions);
+            this.TraverseAndHighlight(addon, &addon->UldManager, retainerActions);
         }
         catch (Exception ex) {
             this.logger.Error(ex, "Failed to apply native highlights to RetainerList.");
         }
     }
 
-    private unsafe void TraverseAndHighlight(AtkUldManager* uldManager, Dictionary<string, (int Undercuts, int Suboptimals)> actions) {
+    private unsafe void TraverseAndHighlight(AtkUnitBase* addon, AtkUldManager* uldManager, Dictionary<string, (int Undercuts, int Suboptimals)> actions) {
         if (uldManager == null) {
             return;
         }
@@ -105,12 +124,12 @@ public class NativeRetainerListHighlighterService : IDisposable {
                         textNodes = textNodes.OrderBy(this.GetAbsoluteX).ToList();
 
                         var nameNode = (AtkTextNode*)textNodes[0];
-                        var rawNameText = this.ExtractString(nameNode->NodeText.StringPtr);
+                        var cleanNameText = this.ExtractString(nameNode->NodeText.StringPtr).Trim();
 
                         string? matchedRetainer = null;
 
                         foreach (var retainerName in actions.Keys.OrderByDescending(k => k.Length)) {
-                            if (rawNameText.StartsWith(retainerName, StringComparison.InvariantCultureIgnoreCase)) {
+                            if (cleanNameText.StartsWith(retainerName, StringComparison.InvariantCultureIgnoreCase)) {
                                 matchedRetainer = retainerName;
                                 break;
                             }
@@ -120,57 +139,76 @@ public class NativeRetainerListHighlighterService : IDisposable {
                             var counts = actions[matchedRetainer];
 
                             ByteColor targetColor;
-                            ushort colorPayload;
+                            uint imGuiColor;
 
-                            // Trinary state coloring for enhanced user readability
                             if (counts.Suboptimals > 0 && counts.Undercuts > 0) {
-                                targetColor = new ByteColor { A = 255, R = 255, G = 150, B = 50 }; // Orange
-                                colorPayload = 24;
+                                targetColor = new ByteColor { A = 255, R = 255, G = 150, B = 50 };
+                                imGuiColor = ImGui.GetColorU32(new Vector4(1f, 0.59f, 0.2f, 1f));
                             }
                             else if (counts.Suboptimals > 0) {
-                                targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 }; // Red
-                                colorPayload = 17;
+                                targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
+                                imGuiColor = ImGui.GetColorU32(new Vector4(1f, 0.23f, 0.23f, 1f));
                             }
                             else {
-                                targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 }; // Yellow
-                                colorPayload = 31;
+                                targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+                                imGuiColor = ImGui.GetColorU32(new Vector4(0.9f, 0.9f, 0.35f, 1f));
                             }
 
+                            // Only change native colors, never modify the text string buffer!
                             nameNode->TextColor = targetColor;
 
                             var marketItemsNode = (AtkTextNode*)textNodes[4];
                             marketItemsNode->TextColor = targetColor;
 
                             int totalActions = counts.Undercuts + counts.Suboptimals;
+                            string textToDraw = $"({totalActions})";
 
-                            var newText = new SeStringBuilder()
-                                .AddText(matchedRetainer + " ")
-                                .AddUiForeground(colorPayload)
-                                .AddText($"({totalActions})")
-                                .AddUiForegroundOff()
-                                .Build();
+                            var pos = this.GetNodeScreenPosition(addon, (AtkResNode*)marketItemsNode);
+                            var textSize = ImGui.CalcTextSize(textToDraw);
 
-                            var encoded = newText.Encode().Concat(new byte[] { 0 }).ToArray();
-                            bool needsUpdate = true;
+                            var drawPos = new Vector2(
+                                pos.X + (((AtkResNode*)marketItemsNode)->Width * addon->Scale) - textSize.X - (10f * addon->Scale),
+                                pos.Y + (((AtkResNode*)marketItemsNode)->Height * addon->Scale / 2f) - (textSize.Y / 2f)
+                            );
 
-                            if (nameNode->NodeText.BufUsed >= encoded.Length) {
-                                var currentBytes = new ReadOnlySpan<byte>(nameNode->NodeText.StringPtr, encoded.Length);
-                                if (currentBytes.SequenceEqual(encoded)) {
-                                    needsUpdate = false;
-                                }
-                            }
-
-                            if (needsUpdate) {
-                                fixed (byte* ptr = encoded) {
-                                    nameNode->SetText(ptr);
-                                }
-                            }
+                            this.overlayData.Add(new OverlayTextData {
+                                Position = drawPos,
+                                Color = imGuiColor,
+                                Text = textToDraw
+                            });
                         }
                     }
 
-                    this.TraverseAndHighlight(&comp->UldManager, actions);
+                    this.TraverseAndHighlight(addon, &comp->UldManager, actions);
                 }
             }
+        }
+    }
+
+    private void OnDrawOverlay() {
+        if (this.overlayData.Count == 0) {
+            return;
+        }
+
+        var addonPtr = this.gameGui.GetAddonByName("RetainerList");
+        if (addonPtr.Address == IntPtr.Zero) {
+            return;
+        }
+
+        unsafe {
+            var addon = (AtkUnitBase*)addonPtr.Address;
+            if (!addon->IsVisible) {
+                return;
+            }
+        }
+
+        var drawList = ImGui.GetForegroundDrawList();
+        uint shadowColor = ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 1f));
+
+        foreach (var data in this.overlayData) {
+            // Draw a subtle text shadow for native consistency
+            drawList.AddText(new Vector2(data.Position.X + 1, data.Position.Y + 1), shadowColor, data.Text);
+            drawList.AddText(data.Position, data.Color, data.Text);
         }
     }
 
@@ -195,6 +233,27 @@ public class NativeRetainerListHighlighterService : IDisposable {
                 }
             }
         }
+    }
+
+    private unsafe Vector2 GetNodeScreenPosition(AtkUnitBase* addon, AtkResNode* node) {
+        if (addon == null || node == null) {
+            return Vector2.Zero;
+        }
+
+        float x = node->X;
+        float y = node->Y;
+        var parent = node->ParentNode;
+
+        while (parent != null) {
+            x += parent->X;
+            y += parent->Y;
+            parent = parent->ParentNode;
+        }
+
+        float screenX = addon->X + (x * addon->Scale);
+        float screenY = addon->Y + (y * addon->Scale);
+
+        return new Vector2(screenX, screenY);
     }
 
     private unsafe float GetAbsoluteX(nint nodePtr) {
@@ -223,5 +282,6 @@ public class NativeRetainerListHighlighterService : IDisposable {
 
     public void Dispose() {
         this.addonLifecycle.UnregisterListener(AddonEvent.PostUpdate, "RetainerList", this.OnRetainerListUpdate);
+        this.pluginInterface.UiBuilder.Draw -= this.OnDrawOverlay;
     }
 }
