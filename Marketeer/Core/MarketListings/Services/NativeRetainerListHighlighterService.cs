@@ -131,17 +131,17 @@ public class NativeRetainerListHighlighterService : IDisposable {
                                 targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
                             }
 
-                            nameNode->TextColor = targetColor;
+                            // Color every text node in the retainer row to create a unified visual block
+                            foreach (var nodePtr in textNodes) {
+                                ((AtkTextNode*)nodePtr)->TextColor = targetColor;
+                            }
 
                             var marketItemsNode = (AtkTextNode*)textNodes[4];
                             var marketResNode = (AtkResNode*)marketItemsNode;
 
-                            // Expanding the width artificially prevents the FFXIV engine from creating truncation artifacts!
                             if (marketResNode->Width < 200) {
                                 marketResNode->Width = 200;
                             }
-
-                            marketItemsNode->TextColor = targetColor;
 
                             var rawMarketText = this.ExtractString(marketItemsNode->NodeText.StringPtr);
                             var cleanMarketText = rawMarketText.Split('(')[0].Replace("=", "").TrimEnd(' ', '…', '.');
