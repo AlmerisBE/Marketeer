@@ -101,7 +101,6 @@ public class NativeRetainerListHighlighterService : IDisposable {
                     var textNodes = new List<nint>();
                     this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
 
-                    // We ensure there are at least 5 text nodes to safely access index 0 through 4
                     if (textNodes.Count >= 5) {
                         textNodes = textNodes.OrderBy(this.GetAbsoluteX).ToList();
 
@@ -120,15 +119,29 @@ public class NativeRetainerListHighlighterService : IDisposable {
                         if (matchedRetainer != null) {
                             var counts = actions[matchedRetainer];
 
-                            // Highlight the retainer name
-                            nameNode->TextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+                            ByteColor targetColor;
+                            ushort colorPayload;
 
-                            // Highlight the Gil column (Index 3 based on absolute X coordinate sorting)
-                            var gilNode = (AtkTextNode*)textNodes[3];
-                            gilNode->TextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+                            // Trinary state coloring for enhanced user readability
+                            if (counts.Suboptimals > 0 && counts.Undercuts > 0) {
+                                targetColor = new ByteColor { A = 255, R = 255, G = 150, B = 50 }; // Orange
+                                colorPayload = 24;
+                            }
+                            else if (counts.Suboptimals > 0) {
+                                targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 }; // Red
+                                colorPayload = 17;
+                            }
+                            else {
+                                targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 }; // Yellow
+                                colorPayload = 31;
+                            }
+
+                            nameNode->TextColor = targetColor;
+
+                            var marketItemsNode = (AtkTextNode*)textNodes[4];
+                            marketItemsNode->TextColor = targetColor;
 
                             int totalActions = counts.Undercuts + counts.Suboptimals;
-                            ushort colorPayload = counts.Suboptimals > 0 ? (ushort)17 : (ushort)31;
 
                             var newText = new SeStringBuilder()
                                 .AddText(matchedRetainer + " ")
