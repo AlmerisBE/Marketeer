@@ -152,9 +152,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 0;
-        values[1].Type = AtkValueType.Int;
-        values[1].Int = 5;
+        values[0].Int = 2;
 
         addon->FireCallback(2u, values, true);
     }
