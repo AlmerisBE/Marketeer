@@ -56,7 +56,6 @@ public class NativeListingHighlighterService : IDisposable {
 
     private unsafe void OnRetainerSellListUpdate(AddonEvent type, AddonArgs args) {
         try {
-            // Lecture du pointeur mémoire sous-jacent via la propriété Address du wrapper
             var addon = (AtkUnitBase*)args.Addon.Address;
             if (addon == null || !addon->IsVisible) {
                 return;
@@ -122,28 +121,29 @@ public class NativeListingHighlighterService : IDisposable {
                 var compNode = (AtkComponentNode*)node;
                 var comp = compNode->Component;
                 if (comp != null) {
+                    var textNodes = new List<nint>();
+                    this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
+
                     bool isRow = false;
                     bool isUndercut = false;
                     bool isSuboptimal = false;
 
-                    for (int j = 0; j < comp->UldManager.NodeListCount; j++) {
-                        var child = comp->UldManager.NodeList[j];
-                        if (child != null && child->Type == NodeType.Text) {
-                            var textNode = (AtkTextNode*)child;
-                            var text = this.ExtractString(textNode->NodeText.StringPtr);
-                            if (!string.IsNullOrWhiteSpace(text)) {
-                                string? matchedItem = this.GetMatchingItemName(text, allItems);
-                                if (matchedItem != null) {
-                                    isRow = true;
-                                    if (suboptimals.Contains(matchedItem)) {
-                                        isSuboptimal = true;
-                                    }
-                                    else if (undercuts.Contains(matchedItem)) {
-                                        isUndercut = true;
-                                    }
+                    foreach (var textNodePtr in textNodes) {
+                        var textNode = (AtkTextNode*)textNodePtr;
+                        var text = this.ExtractString(textNode->NodeText.StringPtr);
 
-                                    break;
+                        if (!string.IsNullOrWhiteSpace(text)) {
+                            string? matchedItem = this.GetMatchingItemName(text, allItems);
+                            if (matchedItem != null) {
+                                isRow = true;
+                                if (suboptimals.Contains(matchedItem)) {
+                                    isSuboptimal = true;
                                 }
+                                else if (undercuts.Contains(matchedItem)) {
+                                    isUndercut = true;
+                                }
+
+                                break;
                             }
                         }
                     }
@@ -160,17 +160,39 @@ public class NativeListingHighlighterService : IDisposable {
                             targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
                         }
 
-                        for (int j = 0; j < comp->UldManager.NodeListCount; j++) {
-                            var child = comp->UldManager.NodeList[j];
-                            if (child != null && child->Type == NodeType.Text) {
-                                var textNode = (AtkTextNode*)child;
-                                textNode->TextColor = targetColor;
-                            }
+                        // Apply color uniformly to ALL text elements within the row (Name, Price, Qty, Total)
+                        // This forces a unified visual block, overriding native item rarity colors.
+                        foreach (var textNodePtr in textNodes) {
+                            var textNode = (AtkTextNode*)textNodePtr;
+                            textNode->TextColor = targetColor;
                         }
                     }
                     else {
                         this.TraverseAndColor(&comp->UldManager, allItems, undercuts, suboptimals);
                     }
+                }
+            }
+        }
+    }
+
+    private unsafe void CollectVisibleTextNodes(AtkUldManager* uldManager, List<nint> list) {
+        if (uldManager == null) {
+            return;
+        }
+
+        for (int i = 0; i < uldManager->NodeListCount; i++) {
+            var node = uldManager->NodeList[i];
+            if (node == null || !node->IsVisible()) {
+                continue;
+            }
+
+            if (node->Type == NodeType.Text) {
+                list.Add((nint)node);
+            }
+            else if ((ushort)node->Type >= 1000) {
+                var compNode = (AtkComponentNode*)node;
+                if (compNode->Component != null) {
+                    this.CollectVisibleTextNodes(&compNode->Component->UldManager, list);
                 }
             }
         }
