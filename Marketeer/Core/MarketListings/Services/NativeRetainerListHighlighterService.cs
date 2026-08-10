@@ -101,33 +101,53 @@ public class NativeRetainerListHighlighterService : IDisposable {
                     var textNodes = new List<nint>();
                     this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
 
+                    // We ensure there are at least 5 text nodes to safely access index 0 through 4
                     if (textNodes.Count >= 5) {
                         textNodes = textNodes.OrderBy(this.GetAbsoluteX).ToList();
 
                         var nameNode = (AtkTextNode*)textNodes[0];
                         var rawNameText = this.ExtractString(nameNode->NodeText.StringPtr);
 
-                        // Clean the name from any previously appended markers to ensure TryGetValue matches perfectly
-                        var marker = "\u200B";
-                        var cleanNameText = rawNameText.Split(marker)[0].Trim();
+                        string? matchedRetainer = null;
 
-                        if (actions.TryGetValue(cleanNameText, out var counts)) {
-                            // Highlight the retainer name in yellow
+                        foreach (var retainerName in actions.Keys.OrderByDescending(k => k.Length)) {
+                            if (rawNameText.StartsWith(retainerName, StringComparison.InvariantCultureIgnoreCase)) {
+                                matchedRetainer = retainerName;
+                                break;
+                            }
+                        }
+
+                        if (matchedRetainer != null) {
+                            var counts = actions[matchedRetainer];
+
+                            // Highlight the retainer name
                             nameNode->TextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
 
-                            if (!rawNameText.Contains(marker)) {
-                                int totalActions = counts.Undercuts + counts.Suboptimals;
-                                // Red (17) if cancellations are needed, otherwise Yellow (43)
-                                ushort colorPayload = counts.Suboptimals > 0 ? (ushort)17 : (ushort)43;
+                            // Highlight the Gil column (Index 3 based on absolute X coordinate sorting)
+                            var gilNode = (AtkTextNode*)textNodes[3];
+                            gilNode->TextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
 
-                                var newText = new SeStringBuilder()
-                                    .AddText(cleanNameText + " " + marker)
-                                    .AddUiForeground(colorPayload)
-                                    .AddText($"({totalActions})")
-                                    .AddUiForegroundOff()
-                                    .Build();
+                            int totalActions = counts.Undercuts + counts.Suboptimals;
+                            ushort colorPayload = counts.Suboptimals > 0 ? (ushort)17 : (ushort)31;
 
-                                var encoded = newText.Encode().Concat(new byte[] { 0 }).ToArray();
+                            var newText = new SeStringBuilder()
+                                .AddText(matchedRetainer + " ")
+                                .AddUiForeground(colorPayload)
+                                .AddText($"({totalActions})")
+                                .AddUiForegroundOff()
+                                .Build();
+
+                            var encoded = newText.Encode().Concat(new byte[] { 0 }).ToArray();
+                            bool needsUpdate = true;
+
+                            if (nameNode->NodeText.BufUsed >= encoded.Length) {
+                                var currentBytes = new ReadOnlySpan<byte>(nameNode->NodeText.StringPtr, encoded.Length);
+                                if (currentBytes.SequenceEqual(encoded)) {
+                                    needsUpdate = false;
+                                }
+                            }
+
+                            if (needsUpdate) {
                                 fixed (byte* ptr = encoded) {
                                     nameNode->SetText(ptr);
                                 }
