@@ -45,6 +45,13 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
 
         this.uiInteraction.SkipDialogue();
 
+        // Intercept and auto-confirm the buyback warning dialog if it appears during the switch process
+        if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
+            this.uiInteraction.ConfirmYesNo();
+            this.nextActionAt = this.GetNow().AddSeconds(0.5);
+            return;
+        }
+
         if (this.uiInteraction.IsAddonReady("RetainerSellList") || this.uiInteraction.IsAddonReady("RetainerHistory")) {
             this.uiInteraction.CloseUnexpectedWindows();
 

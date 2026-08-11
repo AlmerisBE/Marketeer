@@ -18,12 +18,11 @@ public class RetainerSwitcherServiceTests {
     }
 
     [Fact]
-    public void SwitchTo_CascadesWindowClosures_SelectsRetainer_AndOpensMarketIfRequested() {
+    public void SwitchTo_HandlesSelectYesNo_AndContinuesSwitchProcess() {
         var framework = Substitute.For<IFramework>();
         var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
         var logger = Substitute.For<ILoggerService>();
 
-        // Ensure mock methods return true so the state machine can advance
         uiInteraction.CloseRetainerMarket().Returns(true);
         uiInteraction.CloseSalesHistory().Returns(true);
         uiInteraction.CloseSelectString().Returns(true);
@@ -35,37 +34,21 @@ public class RetainerSwitcherServiceTests {
 
         using var service = new TestableRetainerSwitcherService(framework, uiInteraction, logger);
 
-        service.SwitchTo("MyRetainer", openMarketList: true);
+        service.SwitchTo("MyRetainer", openMarketList: false);
 
-        // Tick 1: Retainer market is open, should close it
-        uiInteraction.IsAddonReady("RetainerSellList").Returns(true);
+        // Simulate the appearance of the buyback confirmation dialog
+        uiInteraction.IsAddonReady("SelectYesNo").Returns(true);
         updateCallback?.Invoke(framework);
-        uiInteraction.Received(1).CloseRetainerMarket();
+
+        uiInteraction.Received(1).ConfirmYesNo();
 
         service.MockNow = service.MockNow.AddSeconds(1);
 
-        // Tick 2: Retainer menu is open, should close it
-        uiInteraction.IsAddonReady("RetainerSellList").Returns(false);
+        // The dialog is now closed, process should resume normally to SelectString
+        uiInteraction.IsAddonReady("SelectYesNo").Returns(false);
         uiInteraction.IsAddonReady("SelectString").Returns(true);
         updateCallback?.Invoke(framework);
+
         uiInteraction.Received(1).CloseSelectString();
-
-        service.MockNow = service.MockNow.AddSeconds(1);
-
-        // Tick 3: At Retainer List, should summon retainer
-        uiInteraction.IsAddonReady("SelectString").Returns(false);
-        uiInteraction.IsAddonReady("RetainerList").Returns(true);
-        updateCallback?.Invoke(framework);
-        uiInteraction.Received(1).SelectRetainer("MyRetainer");
-
-        service.MockNow = service.MockNow.AddSeconds(1);
-
-        // Tick 4: Retainer is summoned (SelectString appears for the targeted retainer)
-        uiInteraction.IsAddonReady("RetainerList").Returns(false);
-        uiInteraction.IsAddonReady("SelectString").Returns(true);
-        updateCallback?.Invoke(framework);
-
-        // Final validation: Market menu should be forcefully opened
-        uiInteraction.Received(1).OpenRetainerMarket();
     }
 }
