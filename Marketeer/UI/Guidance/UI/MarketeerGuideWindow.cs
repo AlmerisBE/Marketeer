@@ -2,6 +2,7 @@
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Marketeer.API.CompetitionTracking.Contracts;
+using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Guidance.Models;
 using Marketeer.API.Localization.Contracts;
@@ -21,6 +22,7 @@ public class MarketeerGuideWindow : Window {
     private ICompetitionStateService competitionState;
     private IListingOptimizationService optimizationService;
     private IObjectTable objectTable;
+    private IMarketListingProvider listingProvider;
 
     public MarketeerGuideWindow(
         IWindowGeometryProvider geometryProvider,
@@ -29,7 +31,8 @@ public class MarketeerGuideWindow : Window {
         IRetainerSwitcherService switcherService,
         ICompetitionStateService competitionState,
         IListingOptimizationService optimizationService,
-        IObjectTable objectTable)
+        IObjectTable objectTable,
+        IMarketListingProvider listingProvider)
         : base("Marketeer Guide", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing) {
 
         this.geometryProvider = geometryProvider;
@@ -39,20 +42,32 @@ public class MarketeerGuideWindow : Window {
         this.competitionState = competitionState;
         this.optimizationService = optimizationService;
         this.objectTable = objectTable;
+        this.listingProvider = listingProvider;
         this.IsOpen = true;
     }
 
     public override bool DrawConditions() {
-        return this.geometryProvider.GetWindowGeometry("RetainerSellList", out _, out _, out _, out _, out _) ||
-               this.geometryProvider.GetWindowGeometry("SelectString", out _, out _, out _, out _, out _) ||
-               this.geometryProvider.GetWindowGeometry("RetainerList", out _, out _, out _, out _, out _);
+        if (this.geometryProvider.GetWindowGeometry("RetainerSellList", out _, out _, out _, out _, out _)) {
+            return true;
+        }
+
+        if (this.geometryProvider.GetWindowGeometry("RetainerList", out _, out _, out _, out _, out _)) {
+            return true;
+        }
+
+        // Only draw on SelectString if a retainer is actually summoned and active in memory
+        if (this.geometryProvider.GetWindowGeometry("SelectString", out _, out _, out _, out _, out _)) {
+            return this.listingProvider.GetActiveRetainerId().HasValue;
+        }
+
+        return false;
     }
 
     public override void PreDraw() {
         if (this.geometryProvider.GetWindowGeometry("RetainerSellList", out var x, out var y, out _, out _, out _)) {
             ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
         }
-        else if (this.geometryProvider.GetWindowGeometry("SelectString", out x, out y, out _, out _, out _)) {
+        else if (this.listingProvider.GetActiveRetainerId().HasValue && this.geometryProvider.GetWindowGeometry("SelectString", out x, out y, out _, out _, out _)) {
             ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
         }
         else if (this.geometryProvider.GetWindowGeometry("RetainerList", out x, out y, out _, out _, out _)) {
