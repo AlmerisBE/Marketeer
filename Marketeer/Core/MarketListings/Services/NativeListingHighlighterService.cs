@@ -157,15 +157,12 @@ public class NativeListingHighlighterService : IDisposable {
                             targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
                         }
                         else {
-                            targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
+                            targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 }; // Explicitly revert to default white tint
                         }
 
-                        // Apply color uniformly to ALL text elements within the row (Name, Price, Qty, Total)
-                        // This forces a unified visual block, overriding native item rarity colors.
-                        foreach (var textNodePtr in textNodes) {
-                            var textNode = (AtkTextNode*)textNodePtr;
-                            textNode->TextColor = targetColor;
-                        }
+                        // Apply the color tint to the root component node instead of individual text nodes.
+                        // This resolves UI virtualization artifacts and gracefully preserves native item rarity colors.
+                        compNode->AtkResNode.Color = targetColor;
                     }
                     else {
                         this.TraverseAndColor(&comp->UldManager, allItems, undercuts, suboptimals);
