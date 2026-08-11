@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -128,7 +129,8 @@ public class NativeListingHighlighterService : IDisposable {
 
                     foreach (var textNodePtr in textNodes) {
                         var textNode = (AtkTextNode*)textNodePtr;
-                        var text = this.ExtractString(textNode->NodeText.StringPtr);
+                        // Cast CStringPointer to byte* before passing to ExtractString
+                        var text = this.ExtractString((byte*)textNode->NodeText.StringPtr);
 
                         if (!string.IsNullOrWhiteSpace(text)) {
                             matchedItem = this.GetMatchingItemName(text, allItems);
@@ -138,10 +140,10 @@ public class NativeListingHighlighterService : IDisposable {
                         }
                     }
 
-                    // If a valid item name is found in this row, evaluate and apply explicit colors
                     if (matchedItem != null) {
                         bool isSuboptimal = suboptimals.Contains(matchedItem);
                         bool isUndercut = undercuts.Contains(matchedItem);
+                        bool needsHighlight = isSuboptimal || isUndercut;
 
                         ByteColor targetColor;
                         if (isSuboptimal && isUndercut) {
@@ -154,12 +156,24 @@ public class NativeListingHighlighterService : IDisposable {
                             targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
                         }
                         else {
-                            targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 }; // Explicitly wipe UI virtualization artifacts!
+                            targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
                         }
 
                         foreach (var textNodePtr in textNodes) {
                             var textNode = (AtkTextNode*)textNodePtr;
                             textNode->TextColor = targetColor;
+
+                            // Cast CStringPointer to byte* to allow null checking and nint memory conversion
+                            if (needsHighlight && (byte*)textNode->NodeText.StringPtr != null) {
+                                var seString = MemoryHelper.ReadSeStringNullTerminated((nint)(byte*)textNode->NodeText.StringPtr);
+                                if (seString.Payloads.Any(p => p is UIForegroundPayload || p is UIGlowPayload)) {
+                                    seString.Payloads.RemoveAll(p => p is UIForegroundPayload || p is UIGlowPayload);
+                                    var encoded = seString.Encode().Concat(new byte[] { 0 }).ToArray();
+                                    fixed (byte* ptr = encoded) {
+                                        textNode->SetText(ptr);
+                                    }
+                                }
+                            }
                         }
                     }
 
