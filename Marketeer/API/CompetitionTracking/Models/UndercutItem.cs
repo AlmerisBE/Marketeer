@@ -6,6 +6,7 @@ public class UndercutItem {
     public string ItemName { get; set; } = string.Empty;
     public uint Quantity { get; set; }
     public string RetainerName { get; set; } = string.Empty;
+    public uint Price { get; set; }
     public uint OurPrice { get; set; }
     public uint ServerCheapestPrice { get; set; }
     public uint TargetPrice { get; set; }

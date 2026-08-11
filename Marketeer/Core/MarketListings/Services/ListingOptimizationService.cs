@@ -7,8 +7,8 @@ using System.Collections.Generic;
 namespace Marketeer.Core.MarketListings.Services;
 
 public class ListingOptimizationService : IListingOptimizationService {
-    private IConfigurationService configService;
-    private IItemResolverService itemResolver;
+    private readonly IConfigurationService configService;
+    private readonly IItemResolverService itemResolver;
 
     public ListingOptimizationService(
         IConfigurationService configService,
@@ -34,7 +34,7 @@ public class ListingOptimizationService : IListingOptimizationService {
                             ItemName = this.itemResolver.ResolveItemName(listing.ItemId),
                             CharacterName = charData.CharacterName,
                             RetainerName = retainer.Name,
-                            CurrentPrice = listing.PricePerUnit,
+                            Price = listing.PricePerUnit,
                             VendorPrice = vendorPrice
                         });
                     }
