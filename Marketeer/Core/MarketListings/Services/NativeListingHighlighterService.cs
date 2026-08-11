@@ -129,7 +129,6 @@ public class NativeListingHighlighterService : IDisposable {
 
                     foreach (var textNodePtr in textNodes) {
                         var textNode = (AtkTextNode*)textNodePtr;
-                        // Cast CStringPointer to byte* before passing to ExtractString
                         var text = this.ExtractString((byte*)textNode->NodeText.StringPtr);
 
                         if (!string.IsNullOrWhiteSpace(text)) {
@@ -146,10 +145,9 @@ public class NativeListingHighlighterService : IDisposable {
                         bool needsHighlight = isSuboptimal || isUndercut;
 
                         ByteColor targetColor;
-                        if (isSuboptimal && isUndercut) {
-                            targetColor = new ByteColor { A = 255, R = 255, G = 150, B = 50 };
-                        }
-                        else if (isSuboptimal) {
+
+                        // Prioritize suboptimal (cancellation) over undercuts, removing the hybrid orange state
+                        if (isSuboptimal) {
                             targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
                         }
                         else if (isUndercut) {
@@ -163,7 +161,6 @@ public class NativeListingHighlighterService : IDisposable {
                             var textNode = (AtkTextNode*)textNodePtr;
                             textNode->TextColor = targetColor;
 
-                            // Cast CStringPointer to byte* to allow null checking and nint memory conversion
                             if (needsHighlight && (byte*)textNode->NodeText.StringPtr != null) {
                                 var seString = MemoryHelper.ReadSeStringNullTerminated((nint)(byte*)textNode->NodeText.StringPtr);
                                 if (seString.Payloads.Any(p => p is UIForegroundPayload || p is UIGlowPayload)) {
