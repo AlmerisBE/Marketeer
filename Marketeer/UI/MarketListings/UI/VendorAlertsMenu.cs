@@ -76,7 +76,7 @@ public class VendorAlertsMenu : INavigationNode {
                 ImGui.TextUnformatted(listing.RetainerName);
 
                 ImGui.TableNextColumn();
-                ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), $"{listing.CurrentPrice:N0}");
+                ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), $"{listing.Price:N0}");
 
                 ImGui.TableNextColumn();
                 ImGui.TextColored(new Vector4(0.4f, 1.0f, 0.4f, 1.0f), $"{listing.VendorPrice:N0}");

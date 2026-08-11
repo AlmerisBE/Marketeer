@@ -138,7 +138,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         }
 
         var slots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
-        var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.CurrentPrice);
+        var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.Price);
 
         if (targetSlot == null) {
             this.logger.Info($"Listing for '{this.currentItemTask.ItemName}' successfully cancelled. Moving to next.");

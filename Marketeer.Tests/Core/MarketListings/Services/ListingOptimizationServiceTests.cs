@@ -43,7 +43,7 @@ public class ListingOptimizationServiceTests {
         Assert.Single(results);
         Assert.Equal(100u, results[0].ItemId);
         Assert.Equal("Cheap Potion", results[0].ItemName);
-        Assert.Equal(5u, results[0].CurrentPrice);
+        Assert.Equal(5u, results[0].Price);
         Assert.Equal(10u, results[0].VendorPrice);
     }
 }

@@ -161,7 +161,7 @@ public class GuidanceEngineServiceTests {
                 CharacterName = "Player One",
                 RetainerName = "MyRetainer",
                 ItemName = "Vendor Trash",
-                CurrentPrice = 5,
+                Price = 5,
                 VendorPrice = 10
             }
         };
