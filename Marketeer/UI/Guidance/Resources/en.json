@@ -17,5 +17,6 @@
   "Guidance_Legend_Title": "Legend",
   "Guidance_Legend_Red": "Cancellation required",
   "Guidance_Legend_Yellow": "Price update required",
-  "Guidance_Legend_Orange": "Cancellation & Price update"
+  "Guidance_Legend_Orange": "Cancellation & Price update",
+  "Guidance_Btn_ExecuteAction": "Execute Action"
 }

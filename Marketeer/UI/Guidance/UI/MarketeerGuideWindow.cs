@@ -25,6 +25,8 @@ public class MarketeerGuideWindow : Window {
     private readonly IMarketListingProvider listingProvider;
     private readonly IRetainerProvider retainerProvider;
     private readonly IRetainerUiInteractionService uiInteraction;
+    private readonly IPriceUpdateAutomationService priceUpdateService;
+    private readonly ICancelListingsAutomationService cancelListingsService;
 
     public MarketeerGuideWindow(
         IWindowGeometryProvider geometryProvider,
@@ -36,7 +38,9 @@ public class MarketeerGuideWindow : Window {
         IObjectTable objectTable,
         IMarketListingProvider listingProvider,
         IRetainerProvider retainerProvider,
-        IRetainerUiInteractionService uiInteraction)
+        IRetainerUiInteractionService uiInteraction,
+        IPriceUpdateAutomationService priceUpdateService,
+        ICancelListingsAutomationService cancelListingsService)
         : base("Marketeer Guide", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing) {
 
         this.geometryProvider = geometryProvider;
@@ -49,6 +53,8 @@ public class MarketeerGuideWindow : Window {
         this.listingProvider = listingProvider;
         this.retainerProvider = retainerProvider;
         this.uiInteraction = uiInteraction;
+        this.priceUpdateService = priceUpdateService;
+        this.cancelListingsService = cancelListingsService;
         this.IsOpen = true;
     }
 
@@ -118,7 +124,7 @@ public class MarketeerGuideWindow : Window {
             ImGui.TextUnformatted(this.localization.Translate("Guidance_Summon", instruction.RetainerName));
         }
         else {
-            ImGui.TextUnformatted(this.localization.Translate("Guidance_ItemName", instruction.ItemName));
+            ImGui.TextUnformatted(this.localization.Translate("Guidance_ItemName", $"{instruction.ItemName} x{instruction.Quantity}"));
             if (instruction.ActionType == GuidanceActionType.UpdatePrice && instruction.TargetPrice.HasValue) {
                 ImGui.TextUnformatted(this.localization.Translate("Guidance_TargetPrice", instruction.TargetPrice.Value.ToString("N0")));
             }
@@ -140,6 +146,17 @@ public class MarketeerGuideWindow : Window {
 
             if (ImGui.Button(this.localization.Translate("Guidance_Btn_SwitchAuto", instruction.RetainerName), new Vector2(-1, 0))) {
                 this.switcherService.SwitchTo(instruction.RetainerName, hasMarketActions);
+            }
+        }
+        else if (instruction.ActionType == GuidanceActionType.UpdatePrice || instruction.ActionType == GuidanceActionType.CancelListing) {
+            ImGui.Spacing();
+            if (ImGui.Button(this.localization.Translate("Guidance_Btn_ExecuteAction"), new Vector2(-1, 0))) {
+                if (instruction.ActionType == GuidanceActionType.UpdatePrice) {
+                    this.priceUpdateService.TriggerSingleItemUpdate(instruction.ItemId, instruction.CurrentPrice, instruction.Quantity);
+                }
+                else {
+                    this.cancelListingsService.TriggerSingleItemCancellation(instruction.ItemId, instruction.CurrentPrice, instruction.Quantity);
+                }
             }
         }
 

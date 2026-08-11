@@ -35,6 +35,7 @@ public class ListingOptimizationService : IListingOptimizationService {
                             CharacterName = charData.CharacterName,
                             RetainerName = retainer.Name,
                             Price = listing.PricePerUnit,
+                            Quantity = listing.Quantity,
                             VendorPrice = vendorPrice
                         });
                     }

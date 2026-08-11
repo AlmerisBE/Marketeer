@@ -6,5 +6,6 @@ public class SuboptimalListing {
     public string CharacterName { get; set; } = string.Empty;
     public string RetainerName { get; set; } = string.Empty;
     public uint Price { get; set; }
+    public uint Quantity { get; set; }
     public uint VendorPrice { get; set; }
 }

@@ -92,12 +92,12 @@ public class NativeListingHighlighterService : IDisposable {
             // Create tuples of (ItemName, Price) to uniquely identify specific listings
             var undercuts = this.competitionState.GetUndercutItems()
                 .Where(u => u.CharacterName == currentCharacterName && u.RetainerName == activeRetainerName)
-                .Select(u => (u.ItemName, u.Price))
+                .Select(u => (ItemName: u.ItemName, Price: u.Price, Quantity: u.Quantity))
                 .ToHashSet();
 
             var suboptimals = this.optimizationService.GetVendorPricedListings()
                 .Where(s => s.CharacterName == currentCharacterName && s.RetainerName == activeRetainerName)
-                .Select(s => (s.ItemName, s.Price))
+                .Select(s => (ItemName: s.ItemName, Price: s.Price, Quantity: s.Quantity))
                 .ToHashSet();
 
             this.TraverseAndColor(&addon->UldManager, allItemNames, undercuts, suboptimals);
@@ -107,7 +107,7 @@ public class NativeListingHighlighterService : IDisposable {
         }
     }
 
-    private unsafe void TraverseAndColor(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string, uint)> undercuts, HashSet<(string, uint)> suboptimals) {
+    private unsafe void TraverseAndColor(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity)> undercuts, HashSet<(string ItemName, uint Price, uint Quantity)> suboptimals) {
         if (uldManager == null) {
             return;
         }
@@ -126,41 +126,40 @@ public class NativeListingHighlighterService : IDisposable {
                     this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
 
                     string? matchedItem = null;
-                    var rowTexts = new List<string>();
+                    var rowNumbers = new List<uint>();
 
                     foreach (var textNodePtr in textNodes) {
                         var textNode = (AtkTextNode*)textNodePtr;
                         var text = this.ExtractString((byte*)textNode->NodeText.StringPtr);
 
                         if (!string.IsNullOrWhiteSpace(text)) {
-                            rowTexts.Add(text);
                             if (matchedItem == null) {
                                 matchedItem = this.GetMatchingItemName(text, allItems);
+                            }
+
+                            var digits = new string(text.Where(char.IsDigit).ToArray());
+                            if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedNum)) {
+                                rowNumbers.Add(parsedNum);
                             }
                         }
                     }
 
                     if (matchedItem != null) {
-                        var rowPrices = new List<uint>();
-                        foreach (var text in rowTexts) {
-                            // Extract numbers from the UI text (stripping gil symbols, commas, spaces)
-                            var digits = new string(text.Where(char.IsDigit).ToArray());
-                            if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedPrice)) {
-                                rowPrices.Add(parsedPrice);
-                            }
-                        }
-
                         bool isSuboptimal = false;
                         bool isUndercut = false;
 
-                        // Check if any parsed numeric value on the row matches the targeted price point
-                        foreach (var price in rowPrices) {
-                            if (suboptimals.Contains((matchedItem, price))) {
+                        // Verify that BOTH the specific Price and Quantity parameters exist within this UI row's rendered text
+                        foreach (var sub in suboptimals) {
+                            if (sub.ItemName == matchedItem && rowNumbers.Contains(sub.Price) && rowNumbers.Contains(sub.Quantity)) {
                                 isSuboptimal = true;
+                                break;
                             }
+                        }
 
-                            if (undercuts.Contains((matchedItem, price))) {
+                        foreach (var und in undercuts) {
+                            if (und.ItemName == matchedItem && rowNumbers.Contains(und.Price) && rowNumbers.Contains(und.Quantity)) {
                                 isUndercut = true;
+                                break;
                             }
                         }
 

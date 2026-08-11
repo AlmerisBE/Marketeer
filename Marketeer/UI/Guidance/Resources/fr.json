@@ -17,5 +17,6 @@
   "Guidance_Legend_Title": "Légende",
   "Guidance_Legend_Red": "Annulation requise",
   "Guidance_Legend_Yellow": "Baisse de prix requise",
-  "Guidance_Legend_Orange": "Annulation & Baisse de prix"
+  "Guidance_Legend_Orange": "Annulation & Baisse de prix",
+  "Guidance_Btn_ExecuteAction": "Exécuter l'action"
 }

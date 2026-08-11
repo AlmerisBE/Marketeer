@@ -84,7 +84,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         this.orchestrator.StartOrchestration(retainers, RetainerTargetMenu.MarketListings, this);
     }
 
-    public void TriggerSingleItemUpdate(uint itemId) {
+    public void TriggerSingleItemUpdate(uint itemId, uint? price = null, uint? quantity = null) {
         if (this.IsUpdating) {
             return;
         }
@@ -99,7 +99,11 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         var playerName = localPlayer.Name.TextValue;
         var allUndercuts = this.competitionState.GetUndercutItems();
 
-        var targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == playerName && u.ItemId == normalizedItemId);
+        var targetUndercut = allUndercuts.FirstOrDefault(u =>
+            u.CharacterName == playerName &&
+            u.ItemId == normalizedItemId &&
+            (!price.HasValue || u.Price == price.Value) &&
+            (!quantity.HasValue || u.Quantity == quantity.Value));
 
         if (targetUndercut == null) {
             this.logger.Info($"No undercut detected for item {normalizedItemId} on current character. Single update aborted.");

@@ -85,7 +85,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         this.orchestrator.StartOrchestration(retainers, RetainerTargetMenu.MarketListings, this);
     }
 
-    public void TriggerSingleItemCancellation(uint itemId) {
+    public void TriggerSingleItemCancellation(uint itemId, uint? price = null, uint? quantity = null) {
         if (this.IsCancelling) {
             return;
         }
@@ -99,7 +99,11 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         var playerName = localPlayer.Name.TextValue;
         var allSuboptimal = this.optimizationService.GetVendorPricedListings();
 
-        var targetSuboptimal = allSuboptimal.FirstOrDefault(u => u.CharacterName == playerName && u.ItemId == itemId);
+        var targetSuboptimal = allSuboptimal.FirstOrDefault(u =>
+            u.CharacterName == playerName &&
+            u.ItemId == itemId &&
+            (!price.HasValue || u.Price == price.Value) &&
+            (!quantity.HasValue || u.Quantity == quantity.Value));
 
         if (targetSuboptimal == null) {
             this.logger.Info($"No suboptimal listing detected for item {itemId} on current character. Single cancellation aborted.");
@@ -138,7 +142,7 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
         }
 
         var slots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
-        var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.Price);
+        var targetSlot = slots.FirstOrDefault(s => s.ItemId == this.currentItemTask.ItemId && s.PricePerUnit == this.currentItemTask.Price && s.Quantity == this.currentItemTask.Quantity);
 
         if (targetSlot == null) {
             this.logger.Info($"Listing for '{this.currentItemTask.ItemName}' successfully cancelled. Moving to next.");

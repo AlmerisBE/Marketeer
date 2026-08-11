@@ -60,7 +60,10 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
             if (currentUndercut != null) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.UpdatePrice,
+                    ItemId = currentUndercut.ItemId,
                     ItemName = currentUndercut.ItemName,
+                    CurrentPrice = currentUndercut.Price,
+                    Quantity = currentUndercut.Quantity,
                     TargetPrice = currentUndercut.TargetPrice,
                     RetainerName = activeRetainerName,
                     CharacterName = currentCharacterName
@@ -71,7 +74,10 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
             if (currentSuboptimal != null) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.CancelListing,
+                    ItemId = currentSuboptimal.ItemId,
                     ItemName = currentSuboptimal.ItemName,
+                    CurrentPrice = currentSuboptimal.Price,
+                    Quantity = currentSuboptimal.Quantity,
                     RetainerName = activeRetainerName,
                     CharacterName = currentCharacterName
                 };
