@@ -13,5 +13,9 @@
   "Guidance_Action_SwitchCharacter": "キャラクター変更",
   "Guidance_LogInAs": "次でログインしてください: {0}",
   "Guidance_Btn_Summon": "{0} を呼ぶ",
-  "Guidance_Btn_SwitchAuto": "{0} に切り替える"
+  "Guidance_Btn_SwitchAuto": "{0} に切り替える",
+  "Guidance_Legend_Title": "凡例",
+  "Guidance_Legend_Red": "出品取消が必要",
+  "Guidance_Legend_Yellow": "価格更新が必要",
+  "Guidance_Legend_Orange": "出品取消と価格更新"
 }

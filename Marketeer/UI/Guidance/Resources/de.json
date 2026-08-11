@@ -13,5 +13,9 @@
   "Guidance_Action_SwitchCharacter": "Charakter wechseln",
   "Guidance_LogInAs": "Bitte logge dich ein als: {0}",
   "Guidance_Btn_Summon": "{0} rufen",
-  "Guidance_Btn_SwitchAuto": "Zu {0} wechseln"
+  "Guidance_Btn_SwitchAuto": "Zu {0} wechseln",
+  "Guidance_Legend_Title": "Legende",
+  "Guidance_Legend_Red": "Stornierung erforderlich",
+  "Guidance_Legend_Yellow": "Preisanpassung erforderlich",
+  "Guidance_Legend_Orange": "Stornierung & Preisanpassung"
 }

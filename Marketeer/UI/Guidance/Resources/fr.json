@@ -13,5 +13,9 @@
   "Guidance_Action_SwitchCharacter": "Changer de personnage",
   "Guidance_LogInAs": "Veuillez vous connecter avec : {0}",
   "Guidance_Btn_Summon": "Appeler {0}",
-  "Guidance_Btn_SwitchAuto": "Passer à {0}"
+  "Guidance_Btn_SwitchAuto": "Passer à {0}",
+  "Guidance_Legend_Title": "Légende",
+  "Guidance_Legend_Red": "Annulation requise",
+  "Guidance_Legend_Yellow": "Baisse de prix requise",
+  "Guidance_Legend_Orange": "Annulation & Baisse de prix"
 }

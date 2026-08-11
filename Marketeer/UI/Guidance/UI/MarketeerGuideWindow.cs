@@ -55,7 +55,6 @@ public class MarketeerGuideWindow : Window {
             return true;
         }
 
-        // Only draw on SelectString if a retainer is actually summoned and active in memory
         if (this.geometryProvider.GetWindowGeometry("SelectString", out _, out _, out _, out _, out _)) {
             return this.listingProvider.GetActiveRetainerId().HasValue;
         }
@@ -131,5 +130,14 @@ public class MarketeerGuideWindow : Window {
                 this.switcherService.SwitchTo(instruction.RetainerName, hasMarketActions);
             }
         }
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        ImGui.TextDisabled(this.localization.Translate("Guidance_Legend_Title"));
+        ImGui.TextColored(new Vector4(1.0f, 0.23f, 0.23f, 1.0f), this.localization.Translate("Guidance_Legend_Red"));
+        ImGui.TextColored(new Vector4(0.9f, 0.9f, 0.35f, 1.0f), this.localization.Translate("Guidance_Legend_Yellow"));
+        ImGui.TextColored(new Vector4(1.0f, 0.59f, 0.2f, 1.0f), this.localization.Translate("Guidance_Legend_Orange"));
     }
 }
