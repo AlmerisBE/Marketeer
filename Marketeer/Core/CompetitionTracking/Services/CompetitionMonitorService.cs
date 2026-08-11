@@ -16,15 +16,15 @@ using System.Threading.Tasks;
 namespace Marketeer.Core.CompetitionTracking.Services;
 
 public class CompetitionMonitorService : ICompetitionMonitorService {
-    private IRetainerStateService retainerState;
-    private IServerPriceProvider priceProvider;
-    private ICompetitionStateService competitionState;
-    private IItemResolverService itemResolver;
-    private IMarketListingTrackerService marketListingTracker;
-    private IChatGui chatGui;
-    private ILocalizationService localization;
-    private ILoggerService logger;
-    private IConfigurationService configService;
+    private readonly IRetainerStateService retainerState;
+    private readonly IServerPriceProvider priceProvider;
+    private readonly ICompetitionStateService competitionState;
+    private readonly IItemResolverService itemResolver;
+    private readonly IMarketListingTrackerService marketListingTracker;
+    private readonly IChatGui chatGui;
+    private readonly ILocalizationService localization;
+    private readonly ILoggerService logger;
+    private readonly IConfigurationService configService;
 
     private bool isMonitoring;
     private bool isChecking;
@@ -61,8 +61,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
         this.retainerState.ListingsUpdated += this.OnListingsUpdated;
         this.marketListingTracker.LocalListingModified += this.OnLocalListingModified;
-
-        // Abonnement à l'horloge centrale Universalis
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
 
         this.isMonitoring = true;
@@ -83,7 +81,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
-        // Déclenche une analyse globale basée sur les nouvelles données fraîches en cache
         Task.Run(async () => await this.CheckUndercutsAsync());
     }
 
@@ -92,8 +89,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     private void OnLocalListingModified(uint itemId) {
-        // En cas de modification locale, on force l'invalidation du cache Universalis.
-        // Cela provoquera une requête serveur, qui lancera l'event PricesUpdated, qui lancera CheckUndercutsAsync.
         Task.Run(async () => {
             var allCharacters = this.retainerState.GetAllCharactersListings();
             var worldId = allCharacters.FirstOrDefault(c => c.Listings.Any(l => l.ItemId == itemId))?.HomeWorldId ?? 0;
@@ -103,7 +98,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         });
     }
 
-    // Le code de CheckUndercutForItemAsync est supprimé, car OnLocalListingModified utilise la cascade d'événements.
     public Task CheckUndercutForItemAsync(uint itemId) => Task.CompletedTask;
 
     public async Task CheckUndercutsAsync() {
@@ -141,9 +135,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 foreach (var listing in character.Listings) {
                     var marketLowest = lowestPrices.Where(price => price.ItemId == listing.ItemId).OrderBy(p => p.Price).FirstOrDefault();
 
-                    // Only process if there is a competitor on the market, and it's not the exact same listing
                     if (marketLowest != null && marketLowest.RetainerName != listing.RetainerName) {
-
                         bool isWhitelisted = whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase) ||
                                              (autoWhitelistOwn && ownRetainers.Contains(marketLowest.RetainerName));
 
@@ -153,15 +145,12 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             if (config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore) {
                                 continue;
                             }
-
-                            // MatchPrice behavior
                             targetPrice = marketLowest.Price;
                         }
                         else {
                             targetPrice = Math.Max(1u, marketLowest.Price - 1);
                         }
 
-                        // If our current price is already equal to or lower than our computed target, we are good!
                         if (listing.CurrentPrice <= targetPrice) {
                             continue;
                         }
@@ -174,6 +163,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             ItemName = resolvedItemName,
                             Quantity = listing.Quantity,
                             RetainerName = listing.RetainerName,
+                            Price = listing.CurrentPrice,
                             OurPrice = listing.CurrentPrice,
                             ServerCheapestPrice = marketLowest.Price,
                             TargetPrice = targetPrice,

@@ -15,14 +15,16 @@ using System.Numerics;
 namespace Marketeer.UI.Guidance.UI;
 
 public class MarketeerGuideWindow : Window {
-    private IWindowGeometryProvider geometryProvider;
-    private IEnumerable<IGuidanceInstructionProvider> instructionProviders;
-    private ILocalizationService localization;
-    private IRetainerSwitcherService switcherService;
-    private ICompetitionStateService competitionState;
-    private IListingOptimizationService optimizationService;
-    private IObjectTable objectTable;
-    private IMarketListingProvider listingProvider;
+    private readonly IWindowGeometryProvider geometryProvider;
+    private readonly IEnumerable<IGuidanceInstructionProvider> instructionProviders;
+    private readonly ILocalizationService localization;
+    private readonly IRetainerSwitcherService switcherService;
+    private readonly ICompetitionStateService competitionState;
+    private readonly IListingOptimizationService optimizationService;
+    private readonly IObjectTable objectTable;
+    private readonly IMarketListingProvider listingProvider;
+    private readonly IRetainerProvider retainerProvider;
+    private readonly IRetainerUiInteractionService uiInteraction;
 
     public MarketeerGuideWindow(
         IWindowGeometryProvider geometryProvider,
@@ -32,7 +34,9 @@ public class MarketeerGuideWindow : Window {
         ICompetitionStateService competitionState,
         IListingOptimizationService optimizationService,
         IObjectTable objectTable,
-        IMarketListingProvider listingProvider)
+        IMarketListingProvider listingProvider,
+        IRetainerProvider retainerProvider,
+        IRetainerUiInteractionService uiInteraction)
         : base("Marketeer Guide", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing) {
 
         this.geometryProvider = geometryProvider;
@@ -43,6 +47,8 @@ public class MarketeerGuideWindow : Window {
         this.optimizationService = optimizationService;
         this.objectTable = objectTable;
         this.listingProvider = listingProvider;
+        this.retainerProvider = retainerProvider;
+        this.uiInteraction = uiInteraction;
         this.IsOpen = true;
     }
 
@@ -56,7 +62,13 @@ public class MarketeerGuideWindow : Window {
         }
 
         if (this.geometryProvider.GetWindowGeometry("SelectString", out _, out _, out _, out _, out _)) {
-            return this.listingProvider.GetActiveRetainerId().HasValue;
+            var activeId = this.listingProvider.GetActiveRetainerId();
+            if (activeId.HasValue) {
+                var activeRetainer = this.retainerProvider.GetActiveRetainers().FirstOrDefault(r => r.RetainerId == activeId.Value);
+                if (activeRetainer != null && this.uiInteraction.IsMenuReadyForRetainer(activeRetainer.Name)) {
+                    return true;
+                }
+            }
         }
 
         return false;
@@ -66,7 +78,7 @@ public class MarketeerGuideWindow : Window {
         if (this.geometryProvider.GetWindowGeometry("RetainerSellList", out var x, out var y, out _, out _, out _)) {
             ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
         }
-        else if (this.listingProvider.GetActiveRetainerId().HasValue && this.geometryProvider.GetWindowGeometry("SelectString", out x, out y, out _, out _, out _)) {
+        else if (this.geometryProvider.GetWindowGeometry("SelectString", out x, out y, out _, out _, out _)) {
             ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Always, new Vector2(1.0f, 0.0f));
         }
         else if (this.geometryProvider.GetWindowGeometry("RetainerList", out x, out y, out _, out _, out _)) {
