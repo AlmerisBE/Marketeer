@@ -124,49 +124,46 @@ public class NativeListingHighlighterService : IDisposable {
                     var textNodes = new List<nint>();
                     this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
 
-                    bool isRow = false;
-                    bool isUndercut = false;
-                    bool isSuboptimal = false;
+                    string? matchedItem = null;
 
                     foreach (var textNodePtr in textNodes) {
                         var textNode = (AtkTextNode*)textNodePtr;
                         var text = this.ExtractString(textNode->NodeText.StringPtr);
 
                         if (!string.IsNullOrWhiteSpace(text)) {
-                            string? matchedItem = this.GetMatchingItemName(text, allItems);
+                            matchedItem = this.GetMatchingItemName(text, allItems);
                             if (matchedItem != null) {
-                                isRow = true;
-                                if (suboptimals.Contains(matchedItem)) {
-                                    isSuboptimal = true;
-                                }
-                                else if (undercuts.Contains(matchedItem)) {
-                                    isUndercut = true;
-                                }
-
                                 break;
                             }
                         }
                     }
 
-                    if (isRow) {
+                    // If a valid item name is found in this row, evaluate and apply explicit colors
+                    if (matchedItem != null) {
+                        bool isSuboptimal = suboptimals.Contains(matchedItem);
+                        bool isUndercut = undercuts.Contains(matchedItem);
+
                         ByteColor targetColor;
-                        if (isSuboptimal) {
+                        if (isSuboptimal && isUndercut) {
+                            targetColor = new ByteColor { A = 255, R = 255, G = 150, B = 50 };
+                        }
+                        else if (isSuboptimal) {
                             targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
                         }
                         else if (isUndercut) {
                             targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
                         }
                         else {
-                            targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 }; // Explicitly revert to default white tint
+                            targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 }; // Explicitly wipe UI virtualization artifacts!
                         }
 
-                        // Apply the color tint to the root component node instead of individual text nodes.
-                        // This resolves UI virtualization artifacts and gracefully preserves native item rarity colors.
-                        compNode->AtkResNode.Color = targetColor;
+                        foreach (var textNodePtr in textNodes) {
+                            var textNode = (AtkTextNode*)textNodePtr;
+                            textNode->TextColor = targetColor;
+                        }
                     }
-                    else {
-                        this.TraverseAndColor(&comp->UldManager, allItems, undercuts, suboptimals);
-                    }
+
+                    this.TraverseAndColor(&comp->UldManager, allItems, undercuts, suboptimals);
                 }
             }
         }
