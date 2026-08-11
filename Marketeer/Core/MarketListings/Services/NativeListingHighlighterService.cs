@@ -18,16 +18,16 @@ using System.Linq;
 namespace Marketeer.Core.MarketListings.Services;
 
 public class NativeListingHighlighterService : IDisposable {
-    private IAddonLifecycle addonLifecycle;
-    private IGameGui gameGui;
-    private IMarketListingProvider listingProvider;
-    private IRetainerProvider retainerProvider;
-    private ICompetitionStateService competitionState;
-    private IListingOptimizationService optimizationService;
-    private IInventoryService inventoryService;
-    private IItemResolverService itemResolver;
-    private IObjectTable objectTable;
-    private ILoggerService logger;
+    private readonly IAddonLifecycle addonLifecycle;
+    private readonly IGameGui gameGui;
+    private readonly IMarketListingProvider listingProvider;
+    private readonly IRetainerProvider retainerProvider;
+    private readonly ICompetitionStateService competitionState;
+    private readonly IListingOptimizationService optimizationService;
+    private readonly IInventoryService inventoryService;
+    private readonly IItemResolverService itemResolver;
+    private readonly IObjectTable objectTable;
+    private readonly ILoggerService logger;
 
     public NativeListingHighlighterService(
         IAddonLifecycle addonLifecycle,
@@ -85,19 +85,19 @@ public class NativeListingHighlighterService : IDisposable {
             foreach (var slot in slots.Where(s => s.IsOccupied)) {
                 allItemNames.Add(this.itemResolver.ResolveItemName(slot.ItemId));
             }
-
             if (allItemNames.Count == 0) {
                 return;
             }
 
+            // Create tuples of (ItemName, Price) to uniquely identify specific listings
             var undercuts = this.competitionState.GetUndercutItems()
                 .Where(u => u.CharacterName == currentCharacterName && u.RetainerName == activeRetainerName)
-                .Select(u => u.ItemName)
+                .Select(u => (u.ItemName, u.Price))
                 .ToHashSet();
 
             var suboptimals = this.optimizationService.GetVendorPricedListings()
                 .Where(s => s.CharacterName == currentCharacterName && s.RetainerName == activeRetainerName)
-                .Select(s => s.ItemName)
+                .Select(s => (s.ItemName, s.Price))
                 .ToHashSet();
 
             this.TraverseAndColor(&addon->UldManager, allItemNames, undercuts, suboptimals);
@@ -107,7 +107,7 @@ public class NativeListingHighlighterService : IDisposable {
         }
     }
 
-    private unsafe void TraverseAndColor(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<string> undercuts, HashSet<string> suboptimals) {
+    private unsafe void TraverseAndColor(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string, uint)> undercuts, HashSet<(string, uint)> suboptimals) {
         if (uldManager == null) {
             return;
         }
@@ -126,27 +126,47 @@ public class NativeListingHighlighterService : IDisposable {
                     this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
 
                     string? matchedItem = null;
+                    var rowTexts = new List<string>();
 
                     foreach (var textNodePtr in textNodes) {
                         var textNode = (AtkTextNode*)textNodePtr;
                         var text = this.ExtractString((byte*)textNode->NodeText.StringPtr);
 
                         if (!string.IsNullOrWhiteSpace(text)) {
-                            matchedItem = this.GetMatchingItemName(text, allItems);
-                            if (matchedItem != null) {
-                                break;
+                            rowTexts.Add(text);
+                            if (matchedItem == null) {
+                                matchedItem = this.GetMatchingItemName(text, allItems);
                             }
                         }
                     }
 
                     if (matchedItem != null) {
-                        bool isSuboptimal = suboptimals.Contains(matchedItem);
-                        bool isUndercut = undercuts.Contains(matchedItem);
+                        var rowPrices = new List<uint>();
+                        foreach (var text in rowTexts) {
+                            // Extract numbers from the UI text (stripping gil symbols, commas, spaces)
+                            var digits = new string(text.Where(char.IsDigit).ToArray());
+                            if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedPrice)) {
+                                rowPrices.Add(parsedPrice);
+                            }
+                        }
+
+                        bool isSuboptimal = false;
+                        bool isUndercut = false;
+
+                        // Check if any parsed numeric value on the row matches the targeted price point
+                        foreach (var price in rowPrices) {
+                            if (suboptimals.Contains((matchedItem, price))) {
+                                isSuboptimal = true;
+                            }
+
+                            if (undercuts.Contains((matchedItem, price))) {
+                                isUndercut = true;
+                            }
+                        }
+
                         bool needsHighlight = isSuboptimal || isUndercut;
 
                         ByteColor targetColor;
-
-                        // Prioritize suboptimal (cancellation) over undercuts, removing the hybrid orange state
                         if (isSuboptimal) {
                             targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
                         }
@@ -230,7 +250,6 @@ public class NativeListingHighlighterService : IDisposable {
         if (stringPtr == null) {
             return string.Empty;
         }
-
         return MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue ?? string.Empty;
     }
 

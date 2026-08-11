@@ -72,10 +72,6 @@ public class NativeRetainerListHighlighterService : IDisposable {
                 retainerActions[s.RetainerName] = (retainerActions[s.RetainerName].Undercuts, retainerActions[s.RetainerName].Suboptimals + 1);
             }
 
-            if (retainerActions.Count == 0) {
-                return;
-            }
-
             this.TraverseAndHighlight(&addon->UldManager, retainerActions);
         }
         catch (Exception ex) {
@@ -105,11 +101,21 @@ public class NativeRetainerListHighlighterService : IDisposable {
                         textNodes = textNodes.OrderBy(this.GetAbsoluteX).ToList();
 
                         var nameNode = (AtkTextNode*)textNodes[0];
-                        var rawNameText = this.ExtractString(nameNode->NodeText.StringPtr);
-                        var cleanNameText = rawNameText.Trim();
+                        // Cast CStringPointer to byte*
+                        var rawNameText = this.ExtractString((byte*)nameNode->NodeText.StringPtr);
+
+                        // Aggressively strip any injected counters (e.g., "Marlyne (1)") from previous iterations
+                        var cleanNameText = rawNameText.Split('(')[0].Replace("=", "").Trim();
+
+                        // Wipe residual memory artifacts from the Name column if they exist
+                        if (rawNameText != cleanNameText) {
+                            var encodedName = Encoding.UTF8.GetBytes(cleanNameText).Concat(new byte[] { 0 }).ToArray();
+                            fixed (byte* ptr = encodedName) {
+                                nameNode->SetText(ptr);
+                            }
+                        }
 
                         string? matchedRetainer = null;
-
                         foreach (var retainerName in actions.Keys.OrderByDescending(k => k.Length)) {
                             if (cleanNameText.StartsWith(retainerName, StringComparison.InvariantCultureIgnoreCase)) {
                                 matchedRetainer = retainerName;
@@ -117,52 +123,55 @@ public class NativeRetainerListHighlighterService : IDisposable {
                             }
                         }
 
+                        bool hasActions = false;
+                        int totalActions = 0;
+                        ByteColor targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 }; // Default explicitly to white
+
                         if (matchedRetainer != null) {
                             var counts = actions[matchedRetainer];
-                            ByteColor targetColor;
+                            totalActions = counts.Undercuts + counts.Suboptimals;
 
-                            if (counts.Suboptimals > 0 && counts.Undercuts > 0) {
-                                targetColor = new ByteColor { A = 255, R = 255, G = 150, B = 50 };
-                            }
-                            else if (counts.Suboptimals > 0) {
-                                targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
-                            }
-                            else {
-                                targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
-                            }
-
-                            // Color every text node in the retainer row to create a unified visual block
-                            foreach (var nodePtr in textNodes) {
-                                ((AtkTextNode*)nodePtr)->TextColor = targetColor;
-                            }
-
-                            var marketItemsNode = (AtkTextNode*)textNodes[4];
-                            var marketResNode = (AtkResNode*)marketItemsNode;
-
-                            if (marketResNode->Width < 200) {
-                                marketResNode->Width = 200;
-                            }
-
-                            var rawMarketText = this.ExtractString(marketItemsNode->NodeText.StringPtr);
-                            var cleanMarketText = rawMarketText.Split('(')[0].Replace("=", "").TrimEnd(' ', '…', '.');
-
-                            int totalActions = counts.Undercuts + counts.Suboptimals;
-                            string newTextStr = $"{cleanMarketText} ({totalActions})";
-
-                            var encoded = Encoding.UTF8.GetBytes(newTextStr).Concat(new byte[] { 0 }).ToArray();
-                            bool needsUpdate = true;
-
-                            if (marketItemsNode->NodeText.BufUsed >= encoded.Length) {
-                                var currentBytes = new ReadOnlySpan<byte>(marketItemsNode->NodeText.StringPtr, encoded.Length);
-                                if (currentBytes.SequenceEqual(encoded)) {
-                                    needsUpdate = false;
+                            if (totalActions > 0) {
+                                hasActions = true;
+                                if (counts.Suboptimals > 0) {
+                                    targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 }; // Suboptimal prioritized (Red)
+                                }
+                                else {
+                                    targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 }; // Undercuts only (Yellow)
                                 }
                             }
+                        }
 
-                            if (needsUpdate) {
-                                fixed (byte* ptr = encoded) {
-                                    marketItemsNode->SetText(ptr);
-                                }
+                        // Apply color uniformly to clear virtualization bleeding
+                        foreach (var nodePtr in textNodes) {
+                            ((AtkTextNode*)nodePtr)->TextColor = targetColor;
+                        }
+
+                        var marketItemsNode = (AtkTextNode*)textNodes[4];
+                        var marketResNode = (AtkResNode*)marketItemsNode;
+
+                        if (marketResNode->Width < 200) {
+                            marketResNode->Width = 200;
+                        }
+
+                        var rawMarketText = this.ExtractString((byte*)marketItemsNode->NodeText.StringPtr);
+                        var cleanMarketText = rawMarketText.Split('(')[0].Replace("=", "").TrimEnd(' ', '…', '.');
+
+                        string newTextStr = hasActions ? $"{cleanMarketText} ({totalActions})" : cleanMarketText;
+
+                        var encoded = Encoding.UTF8.GetBytes(newTextStr).Concat(new byte[] { 0 }).ToArray();
+                        bool needsUpdate = true;
+
+                        if (marketItemsNode->NodeText.BufUsed >= encoded.Length) {
+                            var currentBytes = new ReadOnlySpan<byte>((byte*)marketItemsNode->NodeText.StringPtr, encoded.Length);
+                            if (currentBytes.SequenceEqual(encoded)) {
+                                needsUpdate = false;
+                            }
+                        }
+
+                        if (needsUpdate) {
+                            fixed (byte* ptr = encoded) {
+                                marketItemsNode->SetText(ptr);
                             }
                         }
                     }
