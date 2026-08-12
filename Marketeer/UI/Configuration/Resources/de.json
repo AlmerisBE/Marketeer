@@ -18,5 +18,7 @@
   "Config_WhitelistBehavior_Ignore": "Deren Preise komplett ignorieren",
   "Config_WhitelistBehavior_Match": "Preise automatisch anpassen (Match)",
   "Config_AdvancedHeader": "Erweiterte Einstellungen",
-  "Config_EnableDebugMode": "Debug-Modus aktivieren (Detaillierte Protokollierung und Entwicklertools)"
+  "Config_EnableDebugMode": "Debug-Modus aktivieren (Detaillierte Protokollierung und Entwicklertools)",
+  "Config_EnforceVendorPriceMinimum": "Ignoriere Unterbieten unter dem Händlerpreis",
+  "Config_EnforceVendorPriceMinimum_Tooltip": "Verhindert, dass Marketeer dir vorschlägt, Preise zu unterbieten, die unter dem Betrag liegen, den NSC für den Gegenstand zahlen würden. Unrentable Angebote lösen stattdessen eine Abbruchwarnung aus."
 }

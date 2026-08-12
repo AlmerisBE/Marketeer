@@ -9,8 +9,8 @@ using System.Numerics;
 namespace Marketeer.UI.Configuration.UI;
 
 public class ConfigMenu : INavigationNode {
-    private IConfigurationService configurationService;
-    private ILocalizationService localizationService;
+    private readonly IConfigurationService configurationService;
+    private readonly ILocalizationService localizationService;
     private string newWhitelistName = string.Empty;
 
     public string GroupName => this.localizationService.Translate("Group_General");
@@ -140,20 +140,26 @@ public class ConfigMenu : INavigationNode {
             isChanged = true;
         }
 
+        ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
+
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_AdvancedHeader"));
+
+        bool enforceVendorPrice = config.EnforceVendorPriceMinimum;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnforceVendorPriceMinimum"), ref enforceVendorPrice)) {
+            config.EnforceVendorPriceMinimum = enforceVendorPrice;
+            isChanged = true;
+        }
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(this.localizationService.Translate("Config_EnforceVendorPriceMinimum_Tooltip"));
+        }
 
         bool enableChatNotifications = config.EnableChatNotifications;
         if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableChatNotifications"), ref enableChatNotifications)) {
             config.EnableChatNotifications = enableChatNotifications;
             isChanged = true;
         }
-
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_AdvancedHeader"));
 
         bool enableDebugMode = config.EnableDebugMode;
         if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableDebugMode"), ref enableDebugMode)) {

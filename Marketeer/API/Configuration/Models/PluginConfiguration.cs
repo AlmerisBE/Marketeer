@@ -34,6 +34,8 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool EnableChatNotifications { get; set; } = true;
 
+    public bool EnforceVendorPriceMinimum { get; set; } = false;
+
     public bool EnableDebugMode { get; set; } = false;
 
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];

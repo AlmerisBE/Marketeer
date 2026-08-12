@@ -133,7 +133,17 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId, bypassCache: false);
 
                 foreach (var listing in character.Listings) {
-                    var marketLowest = lowestPrices.Where(price => price.ItemId == listing.ItemId).OrderBy(p => p.Price).FirstOrDefault();
+                    uint baseItemId = listing.ItemId > 1000000u ? listing.ItemId - 1000000u : listing.ItemId;
+                    uint vendorPrice = config.EnforceVendorPriceMinimum ? this.itemResolver.ResolveVendorPrice(baseItemId) : 0;
+
+                    var itemPrices = lowestPrices.Where(price => price.ItemId == listing.ItemId);
+
+                    // Ignore market competitors strictly below the vendor sell price
+                    if (config.EnforceVendorPriceMinimum && vendorPrice > 0) {
+                        itemPrices = itemPrices.Where(p => p.Price >= vendorPrice);
+                    }
+
+                    var marketLowest = itemPrices.OrderBy(p => p.Price).FirstOrDefault();
 
                     if (marketLowest != null && marketLowest.RetainerName != listing.RetainerName) {
                         bool isWhitelisted = whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase) ||
@@ -145,10 +155,16 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             if (config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore) {
                                 continue;
                             }
+
                             targetPrice = marketLowest.Price;
                         }
                         else {
                             targetPrice = Math.Max(1u, marketLowest.Price - 1);
+                        }
+
+                        // Ensure our automated undercut target never dips below the vendor price
+                        if (config.EnforceVendorPriceMinimum && vendorPrice > 0) {
+                            targetPrice = Math.Max(vendorPrice, targetPrice);
                         }
 
                         if (listing.CurrentPrice <= targetPrice) {
@@ -163,7 +179,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             ItemName = resolvedItemName,
                             Quantity = listing.Quantity,
                             RetainerName = listing.RetainerName,
-                            Price = listing.CurrentPrice,
+                            Price = listing.CurrentPrice, // Maintained bugfix constraint from UI highlighting
                             OurPrice = listing.CurrentPrice,
                             ServerCheapestPrice = marketLowest.Price,
                             TargetPrice = targetPrice,
@@ -176,11 +192,9 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
             this.competitionState.UpdateUndercuts(undercuts);
 
-            if (undercuts.Any()) {
-                if (config.EnableChatNotifications) {
-                    var notificationMessage = this.localization.Translate("Undercuts_Notification", undercuts.Count);
-                    this.chatGui.Print(notificationMessage);
-                }
+            if (undercuts.Any() && config.EnableChatNotifications) {
+                var notificationMessage = this.localization.Translate("Undercuts_Notification", undercuts.Count);
+                this.chatGui.Print(notificationMessage);
             }
         }
         catch (Exception ex) {

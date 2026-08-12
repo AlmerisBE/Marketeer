@@ -18,5 +18,7 @@
   "Config_WhitelistBehavior_Ignore": "Ignorer complètement leurs prix",
   "Config_WhitelistBehavior_Match": "S'aligner automatiquement sur leurs prix (Match)",
   "Config_AdvancedHeader": "Paramètres Avancés",
-  "Config_EnableDebugMode": "Activer le mode Debug (Journalisation détaillée et outils de développement)"
+  "Config_EnableDebugMode": "Activer le mode Debug (Journalisation détaillée et outils de développement)",
+  "Config_EnforceVendorPriceMinimum": "Ignorer la concurrence sous le prix du vendeur",
+  "Config_EnforceVendorPriceMinimum_Tooltip": "Empêche Marketeer de vous suggérer de vous aligner sur des prix inférieurs à ce que les PNJ vous offrent. Les objets non rentables déclencheront plutôt une alerte d'annulation."
 }

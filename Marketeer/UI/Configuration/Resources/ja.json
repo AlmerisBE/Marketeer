@@ -18,5 +18,7 @@
   "Config_WhitelistBehavior_Ignore": "価格を完全に無視する",
   "Config_WhitelistBehavior_Match": "自動的に同じ価格に合わせる",
   "Config_AdvancedHeader": "詳細設定",
-  "Config_EnableDebugMode": "デバッグモードを有効にする（詳細なログ記録と開発者ツール）"
+  "Config_EnableDebugMode": "デバッグモードを有効にする（詳細なログ記録と開発者ツール）",
+  "Config_EnforceVendorPriceMinimum": "ベンダー価格を下回る値下げを無視する",
+  "Config_EnforceVendorPriceMinimum_Tooltip": "NPCの買取価格を下回る価格に合わせるようMarketeerが提案するのを防ぎます。利益の出ない出品は、代わりに出品取り消しの警告をトリガーします。"
 }
