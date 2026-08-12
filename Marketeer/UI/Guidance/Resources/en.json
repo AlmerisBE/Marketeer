@@ -18,5 +18,6 @@
   "Guidance_Legend_Red": "Cancellation required",
   "Guidance_Legend_Yellow": "Price update required",
   "Guidance_Legend_Orange": "Cancellation & Price update",
-  "Guidance_Btn_ExecuteAction": "Execute Action"
+  "Guidance_Btn_ExecuteAction": "Execute Action",
+  "Command_Guide_Description": "Toggles the visibility of the guidance window."
 }

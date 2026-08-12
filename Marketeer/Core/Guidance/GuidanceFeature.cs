@@ -1,8 +1,10 @@
 ﻿using Dalamud.Interface.Windowing;
+using Marketeer.API.Command.Contracts;
 using Marketeer.API.Features;
 using Marketeer.API.Guidance.Contracts;
 using Marketeer.API.Localization.Contracts;
 using Marketeer.Core.Guidance.Services;
+using Marketeer.UI.Guidance.Commands;
 using Marketeer.UI.Guidance.Providers;
 using Marketeer.UI.Guidance.UI;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,5 +22,8 @@ public class GuidanceFeature : IFeatureModule {
 
         services.AddSingleton<MarketeerGuideWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<MarketeerGuideWindow>());
+
+        // Commands
+        services.AddSingleton<ICommand, GuidanceCommand>();
     }
 }

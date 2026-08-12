@@ -18,5 +18,6 @@
   "Guidance_Legend_Red": "出品取消が必要",
   "Guidance_Legend_Yellow": "価格更新が必要",
   "Guidance_Legend_Orange": "出品取消と価格更新",
-  "Guidance_Btn_ExecuteAction": "アクションを実行"
+  "Guidance_Btn_ExecuteAction": "アクションを実行",
+  "Command_Guide_Description": "ガイダンスウィンドウの表示を切り替えます。"
 }

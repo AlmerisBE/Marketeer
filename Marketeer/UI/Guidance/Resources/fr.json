@@ -18,5 +18,6 @@
   "Guidance_Legend_Red": "Annulation requise",
   "Guidance_Legend_Yellow": "Baisse de prix requise",
   "Guidance_Legend_Orange": "Annulation & Baisse de prix",
-  "Guidance_Btn_ExecuteAction": "Exécuter l'action"
+  "Guidance_Btn_ExecuteAction": "Exécuter l'action",
+  "Command_Guide_Description": "Affiche ou masque la fenêtre de guidance."
 }

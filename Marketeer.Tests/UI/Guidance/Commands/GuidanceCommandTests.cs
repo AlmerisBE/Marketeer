@@ -1,0 +1,50 @@
+﻿using Dalamud.Plugin.Services;
+using Marketeer.API.CompetitionTracking.Contracts;
+using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.Guidance.Contracts;
+using Marketeer.API.Localization.Contracts;
+using Marketeer.API.MarketListings.Contracts;
+using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.UI.Guidance.Commands;
+using Marketeer.UI.Guidance.UI;
+using NSubstitute;
+using Xunit;
+
+namespace Marketeer.Tests.UI.Guidance.Commands;
+
+public class GuidanceCommandTests {
+    [Fact]
+    public void Execute_ShouldToggleWindowIsOpenState() {
+        var geometryProvider = Substitute.For<IWindowGeometryProvider>();
+        var instructionProviders = new List<IGuidanceInstructionProvider>();
+        var localization = Substitute.For<ILocalizationService>();
+        var switcherService = Substitute.For<IRetainerSwitcherService>();
+        var competitionState = Substitute.For<ICompetitionStateService>();
+        var optimizationService = Substitute.For<IListingOptimizationService>();
+        var objectTable = Substitute.For<IObjectTable>();
+        var listingProvider = Substitute.For<IMarketListingProvider>();
+        var retainerProvider = Substitute.For<IRetainerProvider>();
+        var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
+        var priceUpdateService = Substitute.For<IPriceUpdateAutomationService>();
+        var cancelListingsService = Substitute.For<ICancelListingsAutomationService>();
+
+        // Create the actual window instance with mocked dependencies
+        var window = new MarketeerGuideWindow(
+            geometryProvider, instructionProviders, localization, switcherService,
+            competitionState, optimizationService, objectTable, listingProvider,
+            retainerProvider, uiInteraction, priceUpdateService, cancelListingsService);
+
+        var command = new GuidanceCommand(window, localization);
+
+        // Ensure the initial state is closed for testing
+        window.IsOpen = false;
+
+        // First execution should open it
+        command.Execute("");
+        Assert.True(window.IsOpen);
+
+        // Second execution should close it
+        command.Execute("");
+        Assert.False(window.IsOpen);
+    }
+}
