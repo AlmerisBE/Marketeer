@@ -3,5 +3,5 @@
 namespace Marketeer.Core.MarketWatch.Providers;
 
 public class MarketWatchLocalizationProvider : JsonLocalizationProvider {
-    protected override string ResourceBasePath => "Marketeer.UI.MarketWatch.Resources";
+    protected override string ResourceBasePath => "Marketeer.Core.MarketWatch.Resources";
 }
