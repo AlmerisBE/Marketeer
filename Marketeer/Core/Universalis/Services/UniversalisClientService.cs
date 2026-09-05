@@ -210,4 +210,21 @@ public class UniversalisClientService : IServerPriceProvider, IDisposable {
         var cacheKey = $"{worldId}_{itemId}";
         this.cache[cacheKey] = (new List<LowestPriceResult>().AsReadOnly(), DateTime.UtcNow);
     }
+
+    public void UpdateLocalCache(uint itemId, uint worldId, IReadOnlyList<LowestPriceResult> prices) {
+        var cacheKey = $"{worldId}_{itemId}";
+
+        // We inject the fresh data and reset the timestamp so it stays valid
+        this.cache[cacheKey] = (prices, DateTime.UtcNow);
+
+        // Trigger the update event on the framework thread to safely notify observers (CompetitionMonitorService)
+        this.framework.RunOnFrameworkThread(() => {
+            if (!this.cancellationTokenSource.IsCancellationRequested) {
+                this.PricesUpdated?.Invoke(worldId, new[] { itemId });
+            }
+        });
+
+        this.logger.Debug($"[UniversalisClientService] Local cache updated instantly for item {itemId} with {prices.Count} live entries.");
+    }
+
 }

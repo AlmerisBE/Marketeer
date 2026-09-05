@@ -12,4 +12,6 @@ public interface IServerPriceProvider {
     Task<IReadOnlyList<LowestPriceResult>> GetLowestPricesAsync(IEnumerable<uint> itemIds, uint worldId, bool bypassCache = false);
 
     Task ForceRefreshAsync(IEnumerable<uint> itemIds, uint worldId);
+
+    void UpdateLocalCache(uint itemId, uint worldId, IReadOnlyList<LowestPriceResult> prices);
 }

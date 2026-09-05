@@ -14,9 +14,12 @@ public class GameInteropFeature : IFeatureModule {
         services.AddSingleton<IRetainerProvider, RetainerProvider>();
         services.AddSingleton<IMarketListingProvider, MarketListingProvider>();
         services.AddSingleton<IWorldInteractionService, WorldInteractionService>();
+        services.AddSingleton<ILocalMarketViewScanner, LocalMarketViewScanner>();
     }
 
     public void Initialize(IServiceProvider provider) {
         provider.GetRequiredService<IGameEventService>();
+        var marketScanner = provider.GetRequiredService<ILocalMarketViewScanner>();
+        marketScanner.Enable();
     }
 }
