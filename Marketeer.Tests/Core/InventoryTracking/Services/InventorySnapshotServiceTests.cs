@@ -1,9 +1,9 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.InventoryTracking.Models;
-using Marketeer.Core.InventoryTracking.Services;
+using Marketeer.API.InventoryTracking.Services;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
 using NSubstitute;
 using Xunit;
 

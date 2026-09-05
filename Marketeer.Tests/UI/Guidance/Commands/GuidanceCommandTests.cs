@@ -1,12 +1,12 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.CompetitionTracking.Contracts;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Guidance.Contracts;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.MarketListings.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Guidance.Commands;
+using Marketeer.UI.Guidance.Contracts;
 using Marketeer.UI.Guidance.UI;
+using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
 

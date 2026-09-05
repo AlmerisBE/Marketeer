@@ -1,5 +1,5 @@
-﻿using Marketeer.API.MarketWatch.Contracts;
-using Marketeer.API.MarketWatch.Models;
+﻿using Marketeer.Core.MarketWatch.Contracts;
+using Marketeer.Core.MarketWatch.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

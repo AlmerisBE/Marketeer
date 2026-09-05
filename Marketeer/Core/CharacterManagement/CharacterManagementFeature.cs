@@ -1,12 +1,12 @@
-﻿using Marketeer.API.CharacterManagement.Contracts;
-using Marketeer.API.Command.Contracts;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
-using Marketeer.API.Localization.Contracts;
+﻿using Marketeer.Core.CharacterManagement.Commands;
+using Marketeer.Core.CharacterManagement.Contracts;
+using Marketeer.Core.CharacterManagement.Providers;
 using Marketeer.Core.CharacterManagement.Services;
-using Marketeer.UI.CharacterManagement.Commands;
-using Marketeer.UI.CharacterManagement.Providers;
-using Marketeer.UI.CharacterManagement.UI;
+using Marketeer.Core.CharacterManagement.UI;
+using Marketeer.Core.Framework;
+using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer.Core.CharacterManagement;

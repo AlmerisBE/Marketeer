@@ -1,12 +1,12 @@
 ﻿using Dalamud.Interface.Windowing;
-using Marketeer.API.Command.Contracts;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
-using Marketeer.API.Localization.Contracts;
 using Marketeer.Core.Dashboard.Services;
+using Marketeer.Core.Framework;
+using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Dashboard.Commands;
+using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.Providers;
 using Marketeer.UI.Dashboard.UI;
+using Marketeer.UI.Localization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer.Core.Dashboard;

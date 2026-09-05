@@ -1,13 +1,13 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.Financials.Models;
+using Marketeer.API.GameInterop.Contracts;
+using Marketeer.Core.CharacterManagement.Contracts;
+using Marketeer.Core.CharacterManagement.Models;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Financials.Models;
+using Marketeer.Core.Logging.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.CharacterManagement.Contracts;
-using Marketeer.API.CharacterManagement.Models;
 
 namespace Marketeer.Core.CharacterManagement.Services;
 

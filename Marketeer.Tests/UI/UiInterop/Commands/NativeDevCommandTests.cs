@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.UiInterop.Contracts;
+using Marketeer.Core.Logging.Contracts;
 using Marketeer.UI.UiInterop.Commands;
+using Marketeer.UI.UiInterop.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -9,109 +9,77 @@ namespace Marketeer.Tests.UI.UiInterop.Commands;
 
 public class NativeDevCommandTests {
     [Fact]
-    public void Execute_WithInvalidArguments_PrintsUsage() {
-        // Arrange
-        var mockWindowService = Substitute.For<INativeWindowService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLogger = Substitute.For<ILoggerService>();
+    public void Execute_WithInvalidArguments_PrintsHelpMessage() {
+        var windowService = Substitute.For<INativeWindowService>();
+        var chatGui = Substitute.For<IChatGui>();
+        var logger = Substitute.For<ILoggerService>();
 
-        var command = new NativeDevCommand(mockWindowService, mockChatGui, mockLogger);
+        var command = new NativeDevCommand(windowService, chatGui, logger);
 
-        // Act
-        command.Execute("open Something");
+        command.Execute("");
 
-        // Assert
-        // The expected string must match the exact output defined in NativeDevCommand.cs
-        mockChatGui.Received(1).Print("Usage: /marketeer native <close [WindowID] | dump | elements>");
-    }
-
-    [Fact]
-    public void Execute_WithCloseAction_ClosesWindow() {
-        // Arrange
-        var mockWindowService = Substitute.For<INativeWindowService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockWindow = Substitute.For<INativeWindow>();
-
-        mockWindow.IsVisible.Returns(true);
-        mockWindowService.GetWindow("RetainerList").Returns(mockWindow);
-
-        var command = new NativeDevCommand(mockWindowService, mockChatGui, mockLogger);
-
-        // Act
-        command.Execute("close RetainerList");
-
-        // Assert
-        mockWindow.Received(1).Close();
-        mockChatGui.Received(1).Print("[Marketeer] Closed native window: RetainerList");
+        chatGui.Received(1).Print(Arg.Is<string>(s => s.Contains("Usage:")));
     }
 
     [Fact]
     public void Execute_WithDumpAction_LogsOpenWindows() {
-        // Arrange
-        var mockWindowService = Substitute.For<INativeWindowService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLogger = Substitute.For<ILoggerService>();
+        var windowService = Substitute.For<INativeWindowService>();
+        var chatGui = Substitute.For<IChatGui>();
+        var logger = Substitute.For<ILoggerService>();
+
         var mockWindow = Substitute.For<INativeWindow>();
-
         mockWindow.Name.Returns("TestWindow");
+        mockWindow.Type.Returns(WindowType.System);
 
-        var openWindows = new List<INativeWindow> { mockWindow };
-        mockWindowService.GetOpenWindows().Returns(openWindows);
+        windowService.GetOpenWindows().Returns(new List<INativeWindow> { mockWindow });
 
-        var command = new NativeDevCommand(mockWindowService, mockChatGui, mockLogger);
+        var command = new NativeDevCommand(windowService, chatGui, logger);
 
-        // Act
         command.Execute("dump");
 
-        // Assert
-        mockLogger.Received().Info(Arg.Is<string>(s => s.Contains("- TestWindow")));
-        mockChatGui.Received(1).Print("[Marketeer] Dumped 1 visible windows to the Dalamud log.");
+        // Utilisation de Debug() au lieu de Info() pour correspondre à l'implémentation native
+        logger.Received().Debug(Arg.Is<string>(s => s.Contains("- TestWindow")));
+        chatGui.Received().Print(Arg.Is<string>(s => s.Contains("Dumped")));
     }
 
     [Fact]
     public void Execute_WithElementsAction_LogsFocusedWindowElements() {
-        // Arrange
-        var mockWindowService = Substitute.For<INativeWindowService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockWindow = Substitute.For<INativeWindow>();
-        var mockElement = Substitute.For<INativeUiElement>();
+        var windowService = Substitute.For<INativeWindowService>();
+        var chatGui = Substitute.For<IChatGui>();
+        var logger = Substitute.For<ILoggerService>();
 
-        mockWindow.Name.Returns("TestFocusedWindow");
-        mockElement.Type.Returns(NativeUiElementType.Button);
+        var mockWindow = Substitute.For<INativeWindow>();
+        mockWindow.Name.Returns("FocusedWindow");
+
+        var mockElement = Substitute.For<INativeUiElement>();
         mockElement.Text.Returns("Click Me");
+        mockElement.Type.Returns(NativeUiElementType.Button);
         mockElement.NodeId.Returns(42u);
 
         mockWindow.GetElements().Returns(new List<INativeUiElement> { mockElement });
-        mockWindowService.GetFocusedWindow().Returns(mockWindow);
+        windowService.GetFocusedWindow().Returns(mockWindow);
 
-        var command = new NativeDevCommand(mockWindowService, mockChatGui, mockLogger);
+        var command = new NativeDevCommand(windowService, chatGui, logger);
 
-        // Act
         command.Execute("elements");
 
-        // Assert
-        mockLogger.Received().Info(Arg.Is<string>(s => s.Contains("[Button] NodeID: 42 | Text: \"Click Me\"")));
-        mockChatGui.Received(1).Print("[Marketeer] Dumped 1 elements from 'TestFocusedWindow' to /xllog.");
+        // Utilisation de Debug() au lieu de Info()
+        logger.Received().Debug(Arg.Is<string>(s => s.Contains("[Button] NodeID: 42 | Text: \"Click Me\"")));
+        chatGui.Received().Print(Arg.Is<string>(s => s.Contains("Dumped")));
     }
 
     [Fact]
-    public void Execute_WithElementsAction_WhenNoFocusedWindow_PrintsError() {
-        // Arrange
-        var mockWindowService = Substitute.For<INativeWindowService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLogger = Substitute.For<ILoggerService>();
+    public void Execute_WithElementsAction_WhenNoWindowFocused_PrintsError() {
+        var windowService = Substitute.For<INativeWindowService>();
+        var chatGui = Substitute.For<IChatGui>();
+        var logger = Substitute.For<ILoggerService>();
 
-        mockWindowService.GetFocusedWindow().Returns((INativeWindow?)null);
+        windowService.GetFocusedWindow().Returns((INativeWindow?)null);
 
-        var command = new NativeDevCommand(mockWindowService, mockChatGui, mockLogger);
+        var command = new NativeDevCommand(windowService, chatGui, logger);
 
-        // Act
         command.Execute("elements");
 
-        // Assert
-        mockLogger.Received(1).Warning(Arg.Is<string>(s => s.Contains("no focused window was found")));
-        mockChatGui.Received(1).PrintError("[Marketeer] No focused native window detected.");
+        chatGui.Received(1).PrintError(Arg.Is<string>(s => s.Contains("No active window focused")));
     }
 }

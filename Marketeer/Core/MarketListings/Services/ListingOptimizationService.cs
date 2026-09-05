@@ -1,7 +1,7 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.MarketListings.Contracts;
-using Marketeer.API.MarketListings.Models;
-using Marketeer.API.SalesHistory.Contracts;
+﻿using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketListings.Models;
+using Marketeer.Core.SalesHistory.Contracts;
 using System.Collections.Generic;
 
 namespace Marketeer.Core.MarketListings.Services;

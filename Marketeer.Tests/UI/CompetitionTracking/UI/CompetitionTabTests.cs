@@ -1,7 +1,7 @@
-﻿using Marketeer.API.Localization.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
-using Marketeer.API.CompetitionTracking.Contracts;
-using Marketeer.UI.CompetitionTracking.UI;
+﻿using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.Core.CompetitionTracking.UI;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
 

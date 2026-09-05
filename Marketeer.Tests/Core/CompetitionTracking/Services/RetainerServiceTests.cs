@@ -4,11 +4,11 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.Financials.Models;
-using Marketeer.API.CompetitionTracking.Models;
+using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.CompetitionTracking.Services;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.Financials.Models;
 using NSubstitute;
 using Xunit;
 

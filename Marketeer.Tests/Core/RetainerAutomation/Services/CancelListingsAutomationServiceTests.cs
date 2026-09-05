@@ -1,15 +1,15 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.MarketListings.Contracts;
-using Marketeer.API.MarketListings.Models;
-using Marketeer.API.RetainerAutomation.Contracts;
-using Marketeer.API.RetainerAutomation.Models;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketListings.Models;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.Core.RetainerAutomation.Models;
 using Marketeer.Core.RetainerAutomation.Services;
+using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
 

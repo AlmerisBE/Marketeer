@@ -1,5 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
-using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.Core.RetainerAutomation.Contracts;
 
 namespace Marketeer.Core.RetainerAutomation.Services;
 

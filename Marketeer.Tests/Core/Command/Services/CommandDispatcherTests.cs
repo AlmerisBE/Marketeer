@@ -1,7 +1,7 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Command.Contracts;
-using Marketeer.Core.Command.Services;
+using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Command.Services;
 using NSubstitute;
 using Xunit;
 

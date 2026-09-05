@@ -3,9 +3,9 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.InventoryTracking.Contracts;
 using Marketeer.API.InventoryTracking.Models;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using System;
 using System.Linq;
 

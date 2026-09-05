@@ -1,10 +1,10 @@
-﻿using Marketeer.API.Command.Contracts;
-using Marketeer.API.Features;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
+﻿using Marketeer.Core.Framework;
+using Marketeer.Core.RetainerAutomation.Commands;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.Core.RetainerAutomation.Providers;
 using Marketeer.Core.RetainerAutomation.Services;
-using Marketeer.UI.RetainerAutomation.Commands;
-using Marketeer.UI.RetainerAutomation.Providers;
+using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

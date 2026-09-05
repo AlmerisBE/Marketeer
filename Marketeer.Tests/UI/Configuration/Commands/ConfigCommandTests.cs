@@ -1,9 +1,10 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.UI.Configuration.Commands;
-using Marketeer.UI.Configuration.UI;
+﻿using Marketeer.Core.Configuration.Commands;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.UI;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.UI;
+using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -21,7 +22,7 @@ public class ConfigCommandTests {
 
         // Dummy dashboard window dependencies
         var mockNodes = new List<INavigationNode>();
-        var mockAutomation = Substitute.For<Marketeer.API.RetainerAutomation.Contracts.IRetainerAutomationService>();
+        var mockAutomation = Substitute.For<IRetainerAutomationService>();
         var dashboardWindow = new DashboardWindow(mockNodes, mockLocalization, mockAutomation, mockNavService);
 
         var command = new ConfigCommand(mockNavService, dashboardWindow, configMenu, mockLocalization);

@@ -1,13 +1,13 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.Financials.Models;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.MarketListings.Models;
-using Marketeer.API.SalesHistory.Contracts;
-using Marketeer.API.SalesHistory.Models;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.Financials.Models;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketListings.Models;
 using Marketeer.Core.MarketListings.Services;
+using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.Core.SalesHistory.Models;
 using NSubstitute;
 using Xunit;
 

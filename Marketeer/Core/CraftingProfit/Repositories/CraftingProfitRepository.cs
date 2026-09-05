@@ -1,6 +1,6 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.CraftingProfit.Contracts;
-using Marketeer.API.CraftingProfit.Models;
+﻿using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.CraftingProfit.Contracts;
+using Marketeer.Core.CraftingProfit.Models;
 using System.Collections.Generic;
 using System.Linq;
 

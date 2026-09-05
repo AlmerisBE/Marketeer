@@ -1,4 +1,4 @@
-﻿using Marketeer.API.CompetitionTracking.Models;
+﻿using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.CompetitionTracking.Services;
 using Xunit;
 

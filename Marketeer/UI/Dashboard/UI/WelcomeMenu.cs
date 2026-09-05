@@ -1,7 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Plugin;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Localization.Contracts;
+using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using System.Collections.Generic;
 using System.Numerics;
 

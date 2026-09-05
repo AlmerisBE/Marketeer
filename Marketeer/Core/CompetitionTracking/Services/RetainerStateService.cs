@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.CompetitionTracking.Contracts;
-using Marketeer.API.CompetitionTracking.Models;
-using Marketeer.API.Configuration.Contracts;
+using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.Core.CompetitionTracking.Models;
+using Marketeer.Core.Configuration.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 

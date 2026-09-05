@@ -1,9 +1,9 @@
-﻿using Marketeer.API.CraftingProfit.Contracts;
-using Marketeer.API.CraftingProfit.Models;
-using Marketeer.API.GameData.Contracts;
+﻿using Marketeer.API.GameData.Contracts;
 using Marketeer.API.GameData.Models;
-using Marketeer.API.Logging.Contracts;
 using Marketeer.API.Universalis.Contracts;
+using Marketeer.Core.CraftingProfit.Contracts;
+using Marketeer.Core.CraftingProfit.Models;
+using Marketeer.Core.Logging.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

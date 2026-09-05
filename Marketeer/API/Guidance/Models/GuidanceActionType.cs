@@ -1,9 +1,0 @@
-﻿namespace Marketeer.API.Guidance.Models;
-
-public enum GuidanceActionType {
-    UpdatePrice,
-    CancelListing,
-    SwitchRetainer,
-    SummonRetainer,
-    SwitchCharacter
-}

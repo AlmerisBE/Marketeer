@@ -1,8 +1,8 @@
 ﻿using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.MarketListings.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
-using Marketeer.API.RetainerAutomation.Models;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.Core.RetainerAutomation.Models;
 using System.Linq;
 
 namespace Marketeer.Core.RetainerAutomation.Services;

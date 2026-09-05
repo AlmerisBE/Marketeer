@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using System;
-using Marketeer.API.Logging.Contracts;
+using Marketeer.Core.Logging.Contracts;
 
 namespace Marketeer.Core.Logging.Services;
 

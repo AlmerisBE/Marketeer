@@ -1,4 +1,4 @@
-﻿using Marketeer.Core.Localization.Providers;
+﻿using Marketeer.UI.Localization.Providers;
 
 namespace Marketeer.UI.Guidance.Providers;
 

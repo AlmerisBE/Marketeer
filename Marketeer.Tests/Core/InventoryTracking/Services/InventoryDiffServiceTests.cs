@@ -1,5 +1,5 @@
 ﻿using Marketeer.API.InventoryTracking.Models;
-using Marketeer.Core.InventoryTracking.Services;
+using Marketeer.API.InventoryTracking.Services;
 using Xunit;
 
 namespace Marketeer.Tests.Core.InventoryTracking.Services;

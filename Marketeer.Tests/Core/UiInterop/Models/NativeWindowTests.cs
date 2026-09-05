@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.UiInterop.Contracts;
-using Marketeer.Core.UiInterop.Models;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.UI.UiInterop.Contracts;
+using Marketeer.UI.UiInterop.Models;
 using NSubstitute;
 using Xunit;
 

@@ -1,5 +1,5 @@
-﻿using Marketeer.API.CompetitionTracking.Contracts;
-using Marketeer.API.CompetitionTracking.Models;
+﻿using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.Core.CompetitionTracking.Models;
 using System.Collections.Generic;
 using System.Linq;
 

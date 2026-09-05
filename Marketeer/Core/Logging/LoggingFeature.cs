@@ -1,5 +1,5 @@
-﻿using Marketeer.API.Features;
-using Marketeer.API.Logging.Contracts;
+﻿using Marketeer.Core.Framework;
+using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.Logging.Services;
 using Microsoft.Extensions.DependencyInjection;
 

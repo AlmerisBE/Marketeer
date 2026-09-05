@@ -1,6 +1,6 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.SalesHistory.Contracts;
-using Marketeer.API.SalesHistory.Models;
+﻿using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.Core.SalesHistory.Models;
 using System.Collections.Generic;
 using System.Linq;
 

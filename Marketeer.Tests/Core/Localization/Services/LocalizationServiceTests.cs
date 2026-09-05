@@ -1,7 +1,7 @@
 ﻿using Dalamud.Game;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.Core.Localization.Services;
+using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Localization.Services;
 using NSubstitute;
 using Xunit;
 

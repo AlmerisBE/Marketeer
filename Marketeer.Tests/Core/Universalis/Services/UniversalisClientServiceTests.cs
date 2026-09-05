@@ -1,8 +1,8 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.Core.Universalis.Services;
+using Marketeer.API.Universalis.Services;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.Logging.Contracts;
 using NSubstitute;
 using System.Net;
 using Xunit;
@@ -30,7 +30,7 @@ public class UniversalisClientServiceTests {
     public async Task GetLowestPricesAsync_WithMultipleItems_ParsesDictionaryAndReturnsResults() {
         var mockLogger = Substitute.For<ILoggerService>();
         var mockConfigService = Substitute.For<IConfigurationService>();
-        mockConfigService.GetConfig().Returns(new Marketeer.API.Configuration.Models.PluginConfiguration { UniversalisCacheMinutes = 30 });
+        mockConfigService.GetConfig().Returns(new PluginConfiguration { UniversalisCacheMinutes = 30 });
 
         var jsonResponse = @"{
             ""items"": {

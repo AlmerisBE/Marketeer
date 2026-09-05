@@ -1,4 +1,4 @@
-﻿using Marketeer.API.MarketWatch.Models;
+﻿using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.MarketWatch.Services;
 using Xunit;
 

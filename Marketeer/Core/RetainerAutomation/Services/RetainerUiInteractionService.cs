@@ -1,9 +1,9 @@
 ﻿using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
-using Marketeer.API.UiInterop.Contracts;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.UiInterop.Contracts;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;

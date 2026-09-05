@@ -1,11 +1,11 @@
 ﻿using Dalamud.Interface.Windowing;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.MarketListings.Contracts;
+using Marketeer.Core.Framework;
+using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketListings.Providers;
 using Marketeer.Core.MarketListings.Services;
-using Marketeer.UI.MarketListings.Providers;
-using Marketeer.UI.MarketListings.UI;
+using Marketeer.Core.MarketListings.UI;
+using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

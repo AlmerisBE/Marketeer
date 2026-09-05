@@ -1,4 +1,4 @@
-﻿using Marketeer.API.SalesHistory.Models;
+﻿using Marketeer.Core.SalesHistory.Models;
 using Marketeer.Core.SalesHistory.Services;
 using Xunit;
 

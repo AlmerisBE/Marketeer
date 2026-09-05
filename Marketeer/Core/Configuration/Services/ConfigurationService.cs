@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.MarketWatch.Models;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.MarketWatch.Models;
 using System.Collections.Generic;
 
 namespace Marketeer.Core.Configuration.Services;

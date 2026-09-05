@@ -2,12 +2,12 @@
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.SalesHistory.Contracts;
 using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
-using Marketeer.UI.CompetitionTracking.Commands;
+using Marketeer.Core.CompetitionTracking.Commands;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
 

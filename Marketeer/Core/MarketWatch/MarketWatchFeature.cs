@@ -1,11 +1,11 @@
-﻿using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.MarketWatch.Contracts;
+﻿using Marketeer.Core.Framework;
+using Marketeer.Core.MarketWatch.Contracts;
+using Marketeer.Core.MarketWatch.Providers;
 using Marketeer.Core.MarketWatch.Repositories;
 using Marketeer.Core.MarketWatch.Services;
-using Marketeer.UI.MarketWatch.Providers;
-using Marketeer.UI.MarketWatch.UI;
+using Marketeer.Core.MarketWatch.UI;
+using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

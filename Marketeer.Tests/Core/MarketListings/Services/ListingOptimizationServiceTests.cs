@@ -1,8 +1,8 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.Financials.Models;
-using Marketeer.API.SalesHistory.Contracts;
+﻿using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.Financials.Models;
 using Marketeer.Core.MarketListings.Services;
+using Marketeer.Core.SalesHistory.Contracts;
 using NSubstitute;
 using Xunit;
 

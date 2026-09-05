@@ -2,15 +2,15 @@
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin.Services;
-using Marketeer.API.CharacterManagement.Models;
-using Marketeer.API.CompetitionTracking.Contracts;
-using Marketeer.API.CompetitionTracking.Models;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Guidance.Models;
-using Marketeer.API.MarketListings.Contracts;
-using Marketeer.API.MarketListings.Models;
-using Marketeer.API.UiInterop.Contracts;
-using Marketeer.Core.Guidance.Services;
+using Marketeer.Core.CharacterManagement.Models;
+using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.Core.CompetitionTracking.Models;
+using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketListings.Models;
+using Marketeer.UI.Guidance.Models;
+using Marketeer.UI.Guidance.Services;
+using Marketeer.UI.UiInterop.Contracts;
 using NSubstitute;
 using Xunit;
 

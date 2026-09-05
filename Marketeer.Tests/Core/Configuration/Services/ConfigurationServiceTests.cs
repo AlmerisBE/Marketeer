@@ -1,8 +1,8 @@
 ﻿using Dalamud.Configuration;
 using Dalamud.Plugin;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.Financials.Models;
+using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Configuration.Services;
+using Marketeer.Core.Financials.Models;
 using NSubstitute;
 using Xunit;
 

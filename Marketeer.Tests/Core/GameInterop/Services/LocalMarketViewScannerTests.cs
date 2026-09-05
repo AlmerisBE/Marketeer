@@ -1,9 +1,9 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.SalesHistory.Contracts;
+using Marketeer.API.GameInterop.Services;
 using Marketeer.API.Universalis.Contracts;
-using Marketeer.Core.GameInterop.Services;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.SalesHistory.Contracts;
 using NSubstitute;
 using Xunit;
 

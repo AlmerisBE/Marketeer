@@ -1,4 +1,4 @@
-﻿using Marketeer.API.CharacterManagement.Models;
+﻿using Marketeer.Core.CharacterManagement.Models;
 using System.Collections.Generic;
 
 namespace Marketeer.API.GameInterop.Contracts;

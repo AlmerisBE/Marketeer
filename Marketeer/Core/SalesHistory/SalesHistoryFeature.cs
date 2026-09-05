@@ -1,13 +1,12 @@
-﻿using Marketeer.API.Command.Contracts;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.SalesHistory.Contracts;
+﻿using Marketeer.Core.Framework;
+using Marketeer.Core.SalesHistory.Commands;
+using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.Core.SalesHistory.Providers;
 using Marketeer.Core.SalesHistory.Services;
-using Marketeer.UI.SalesHistory.Commands;
-using Marketeer.UI.SalesHistory.Providers;
-using Marketeer.UI.SalesHistory.Services;
-using Marketeer.UI.SalesHistory.UI;
+using Marketeer.Core.SalesHistory.UI;
+using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

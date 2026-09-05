@@ -1,10 +1,9 @@
 ﻿using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
-using Marketeer.Core.Dependencies;
-using Marketeer.UI.Configuration.UI;
+using Marketeer.Core.Configuration.UI;
+using Marketeer.Core.Framework;
+using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.UI;
 using Microsoft.Extensions.DependencyInjection;
 

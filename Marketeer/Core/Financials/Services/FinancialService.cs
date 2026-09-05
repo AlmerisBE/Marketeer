@@ -1,6 +1,6 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Financials.Contracts;
-using Marketeer.API.Financials.Models;
+﻿using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Financials.Contracts;
+using Marketeer.Core.Financials.Models;
 using System.Linq;
 
 namespace Marketeer.Core.Financials.Services;

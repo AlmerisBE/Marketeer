@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
-using Marketeer.API.SalesHistory.Contracts;
+using Marketeer.Core.SalesHistory.Contracts;
 using System;
 using System.Collections.Generic;
 

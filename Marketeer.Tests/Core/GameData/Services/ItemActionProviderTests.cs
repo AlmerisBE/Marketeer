@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.API.GameData.Contracts;
-using Marketeer.Core.GameData.Services;
+using Marketeer.API.GameData.Services;
 using NSubstitute;
 using Xunit;
 

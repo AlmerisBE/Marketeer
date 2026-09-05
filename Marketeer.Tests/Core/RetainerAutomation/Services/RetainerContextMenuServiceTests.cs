@@ -1,10 +1,10 @@
 ﻿using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
-using Marketeer.API.UiInterop.Contracts;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.RetainerAutomation.Services;
+using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.UiInterop.Contracts;
 using NSubstitute;
 using Xunit;
 

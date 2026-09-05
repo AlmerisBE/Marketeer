@@ -1,11 +1,11 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.Logging.Contracts;
-using Marketeer.API.MarketWatch.Contracts;
-using Marketeer.API.MarketWatch.Models;
 using Marketeer.API.Universalis.Contracts;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketWatch.Contracts;
+using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.MarketWatch.Services;
 using NSubstitute;
 using Xunit;

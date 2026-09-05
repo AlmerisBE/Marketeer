@@ -1,6 +1,6 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.MarketWatch.Models;
+﻿using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.MarketWatch.Repositories;
 using NSubstitute;
 using Xunit;

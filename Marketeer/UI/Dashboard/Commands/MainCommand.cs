@@ -1,4 +1,4 @@
-﻿using Marketeer.API.Command.Contracts;
+﻿using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Dashboard.UI;
 
 namespace Marketeer.UI.Dashboard.Commands;

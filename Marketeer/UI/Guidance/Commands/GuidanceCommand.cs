@@ -1,6 +1,6 @@
-﻿using Marketeer.API.Command.Contracts;
-using Marketeer.API.Localization.Contracts;
+﻿using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Guidance.UI;
+using Marketeer.UI.Localization.Contracts;
 
 namespace Marketeer.UI.Guidance.Commands;
 

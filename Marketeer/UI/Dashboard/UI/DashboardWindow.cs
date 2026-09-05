@@ -1,8 +1,8 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Localization.Contracts;
-using Marketeer.API.RetainerAutomation.Contracts;
+using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;

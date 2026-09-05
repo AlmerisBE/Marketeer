@@ -19,15 +19,57 @@
 		<EmbeddedResource Include="UI\**\*.json" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Folder Include="UI\CharacterManagement\Resources\" />
-	  <Folder Include="UI\Configuration\Resources\" />
-	  <Folder Include="UI\CraftingProfit\Resources\" />
-	  <Folder Include="UI\Financials\Resources\" />
+	  <EmbeddedResource Include="API\InventoryTracking\Resources\de.json" />
+	  <EmbeddedResource Include="API\InventoryTracking\Resources\en.json" />
+	  <EmbeddedResource Include="API\InventoryTracking\Resources\fr.json" />
+	  <EmbeddedResource Include="API\InventoryTracking\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\CharacterManagement\Resources\de.json" />
+	  <EmbeddedResource Include="Core\CharacterManagement\Resources\en.json" />
+	  <EmbeddedResource Include="Core\CharacterManagement\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\CharacterManagement\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\CompetitionTracking\Resources\de.json" />
+	  <EmbeddedResource Include="Core\CompetitionTracking\Resources\en.json" />
+	  <EmbeddedResource Include="Core\CompetitionTracking\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\CompetitionTracking\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\Configuration\Resources\de.json" />
+	  <EmbeddedResource Include="Core\Configuration\Resources\en.json" />
+	  <EmbeddedResource Include="Core\Configuration\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\Configuration\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\CraftingProfit\Resources\de.json" />
+	  <EmbeddedResource Include="Core\CraftingProfit\Resources\en.json" />
+	  <EmbeddedResource Include="Core\CraftingProfit\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\CraftingProfit\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\Financials\Resources\de.json" />
+	  <EmbeddedResource Include="Core\Financials\Resources\en.json" />
+	  <EmbeddedResource Include="Core\Financials\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\Financials\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\MarketListings\Resources\de.json" />
+	  <EmbeddedResource Include="Core\MarketListings\Resources\en.json" />
+	  <EmbeddedResource Include="Core\MarketListings\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\MarketListings\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\MarketWatch\Resources\de.json" />
+	  <EmbeddedResource Include="Core\MarketWatch\Resources\en.json" />
+	  <EmbeddedResource Include="Core\MarketWatch\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\MarketWatch\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\RetainerAutomation\Resources\de.json" />
+	  <EmbeddedResource Include="Core\RetainerAutomation\Resources\en.json" />
+	  <EmbeddedResource Include="Core\RetainerAutomation\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\RetainerAutomation\Resources\ja.json" />
+	  <EmbeddedResource Include="Core\SalesHistory\Resources\de.json" />
+	  <EmbeddedResource Include="Core\SalesHistory\Resources\en.json" />
+	  <EmbeddedResource Include="Core\SalesHistory\Resources\fr.json" />
+	  <EmbeddedResource Include="Core\SalesHistory\Resources\ja.json" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Core\CharacterManagement\Resources\" />
+	  <Folder Include="Core\Configuration\Resources\" />
+	  <Folder Include="Core\CraftingProfit\Resources\" />
+	  <Folder Include="Core\Financials\Resources\" />
 	  <Folder Include="UI\Guidance\Resources\" />
-	  <Folder Include="UI\InventoryTracking\Resources\" />
-	  <Folder Include="UI\MarketListings\Resources\" />
-	  <Folder Include="UI\MarketWatch\Resources\" />
-	  <Folder Include="UI\RetainerAutomation\Resources\" />
-	  <Folder Include="UI\SalesHistory\Resources\" />
+	  <Folder Include="API\InventoryTracking\Resources\" />
+	  <Folder Include="Core\MarketListings\Resources\" />
+	  <Folder Include="Core\MarketWatch\Resources\" />
+	  <Folder Include="Core\RetainerAutomation\Resources\" />
+	  <Folder Include="Core\SalesHistory\Resources\" />
 	</ItemGroup>
 </Project>

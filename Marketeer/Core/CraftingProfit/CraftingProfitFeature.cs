@@ -1,11 +1,11 @@
-﻿using Marketeer.API.CraftingProfit.Contracts;
-using Marketeer.API.Dashboard.Contracts;
-using Marketeer.API.Features;
-using Marketeer.API.Localization.Contracts;
+﻿using Marketeer.Core.CraftingProfit.Contracts;
+using Marketeer.Core.CraftingProfit.Providers;
 using Marketeer.Core.CraftingProfit.Repositories;
 using Marketeer.Core.CraftingProfit.Services;
-using Marketeer.UI.CraftingProfit.Providers;
-using Marketeer.UI.CraftingProfit.UI;
+using Marketeer.Core.CraftingProfit.UI;
+using Marketeer.Core.Framework;
+using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

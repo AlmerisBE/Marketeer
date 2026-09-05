@@ -1,6 +1,6 @@
-﻿using Marketeer.API.Configuration.Contracts;
-using Marketeer.API.Configuration.Models;
-using Marketeer.API.CraftingProfit.Models;
+﻿using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.CraftingProfit.Models;
 using Marketeer.Core.CraftingProfit.Repositories;
 using NSubstitute;
 using Xunit;

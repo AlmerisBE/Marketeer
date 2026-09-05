@@ -1,4 +1,4 @@
-﻿using Marketeer.API.MarketListings.Models;
+﻿using Marketeer.Core.MarketListings.Models;
 using System.Collections.Generic;
 
 namespace Marketeer.API.GameInterop.Contracts;
