@@ -24,6 +24,7 @@ public class RetainerDetailsView : IRetainerDetailsView {
         ImGui.Spacing();
 
         var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
+
         RetainerDetailsTablePresenter.DrawTable(listings, this.localizationService);
     }
 }

@@ -39,6 +39,7 @@ public class RetainerDetailsWindow : Window {
         if (!this.currentRetainerId.HasValue) return;
 
         var listings = this.marketListingTrackerService.GetListingsForRetainer(this.currentRetainerId.Value);
+
         RetainerDetailsTablePresenter.DrawTable(listings, this.localizationService);
     }
 }

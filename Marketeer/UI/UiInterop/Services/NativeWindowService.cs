@@ -26,14 +26,10 @@ public unsafe class NativeWindowService : INativeWindowService {
 
     public INativeWindow? GetFocusedWindow() {
         var atkStage = AtkStage.Instance();
-
-        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) {
-            return null;
-        }
+        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) return null;
 
         var focusedList = atkStage->RaptureAtkUnitManager->AtkUnitManager.FocusedUnitsList;
 
-        // Iterate backwards: the highest index usually represents the top-most focused window
         for (int i = focusedList.Count - 1; i >= 0; i--) {
             AtkUnitBase* addon = focusedList.Entries[i].Value;
 
@@ -43,9 +39,7 @@ public unsafe class NativeWindowService : INativeWindowService {
                 var actualSpan = nullIndex >= 0 ? nameSpan[..nullIndex] : nameSpan;
                 var name = Encoding.UTF8.GetString(actualSpan);
 
-                if (!string.IsNullOrEmpty(name)) {
-                    return this.GetWindow(name);
-                }
+                if (!string.IsNullOrEmpty(name)) return this.GetWindow(name);
             }
         }
 
@@ -56,9 +50,7 @@ public unsafe class NativeWindowService : INativeWindowService {
         var openWindows = new List<INativeWindow>();
         var atkStage = AtkStage.Instance();
 
-        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) {
-            return openWindows;
-        }
+        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) return openWindows;
 
         var loadedUnits = atkStage->RaptureAtkUnitManager->AtkUnitManager.AllLoadedUnitsList;
 
@@ -83,18 +75,10 @@ public unsafe class NativeWindowService : INativeWindowService {
     private WindowType DetermineWindowType(string addonName) {
         var lowerName = addonName.ToLowerInvariant();
 
-        if (lowerName.Contains("inventory") || lowerName.Contains("armoury")) {
-            return WindowType.Inventory;
-        }
-        if (lowerName.Contains("selectstring") || lowerName.Contains("selectyesno") || lowerName.Contains("talk")) {
-            return WindowType.Dialog;
-        }
-        if (lowerName.Contains("menu") || lowerName.Contains("context")) {
-            return WindowType.Menu;
-        }
-        if (lowerName.Contains("system") || lowerName.Contains("hud")) {
-            return WindowType.System;
-        }
+        if (lowerName.Contains("inventory") || lowerName.Contains("armoury")) return WindowType.Inventory;
+        if (lowerName.Contains("selectstring") || lowerName.Contains("selectyesno") || lowerName.Contains("talk")) return WindowType.Dialog;
+        if (lowerName.Contains("menu") || lowerName.Contains("context")) return WindowType.Menu;
+        if (lowerName.Contains("system") || lowerName.Contains("hud")) return WindowType.System;
 
         return WindowType.Unknown;
     }

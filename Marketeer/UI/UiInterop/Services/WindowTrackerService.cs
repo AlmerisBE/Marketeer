@@ -24,30 +24,22 @@ public unsafe class WindowTrackerService : IWindowTrackerService, IDisposable {
     }
 
     public void EnableTracking() {
-        if (this.IsTracking) {
-            return;
-        }
+        if (this.IsTracking) return;
 
         this.logger.Debug("WindowTrackerService: Enabling native window tracking.");
-
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, this.OnWindowOpened);
         this.addonLifecycle.RegisterListener(AddonEvent.PreFinalize, this.OnWindowClosed);
         this.framework.Update += this.OnFrameworkUpdate;
-
         this.IsTracking = true;
     }
 
     public void DisableTracking() {
-        if (!this.IsTracking) {
-            return;
-        }
+        if (!this.IsTracking) return;
 
         this.logger.Debug("WindowTrackerService: Disabling native window tracking.");
-
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, this.OnWindowOpened);
         this.addonLifecycle.UnregisterListener(AddonEvent.PreFinalize, this.OnWindowClosed);
         this.framework.Update -= this.OnFrameworkUpdate;
-
         this.IsTracking = false;
         this.lastFocusedWindowName = null;
     }
@@ -64,9 +56,7 @@ public unsafe class WindowTrackerService : IWindowTrackerService, IDisposable {
 
     private string GetVisibleWindowsContext() {
         var atkStage = AtkStage.Instance();
-        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) {
-            return string.Empty;
-        }
+        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) return string.Empty;
 
         var loadedUnits = atkStage->RaptureAtkUnitManager->AtkUnitManager.AllLoadedUnitsList;
         var visibleNames = new System.Collections.Generic.List<string>();
@@ -80,9 +70,7 @@ public unsafe class WindowTrackerService : IWindowTrackerService, IDisposable {
                 var actualSpan = nullIndex >= 0 ? nameSpan[..nullIndex] : nameSpan;
                 var name = Encoding.UTF8.GetString(actualSpan);
 
-                if (!string.IsNullOrEmpty(name)) {
-                    visibleNames.Add(name);
-                }
+                if (!string.IsNullOrEmpty(name)) visibleNames.Add(name);
             }
         }
 
@@ -91,9 +79,7 @@ public unsafe class WindowTrackerService : IWindowTrackerService, IDisposable {
 
     private void OnFrameworkUpdate(IFramework frameworkInstance) {
         var atkStage = AtkStage.Instance();
-        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) {
-            return;
-        }
+        if (atkStage == null || atkStage->RaptureAtkUnitManager == null) return;
 
         var focusedUnits = atkStage->RaptureAtkUnitManager->AtkUnitManager.FocusedUnitsList;
 
@@ -106,7 +92,6 @@ public unsafe class WindowTrackerService : IWindowTrackerService, IDisposable {
                 var actualSpan = nullIndex >= 0 ? nameSpan[..nullIndex] : nameSpan;
                 var currentFocusedName = Encoding.UTF8.GetString(actualSpan);
 
-                // Log only when the active focus switches to a new window
                 if (currentFocusedName != this.lastFocusedWindowName && !string.IsNullOrEmpty(currentFocusedName)) {
                     this.lastFocusedWindowName = currentFocusedName;
                     this.logger.Debug($"[Window Tracker] Focused: {currentFocusedName}");

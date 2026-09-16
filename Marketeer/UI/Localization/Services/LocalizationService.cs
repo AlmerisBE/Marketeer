@@ -1,7 +1,7 @@
 ﻿using Dalamud.Game;
 using Dalamud.Plugin.Services;
-using System.Collections.Generic;
 using Marketeer.UI.Localization.Contracts;
+using System.Collections.Generic;
 
 namespace Marketeer.UI.Localization.Services;
 
@@ -23,9 +23,7 @@ public class LocalizationService : ILocalizationService {
         // Aggregate translations from all feature modules
         foreach (var provider in providers) {
             foreach (var languagePair in provider.GetTranslations()) {
-                if (!this.translations.ContainsKey(languagePair.Key)) {
-                    continue;
-                }
+                if (!this.translations.ContainsKey(languagePair.Key)) continue;
 
                 foreach (var translationPair in languagePair.Value) {
                     this.translations[languagePair.Key][translationPair.Key] = translationPair.Value;
@@ -37,17 +35,9 @@ public class LocalizationService : ILocalizationService {
     public string Translate(string key) {
         var currentLanguage = this.clientState.ClientLanguage;
 
-        // 1. Try to find the translation in the current UI language
-        if (this.translations[currentLanguage].TryGetValue(key, out var translation)) {
-            return translation;
-        }
+        if (this.translations[currentLanguage].TryGetValue(key, out var translation)) return translation;
+        if (currentLanguage != ClientLanguage.English && this.translations[ClientLanguage.English].TryGetValue(key, out var fallback)) return fallback;
 
-        // 2. Fallback to English if the translation is missing in the current language
-        if (currentLanguage != ClientLanguage.English && this.translations[ClientLanguage.English].TryGetValue(key, out var fallback)) {
-            return fallback;
-        }
-
-        // 3. Fallback to the raw key if totally missing
         return key;
     }
 

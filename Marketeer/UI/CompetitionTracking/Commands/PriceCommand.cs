@@ -36,16 +36,12 @@ public class PriceCommand : ICommand {
     }
 
     public void Execute(string arguments) {
-        if (string.IsNullOrWhiteSpace(arguments)) {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(arguments)) return;
 
         var args = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         var subCommand = args.Length > 0 ? args[0].ToLowerInvariant() : string.Empty;
 
-        if (subCommand != "lowest" || args.Length < 2) {
-            return;
-        }
+        if (subCommand != "lowest" || args.Length < 2) return;
 
         var rawItemName = args[1].Trim();
         var itemId = this.itemResolver.ResolveItemId(rawItemName);
@@ -56,9 +52,7 @@ public class PriceCommand : ICommand {
         }
 
         var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null || localPlayer.CurrentWorld.RowId == 0) {
-            return;
-        }
+        if (localPlayer == null || localPlayer.CurrentWorld.RowId == 0) return;
 
         var worldId = localPlayer.CurrentWorld.RowId;
 

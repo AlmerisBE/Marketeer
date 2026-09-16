@@ -28,9 +28,7 @@ public class CommandDispatcher : IDisposable {
 
         var targetCommand = this.commands.FirstOrDefault(c => c.CommandTrigger.Equals(subCommand, StringComparison.InvariantCultureIgnoreCase));
 
-        if (targetCommand != null) {
-            targetCommand.Execute(subArguments);
-        }
+        if (targetCommand != null) targetCommand.Execute(subArguments);
     }
 
     public void Dispose() {

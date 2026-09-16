@@ -1,9 +1,9 @@
 ﻿using Dalamud.Game;
+using Marketeer.UI.Localization.Contracts;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
-using Marketeer.UI.Localization.Contracts;
 
 namespace Marketeer.UI.Localization.Providers;
 
@@ -27,18 +27,13 @@ public abstract class JsonLocalizationProvider : ILocalizationProvider {
             var resourceName = $"{this.ResourceBasePath}.{lang.Key}.json";
             using var stream = assembly.GetManifestResourceStream(resourceName);
 
-            // If the specific language file doesn't exist, we gracefully skip it
-            if (stream == null) {
-                continue;
-            }
+            if (stream == null) continue;
 
             using var reader = new StreamReader(stream);
             var json = reader.ReadToEnd();
 
             var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-            if (parsed != null) {
-                translations[lang.Value] = parsed;
-            }
+            if (parsed != null) translations[lang.Value] = parsed;
         }
 
         return translations;
