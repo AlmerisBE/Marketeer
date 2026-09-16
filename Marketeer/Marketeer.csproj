@@ -19,10 +19,6 @@
 		<EmbeddedResource Include="UI\**\*.json" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Include="API\InventoryTracking\Resources\de.json" />
-	  <EmbeddedResource Include="API\InventoryTracking\Resources\en.json" />
-	  <EmbeddedResource Include="API\InventoryTracking\Resources\fr.json" />
-	  <EmbeddedResource Include="API\InventoryTracking\Resources\ja.json" />
 	  <EmbeddedResource Include="Core\CharacterManagement\Resources\de.json" />
 	  <EmbeddedResource Include="Core\CharacterManagement\Resources\en.json" />
 	  <EmbeddedResource Include="Core\CharacterManagement\Resources\fr.json" />
@@ -66,7 +62,7 @@
 	  <Folder Include="Core\CraftingProfit\Resources\" />
 	  <Folder Include="Core\Financials\Resources\" />
 	  <Folder Include="UI\Guidance\Resources\" />
-	  <Folder Include="API\InventoryTracking\Resources\" />
+	  <Folder Include="UI\InventoryBrowser\Resources\" />
 	  <Folder Include="Core\MarketListings\Resources\" />
 	  <Folder Include="Core\MarketWatch\Resources\" />
 	  <Folder Include="Core\RetainerAutomation\Resources\" />

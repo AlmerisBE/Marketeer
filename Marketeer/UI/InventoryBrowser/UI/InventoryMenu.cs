@@ -1,18 +1,17 @@
 ﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
 using Marketeer.API.InventoryTracking.Models;
-using Marketeer.API.InventoryTracking.UI.Components;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Financials.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.InventoryBrowser.Components;
 using Marketeer.UI.Localization.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Marketeer.API.InventoryTracking.UI;
+namespace Marketeer.UI.InventoryBrowser.UI;
 
 public class InventoryMenu : INavigationNode {
     private IConfigurationService configService;
@@ -84,19 +83,8 @@ public class InventoryMenu : INavigationNode {
                 return;
             }
 
-            var items = retainer.MarketListings.Values.Select(l => new TrackedItem { ItemId = l.ItemId, Quantity = l.Quantity }).ToList();
+            var items = retainer.MarketListings.Values.Select(l => new TrackedItem { ItemId = l.ItemId, Quantity = l.Quantity, ContainerId = 0, SlotIndex = 0 }).ToList();
             InventoryTablePresenter.DrawTable($"RetainerInv_{retainer.RetainerId}", items, this.localization, this.itemResolver, this.textureProvider);
-        }
-    }
-
-    private void DrawIcon(uint iconId) {
-        if (iconId == 0) {
-            return;
-        }
-
-        var iconWrap = this.textureProvider.GetFromGameIcon(new GameIconLookup(iconId)).GetWrapOrDefault();
-        if (iconWrap != null) {
-            ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
         }
     }
 }

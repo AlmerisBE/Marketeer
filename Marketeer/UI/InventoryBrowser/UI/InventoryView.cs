@@ -1,14 +1,14 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Plugin.Services;
-using Marketeer.API.InventoryTracking.UI.Components;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.InventoryBrowser.Components;
 using Marketeer.UI.Localization.Contracts;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Marketeer.API.InventoryTracking.UI;
+namespace Marketeer.UI.InventoryBrowser.UI;
 
 public class InventoryView : INavigationNode {
     private IConfigurationService configService;
@@ -62,12 +62,8 @@ public class InventoryView : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
-        if (this.isRetainerMode) {
-            this.DrawRetainer();
-        }
-        else {
-            this.DrawCharacter();
-        }
+        if (this.isRetainerMode) this.DrawRetainer();
+        else this.DrawCharacter();
     }
 
     private void DrawCharacter() {

@@ -1,10 +1,10 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.API.GameData.Contracts;
-using Marketeer.API.InventoryTracking.UI;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.InventoryBrowser.UI;
 using Marketeer.UI.Localization.Contracts;
 using System;
 using System.Linq;

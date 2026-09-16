@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Marketeer.API.InventoryTracking.UI.Components;
+namespace Marketeer.UI.InventoryBrowser.Components;
 
 public static class InventoryTablePresenter {
     public static void DrawTable(
