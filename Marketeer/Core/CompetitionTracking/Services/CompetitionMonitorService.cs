@@ -55,9 +55,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     public void StartMonitoring() {
-        if (this.isMonitoring) {
-            return;
-        }
+        if (this.isMonitoring) return;
 
         this.retainerState.ListingsUpdated += this.OnListingsUpdated;
         this.marketListingTracker.LocalListingModified += this.OnLocalListingModified;
@@ -68,9 +66,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     public void StopMonitoring() {
-        if (!this.isMonitoring) {
-            return;
-        }
+        if (!this.isMonitoring) return;
 
         this.retainerState.ListingsUpdated -= this.OnListingsUpdated;
         this.marketListingTracker.LocalListingModified -= this.OnLocalListingModified;
@@ -92,18 +88,14 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         Task.Run(async () => {
             var allCharacters = this.retainerState.GetAllCharactersListings();
             var worldId = allCharacters.FirstOrDefault(c => c.Listings.Any(l => l.ItemId == itemId))?.HomeWorldId ?? 0;
-            if (worldId > 0) {
-                await this.priceProvider.ForceRefreshAsync(new[] { itemId }, worldId);
-            }
+            if (worldId > 0) await this.priceProvider.ForceRefreshAsync(new[] { itemId }, worldId);
         });
     }
 
     public Task CheckUndercutForItemAsync(uint itemId) => Task.CompletedTask;
 
     public async Task CheckUndercutsAsync() {
-        if (this.isChecking) {
-            return;
-        }
+        if (this.isChecking) return;
 
         this.isChecking = true;
 
@@ -125,9 +117,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
             }
 
             foreach (var character in allCharacters) {
-                if (!character.Listings.Any()) {
-                    continue;
-                }
+                if (!character.Listings.Any()) continue;
 
                 var itemIds = character.Listings.Select(listing => listing.ItemId).Distinct();
                 var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId, bypassCache: false);
@@ -138,7 +128,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
                     var itemPrices = lowestPrices.Where(price => price.ItemId == listing.ItemId);
 
-                    // Ignore market competitors strictly below the vendor sell price
                     if (config.EnforceVendorPriceMinimum && vendorPrice > 0) {
                         itemPrices = itemPrices.Where(p => p.Price >= vendorPrice);
                     }
@@ -152,24 +141,18 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                         uint targetPrice;
 
                         if (isWhitelisted) {
-                            if (config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore) {
-                                continue;
-                            }
-
+                            if (config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore) continue;
                             targetPrice = marketLowest.Price;
                         }
                         else {
                             targetPrice = Math.Max(1u, marketLowest.Price - 1);
                         }
 
-                        // Ensure our automated undercut target never dips below the vendor price
                         if (config.EnforceVendorPriceMinimum && vendorPrice > 0) {
                             targetPrice = Math.Max(vendorPrice, targetPrice);
                         }
 
-                        if (listing.CurrentPrice <= targetPrice) {
-                            continue;
-                        }
+                        if (listing.CurrentPrice <= targetPrice) continue;
 
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
@@ -179,7 +162,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             ItemName = resolvedItemName,
                             Quantity = listing.Quantity,
                             RetainerName = listing.RetainerName,
-                            Price = listing.CurrentPrice, // Maintained bugfix constraint from UI highlighting
+                            Price = listing.CurrentPrice,
                             OurPrice = listing.CurrentPrice,
                             ServerCheapestPrice = marketLowest.Price,
                             TargetPrice = targetPrice,

@@ -39,9 +39,7 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
         this.clientState.Login += this.OnLogin;
 
         this.framework.RunOnFrameworkThread(() => {
-            if (this.clientState.IsLoggedIn) {
-                this.RecordCurrentCharacter();
-            }
+            if (this.clientState.IsLoggedIn) this.RecordCurrentCharacter();
         });
     }
 
@@ -58,14 +56,10 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
 
     public void RecordCurrentCharacter() {
         try {
-            if (this.objectTable == null || this.configService == null || this.logger == null) {
-                return;
-            }
+            if (this.objectTable == null || this.configService == null || this.logger == null) return;
 
             var localPlayer = this.objectTable.LocalPlayer;
-            if (localPlayer == null || localPlayer.Name == null) {
-                return;
-            }
+            if (localPlayer == null || localPlayer.Name == null) return;
 
             var characterName = localPlayer.Name.TextValue;
             var worldId = localPlayer.HomeWorld.RowId;
@@ -97,17 +91,13 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
 
     public bool IsActiveCharacter(string name, uint homeWorldId) {
         var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null || localPlayer.Name == null) {
-            return false;
-        }
+        if (localPlayer == null || localPlayer.Name == null) return false;
 
         return localPlayer.Name.TextValue == name && localPlayer.HomeWorld.RowId == homeWorldId;
     }
 
     public void ForgetCharacter(string name, uint homeWorldId) {
-        if (this.IsActiveCharacter(name, homeWorldId)) {
-            return;
-        }
+        if (this.IsActiveCharacter(name, homeWorldId)) return;
 
         var storageKey = $"{name}_{homeWorldId}";
         var config = this.configService.GetConfig();

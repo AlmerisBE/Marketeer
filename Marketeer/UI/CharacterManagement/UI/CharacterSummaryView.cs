@@ -9,7 +9,7 @@ using Marketeer.UI.Localization.Contracts;
 using System;
 using System.Linq;
 
-namespace Marketeer.Core.CharacterManagement.UI;
+namespace Marketeer.UI.CharacterManagement.UI;
 
 public class CharacterSummaryView : ICharacterSummaryView {
     private ICharacterTrackerService trackerService;

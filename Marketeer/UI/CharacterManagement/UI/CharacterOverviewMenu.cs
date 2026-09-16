@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Marketeer.Core.CharacterManagement.UI;
+namespace Marketeer.UI.CharacterManagement.UI;
 
 public class CharacterOverviewMenu : INavigationNode {
     private ICharacterTrackerService trackerService;

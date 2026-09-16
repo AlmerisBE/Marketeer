@@ -1,6 +1,6 @@
 ﻿using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
-using Marketeer.Core.CharacterManagement.UI;
+using Marketeer.UI.CharacterManagement.UI;
 using NSubstitute;
 using Xunit;
 

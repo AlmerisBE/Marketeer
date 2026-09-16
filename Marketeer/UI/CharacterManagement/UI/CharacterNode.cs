@@ -6,7 +6,7 @@ using Marketeer.UI.Dashboard.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Marketeer.Core.CharacterManagement.UI;
+namespace Marketeer.UI.CharacterManagement.UI;
 
 public class CharacterNode : INavigationNode {
     public TrackedCharacter Character { get; }

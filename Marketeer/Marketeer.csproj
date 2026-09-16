@@ -19,10 +19,6 @@
 		<EmbeddedResource Include="UI\**\*.json" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Include="Core\CharacterManagement\Resources\de.json" />
-	  <EmbeddedResource Include="Core\CharacterManagement\Resources\en.json" />
-	  <EmbeddedResource Include="Core\CharacterManagement\Resources\fr.json" />
-	  <EmbeddedResource Include="Core\CharacterManagement\Resources\ja.json" />
 	  <EmbeddedResource Include="Core\CompetitionTracking\Resources\de.json" />
 	  <EmbeddedResource Include="Core\CompetitionTracking\Resources\en.json" />
 	  <EmbeddedResource Include="Core\CompetitionTracking\Resources\fr.json" />
@@ -57,7 +53,7 @@
 	  <EmbeddedResource Include="Core\SalesHistory\Resources\ja.json" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Folder Include="Core\CharacterManagement\Resources\" />
+	  <Folder Include="UI\CharacterManagement\Resources\" />
 	  <Folder Include="Core\Configuration\Resources\" />
 	  <Folder Include="Core\CraftingProfit\Resources\" />
 	  <Folder Include="Core\Financials\Resources\" />

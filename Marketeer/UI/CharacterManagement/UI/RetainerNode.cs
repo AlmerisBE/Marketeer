@@ -3,7 +3,7 @@ using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.UI.Dashboard.Contracts;
 using System.Collections.Generic;
 
-namespace Marketeer.Core.CharacterManagement.UI;
+namespace Marketeer.UI.CharacterManagement.UI;
 
 public class RetainerNode : INavigationNode {
     public RetainerDisplayData Retainer { get; }

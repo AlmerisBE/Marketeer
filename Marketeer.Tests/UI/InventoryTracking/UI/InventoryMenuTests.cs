@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.InventoryTracking.UI;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.UI.InventoryBrowser.UI;
 using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;

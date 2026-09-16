@@ -3,7 +3,7 @@ using Marketeer.Core.CharacterManagement.Models;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Marketeer.Core.CharacterManagement.UI;
+namespace Marketeer.UI.CharacterManagement.UI;
 
 public class RetainerDataPresenter : IRetainerDataPresenter {
     private IRetainerTrackerService retainerTrackerService;
