@@ -2,9 +2,9 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Marketeer.API.GameData.Contracts;
+using Marketeer.API.GameData.Models;
 using Marketeer.Core.CraftingProfit.Contracts;
 using Marketeer.Core.CraftingProfit.Models;
-using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
-using Marketeer.Core.MarketWatch.Contracts;
+using Marketeer.API.GameData.Contracts;
+using Marketeer.API.GameData.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,9 +21,7 @@ public class MarketItemSearchProvider : IMarketItemSearchProvider {
 
     private void InitializeCache() {
         var sheet = this.dataManager.GetExcelSheet<Item>();
-        if (sheet == null) {
-            return;
-        }
+        if (sheet == null) return;
 
         foreach (var item in sheet) {
             // ItemSearchCategory > 0 means the item is listable on the market board
@@ -39,9 +38,7 @@ public class MarketItemSearchProvider : IMarketItemSearchProvider {
     }
 
     public IEnumerable<ItemSearchResult> SearchMarketableItems(string query, int limit = 20) {
-        if (string.IsNullOrWhiteSpace(query)) {
-            return [];
-        }
+        if (string.IsNullOrWhiteSpace(query)) return [];
 
         return this.cache
             .Where(i => i.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase))

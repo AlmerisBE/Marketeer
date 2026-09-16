@@ -1,13 +1,11 @@
 ﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
-using Marketeer.API.InventoryTracking.Models;
+using Marketeer.API.InventoryTracking.UI.Components;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
 namespace Marketeer.API.InventoryTracking.UI;
@@ -83,7 +81,7 @@ public class InventoryView : INavigationNode {
 
         ImGui.TextDisabled(this.localization.Translate("InventoryTab_LastUpdated", snapshot.Timestamp.ToString("g")));
         ImGui.Spacing();
-        this.DrawTable(snapshot.Items);
+        InventoryTablePresenter.DrawTable($"CharacterInvTable_{key}", snapshot.Items, this.localization, this.itemResolver, this.textureProvider);
     }
 
     private void DrawRetainer() {
@@ -96,40 +94,6 @@ public class InventoryView : INavigationNode {
 
         ImGui.TextDisabled(this.localization.Translate("InventoryTab_LastUpdated", snapshot.Timestamp.ToString("g")));
         ImGui.Spacing();
-        this.DrawTable(snapshot.Items);
-    }
-
-    private void DrawTable(IEnumerable<TrackedItem> items) {
-        if (ImGui.BeginTable("InventoryTable", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY, new Vector2(0, -1))) {
-            ImGui.TableSetupScrollFreeze(0, 1);
-            ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 24f);
-            ImGui.TableSetupColumn(this.localization.Translate("InventoryTab_ColName"), ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn(this.localization.Translate("InventoryTab_ColQuantity"), ImGuiTableColumnFlags.WidthFixed, 60f);
-            ImGui.TableHeadersRow();
-
-            foreach (var item in items.OrderBy(i => i.ContainerId).ThenBy(i => i.SlotIndex)) {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                this.DrawIcon(this.itemResolver.ResolveIconId(item.ItemId));
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(this.itemResolver.ResolveItemName(item.ItemId));
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(item.Quantity.ToString("N0"));
-            }
-            ImGui.EndTable();
-        }
-    }
-
-    private void DrawIcon(uint iconId) {
-        if (iconId == 0) {
-            return;
-        }
-
-        var iconWrap = this.textureProvider.GetFromGameIcon(new GameIconLookup(iconId)).GetWrapOrDefault();
-        if (iconWrap != null) {
-            ImGui.Image(iconWrap.Handle, new Vector2(24, 24));
-        }
+        InventoryTablePresenter.DrawTable($"RetainerInvTable_{this.targetRetainerId}", snapshot.Items, this.localization, this.itemResolver, this.textureProvider);
     }
 }

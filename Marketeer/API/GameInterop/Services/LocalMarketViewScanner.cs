@@ -75,7 +75,9 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                 var node = addon->UldManager.NodeList[i];
                 if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
                     var textNode = (AtkTextNode*)node;
-                    var text = this.ExtractString((byte*)textNode->NodeText.StringPtr).Trim();
+
+                    // CORRECTION: Cast to byte* first to use CStringPointer implicit conversion, then to nint
+                    var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr).Trim();
 
                     if (!string.IsNullOrWhiteSpace(text)) {
                         uint resolvedId = this.itemResolver.ResolveItemId(text);
@@ -133,7 +135,10 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
                         if (childNode->Type == NodeType.Text) {
                             var textNode = (AtkTextNode*)childNode;
-                            var text = this.ExtractString((byte*)textNode->NodeText.StringPtr);
+
+                            // CORRECTION: Cast to byte* then nint
+                            var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr);
+
                             if (!string.IsNullOrWhiteSpace(text)) textNodes.Add((this.GetAbsoluteX((nint)childNode), text));
                         }
                         else if (childNode->Type == NodeType.Image) {
@@ -163,6 +168,11 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
         }
     }
 
+    private unsafe string ExtractString(nint stringPtr) {
+        if (stringPtr == IntPtr.Zero) return string.Empty;
+        return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
+    }
+
     private unsafe float GetAbsoluteX(nint nodePtr) {
         var node = (AtkResNode*)nodePtr;
         if (node == null) return 0;
@@ -174,11 +184,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
             parent = parent->ParentNode;
         }
         return x;
-    }
-
-    private unsafe string ExtractString(byte* stringPtr) {
-        if (stringPtr == null) return string.Empty;
-        return MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue ?? string.Empty;
     }
 
     public void Dispose() {

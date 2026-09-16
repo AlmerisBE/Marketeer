@@ -1,6 +1,8 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Marketeer.API.GameData.Contracts;
+using Marketeer.API.GameData.Models;
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.SalesHistory.Contracts;
