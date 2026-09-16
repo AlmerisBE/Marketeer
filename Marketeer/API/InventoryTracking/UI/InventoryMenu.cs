@@ -2,6 +2,7 @@
 using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
 using Marketeer.API.InventoryTracking.Models;
+using Marketeer.API.InventoryTracking.UI.Components;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Financials.Models;
 using Marketeer.Core.SalesHistory.Contracts;
@@ -68,30 +69,11 @@ public class InventoryMenu : INavigationNode {
 
     private void DrawPlayerInventory(InventorySnapshot snapshot) {
         ImGui.Spacing();
-        ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), this.localization.Translate("InventoryTab_PlayerInventory"));
+        ImGui.TextColored(new Vector4(0.5f, 0.8f, 1.0f, 1.0f), this.localization.Translate("InventoryTab_PlayerInventory", snapshot.CharacterName));
         ImGui.TextDisabled(this.localization.Translate("InventoryTab_LastUpdated", snapshot.Timestamp.ToString("g")));
         ImGui.Separator();
 
-        if (ImGui.BeginTable($"PlayerInv_{snapshot.CharacterName}", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY, new Vector2(0, 300f))) {
-            ImGui.TableSetupScrollFreeze(0, 1);
-            ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 24f);
-            ImGui.TableSetupColumn(this.localization.Translate("InventoryTab_ColName"), ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn(this.localization.Translate("InventoryTab_ColQuantity"), ImGuiTableColumnFlags.WidthFixed, 60f);
-            ImGui.TableHeadersRow();
-
-            foreach (var item in snapshot.Items.OrderBy(i => i.ContainerId).ThenBy(i => i.SlotIndex)) {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                this.DrawIcon(this.itemResolver.ResolveIconId(item.ItemId));
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(this.itemResolver.ResolveItemName(item.ItemId));
-
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(item.Quantity.ToString("N0"));
-            }
-            ImGui.EndTable();
-        }
+        InventoryTablePresenter.DrawTable($"PlayerInv_{snapshot.CharacterName}", snapshot.Items, this.localization, this.itemResolver, this.textureProvider);
     }
 
     private void DrawRetainerInventory(RetainerFinancialData retainer) {
@@ -102,26 +84,8 @@ public class InventoryMenu : INavigationNode {
                 return;
             }
 
-            if (ImGui.BeginTable($"RetainerInv_{retainer.RetainerId}", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY, new Vector2(0, 200f))) {
-                ImGui.TableSetupScrollFreeze(0, 1);
-                ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 24f);
-                ImGui.TableSetupColumn(this.localization.Translate("InventoryTab_ColName"), ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn(this.localization.Translate("InventoryTab_ColQuantity"), ImGuiTableColumnFlags.WidthFixed, 60f);
-                ImGui.TableHeadersRow();
-
-                foreach (var listing in retainer.MarketListings.Values) {
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    this.DrawIcon(this.itemResolver.ResolveIconId(listing.ItemId));
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(this.itemResolver.ResolveItemName(listing.ItemId));
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(listing.Quantity.ToString("N0"));
-                }
-                ImGui.EndTable();
-            }
+            var items = retainer.MarketListings.Values.Select(l => new TrackedItem { ItemId = l.ItemId, Quantity = l.Quantity }).ToList();
+            InventoryTablePresenter.DrawTable($"RetainerInv_{retainer.RetainerId}", items, this.localization, this.itemResolver, this.textureProvider);
         }
     }
 

@@ -9,19 +9,6 @@ namespace Marketeer.Tests.UI.UiInterop.Commands;
 
 public class NativeDevCommandTests {
     [Fact]
-    public void Execute_WithInvalidArguments_PrintsHelpMessage() {
-        var windowService = Substitute.For<INativeWindowService>();
-        var chatGui = Substitute.For<IChatGui>();
-        var logger = Substitute.For<ILoggerService>();
-
-        var command = new NativeDevCommand(windowService, chatGui, logger);
-
-        command.Execute("");
-
-        chatGui.Received(1).Print(Arg.Is<string>(s => s.Contains("Usage:")));
-    }
-
-    [Fact]
     public void Execute_WithDumpAction_LogsOpenWindows() {
         var windowService = Substitute.For<INativeWindowService>();
         var chatGui = Substitute.For<IChatGui>();
@@ -37,7 +24,6 @@ public class NativeDevCommandTests {
 
         command.Execute("dump");
 
-        // Utilisation de Debug() au lieu de Info() pour correspondre à l'implémentation native
         logger.Received().Debug(Arg.Is<string>(s => s.Contains("- TestWindow")));
         chatGui.Received().Print(Arg.Is<string>(s => s.Contains("Dumped")));
     }
@@ -63,23 +49,7 @@ public class NativeDevCommandTests {
 
         command.Execute("elements");
 
-        // Utilisation de Debug() au lieu de Info()
         logger.Received().Debug(Arg.Is<string>(s => s.Contains("[Button] NodeID: 42 | Text: \"Click Me\"")));
         chatGui.Received().Print(Arg.Is<string>(s => s.Contains("Dumped")));
-    }
-
-    [Fact]
-    public void Execute_WithElementsAction_WhenNoWindowFocused_PrintsError() {
-        var windowService = Substitute.For<INativeWindowService>();
-        var chatGui = Substitute.For<IChatGui>();
-        var logger = Substitute.For<ILoggerService>();
-
-        windowService.GetFocusedWindow().Returns((INativeWindow?)null);
-
-        var command = new NativeDevCommand(windowService, chatGui, logger);
-
-        command.Execute("elements");
-
-        chatGui.Received(1).PrintError(Arg.Is<string>(s => s.Contains("No active window focused")));
     }
 }

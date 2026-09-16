@@ -57,22 +57,20 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
     }
 
     private unsafe void OnAddonUpdate(AddonEvent type, AddonArgs args) {
-        if ((DateTime.Now - this.lastScanTime).TotalMilliseconds < 1000) return; // Anti-spam debounce
+        if ((DateTime.Now - this.lastScanTime).TotalMilliseconds < 1000) return;
 
         var addon = (AtkUnitBase*)args.Addon.Address;
         if (addon == null || !addon->IsVisible) return;
 
         var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null) return;
+        if (localPlayer == null || localPlayer.CurrentWorld.RowId == 0) return;
 
         uint worldId = localPlayer.CurrentWorld.RowId;
-        if (worldId == 0) return;
 
         try {
             string itemName = string.Empty;
             uint targetItemId = 0;
 
-            // 1. Locate the Item Name in the addon's root text nodes
             for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
                 var node = addon->UldManager.NodeList[i];
                 if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
@@ -92,7 +90,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
             if (targetItemId == 0) return;
 
-            // 2. Locate the List Component and parse the rows
             var results = new List<LowestPriceResult>();
 
             for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
@@ -137,20 +134,13 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                         if (childNode->Type == NodeType.Text) {
                             var textNode = (AtkTextNode*)childNode;
                             var text = this.ExtractString((byte*)textNode->NodeText.StringPtr);
-                            if (!string.IsNullOrWhiteSpace(text)) {
-                                textNodes.Add((this.GetAbsoluteX((nint)childNode), text));
-                            }
+                            if (!string.IsNullOrWhiteSpace(text)) textNodes.Add((this.GetAbsoluteX((nint)childNode), text));
                         }
                         else if (childNode->Type == NodeType.Image) {
-                            // Basic heuristic: if an image node is visible early in the row, it's likely the HQ icon.
-                            // The exact icon ID can vary, but its presence in the first column is a strong indicator.
-                            if (this.GetAbsoluteX((nint)childNode) < 50f) {
-                                isHq = true;
-                            }
+                            if (this.GetAbsoluteX((nint)childNode) < 50f) isHq = true;
                         }
                     }
 
-                    // Order by X position: 0=Price, 1=Qty, 2=Total, 3=RetainerName
                     textNodes = textNodes.OrderBy(t => t.X).ToList();
 
                     if (textNodes.Count >= 4) {
@@ -167,7 +157,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                         }
                     }
 
-                    // Recursive search for nested lists if any
                     this.ExtractListingsFromComponent(&rowComponent->UldManager, itemId, results);
                 }
             }
