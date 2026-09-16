@@ -28,9 +28,7 @@ public unsafe class NativeWindow : INativeWindow {
     public INativeWindow? Parent {
         get {
             var parentName = this.hierarchyProvider.GetParentWindowName(this.Name);
-            if (string.IsNullOrEmpty(parentName)) {
-                return null;
-            }
+            if (string.IsNullOrEmpty(parentName)) return null;
             return this.windowService.GetWindow(parentName);
         }
     }
@@ -52,14 +50,10 @@ public unsafe class NativeWindow : INativeWindow {
     }
 
     public void Close() {
-        if (this.Parent != null && this.Parent.IsVisible) {
-            this.Parent.Close(); // Interface call: 0 arguments
-        }
+        if (this.Parent != null && this.Parent.IsVisible) this.Parent.Close();
 
         var addon = this.GetAtkUnitBase();
-        if (addon == null || !addon->IsVisible) {
-            return;
-        }
+        if (addon == null || !addon->IsVisible) return;
 
         if (this.Type == WindowType.Dialog || this.Type == WindowType.Menu) {
             var values = stackalloc AtkValue[1];
@@ -68,10 +62,7 @@ public unsafe class NativeWindow : INativeWindow {
             values[0].Int = -1;
             addon->FireCallback(1u, values);
         }
-        else {
-            // CS7036 Fix: AtkUnitBase.Close requires the fireCallback boolean
-            addon->Close(true);
-        }
+        else addon->Close(true);
     }
 
     public void SendCallback(params object[] args) {
@@ -86,9 +77,7 @@ public unsafe class NativeWindow : INativeWindow {
             return;
         }
 
-        if (args == null || args.Length == 0) {
-            return;
-        }
+        if (args == null || args.Length == 0) return;
 
         var values = stackalloc AtkValue[args.Length];
 
@@ -107,9 +96,7 @@ public unsafe class NativeWindow : INativeWindow {
                 values[i].Type = AtkValueType.Int;
                 values[i].Int = boolValue ? 1 : 0;
             }
-            else {
-                this.logger.Warning($"[NativeWindow] Unsupported argument type '{args[i].GetType().Name}' at index {i} for callback.");
-            }
+            else this.logger.Warning($"[NativeWindow] Unsupported argument type '{args[i].GetType().Name}' at index {i} for callback.");
         }
 
         this.logger.Debug($"[NativeWindow] Sending callback to '{this.Name}' with {args.Length} arguments (Event ID: {args[0]}).");
@@ -120,30 +107,24 @@ public unsafe class NativeWindow : INativeWindow {
         var addon = this.GetAtkUnitBase();
         var elements = new List<INativeUiElement>();
 
-        if (addon == null || !addon->IsVisible) {
-            return elements;
-        }
+        if (addon == null || !addon->IsVisible) return elements;
 
         this.ExtractElementsRecursively(&addon->UldManager, elements, false);
         return elements;
     }
 
     private void ExtractElementsRecursively(AtkUldManager* uldManager, List<INativeUiElement> elements, bool ignoreRawText) {
-        if (uldManager == null) {
-            return;
-        }
+        if (uldManager == null) return;
 
         for (int i = 0; i < uldManager->NodeListCount; i++) {
             var node = uldManager->NodeList[i];
 
-            if (node == null || !node->IsVisible()) {
-                continue;
-            }
+            if (node == null || !node->IsVisible()) continue;
 
             if (node->Type == NodeType.Text) {
                 if (!ignoreRawText) {
                     var textNode = (AtkTextNode*)node;
-                    var text = this.ExtractString(textNode->NodeText.StringPtr);
+                    var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr);
 
                     if (!string.IsNullOrWhiteSpace(text)) {
                         elements.Add(new NativeUiElement(text, NativeUiElementType.Text, node->NodeId, this.Name, this.gameGui, this.logger));
@@ -169,9 +150,7 @@ public unsafe class NativeWindow : INativeWindow {
     }
 
     private string GetAggregatedTextDirect(AtkUldManager* uldManager) {
-        if (uldManager == null) {
-            return string.Empty;
-        }
+        if (uldManager == null) return string.Empty;
 
         var sb = new StringBuilder();
 
@@ -180,11 +159,9 @@ public unsafe class NativeWindow : INativeWindow {
 
             if (node != null && node->IsVisible() && node->Type == NodeType.Text) {
                 var textNode = (AtkTextNode*)node;
-                var text = this.ExtractString(textNode->NodeText.StringPtr);
+                var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr);
 
-                if (!string.IsNullOrWhiteSpace(text)) {
-                    sb.Append(text).Append(" | ");
-                }
+                if (!string.IsNullOrWhiteSpace(text)) sb.Append(text).Append(" | ");
             }
         }
 
@@ -192,18 +169,14 @@ public unsafe class NativeWindow : INativeWindow {
         return result.Length > 0 ? result.TrimEnd(' ', '|') : string.Empty;
     }
 
-    private string ExtractString(byte* stringPtr) {
-        if (stringPtr == null) {
-            return string.Empty;
-        }
-        return Marshal.PtrToStringUTF8((IntPtr)stringPtr) ?? string.Empty;
+    private string ExtractString(nint stringPtr) {
+        if (stringPtr == IntPtr.Zero) return string.Empty;
+        return Marshal.PtrToStringUTF8(stringPtr) ?? string.Empty;
     }
 
     private AtkUnitBase* GetAtkUnitBase() {
         var addonPtr = this.gameGui.GetAddonByName(this.Name);
-        if (addonPtr.Address == IntPtr.Zero) {
-            return null;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return null;
         return (AtkUnitBase*)addonPtr.Address;
     }
 }

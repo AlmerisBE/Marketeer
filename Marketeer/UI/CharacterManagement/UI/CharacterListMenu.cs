@@ -1,11 +1,12 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
+using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.Core.MarketListings.UI;
 using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.InventoryBrowser.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.MarketListings.UI;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -57,131 +58,114 @@ public class CharacterListMenu : INavigationNode {
             return;
         }
 
-        var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
-        var forgetTooltip = this.localizationService.Translate("CharacterList_TooltipForget");
-        var noRetainersLabel = this.localizationService.Translate("CharacterList_NoRetainers");
-        var retainerColName = this.localizationService.Translate("CharacterList_RetainerColName");
-        var gilColName = this.localizationService.Translate("CharacterList_ColGil");
-        var listingsColName = this.localizationService.Translate("CharacterList_ColListingsCount");
-        var totalColName = this.localizationService.Translate("CharacterList_ColTotalValue");
-
-        var onSaleButtonLabel = this.localizationService.Translate("CharacterList_BtnOnSale");
-        var inventoryButtonLabel = this.localizationService.Translate("CharacterList_BtnInventory");
-
-        var updateRequiredTooltip = this.localizationService.Translate("Dashboard_PriceUpdateRequired");
-        var syncRequiredTooltip = this.localizationService.Translate("Dashboard_SyncRequired");
-
-        var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + (ImGui.GetStyle().FramePadding.X * 2);
-
         foreach (var character in characters) {
-            bool isExpanded = false;
+            this.DrawCharacterCard(character);
+        }
+    }
 
-            if (ImGui.BeginTable($"HeaderLayout_{character.Name}_{character.HomeWorldId}", 2, ImGuiTableFlags.None)) {
-                ImGui.TableSetupColumn("Header", ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, buttonWidth);
+    private void DrawCharacterCard(TrackedCharacter character) {
+        var forgetLabel = this.localizationService.Translate("CharacterList_BtnForget");
+        var buttonWidth = ImGui.CalcTextSize(forgetLabel).X + (ImGui.GetStyle().FramePadding.X * 2);
+        bool isExpanded = false;
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
+        if (ImGui.BeginTable($"HeaderLayout_{character.Name}_{character.HomeWorldId}", 2, ImGuiTableFlags.None)) {
+            ImGui.TableSetupColumn("Header", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, buttonWidth);
 
-                var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
-                var headerText = $"{character.Name} ({worldName})###{character.Name}_{character.HomeWorldId}";
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
 
-                isExpanded = ImGui.TreeNodeEx(headerText, ImGuiTreeNodeFlags.Framed);
+            var worldName = this.worldDataPresenter.GetWorldName(character.HomeWorldId);
+            isExpanded = ImGui.TreeNodeEx($"{character.Name} ({worldName})###{character.Name}_{character.HomeWorldId}", ImGuiTreeNodeFlags.Framed);
 
-                ImGui.TableNextColumn();
-                var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
-                if (isActive) {
-                    ImGui.BeginDisabled();
-                }
+            ImGui.TableNextColumn();
+            var isActive = this.trackerService.IsActiveCharacter(character.Name, character.HomeWorldId);
+            if (isActive) ImGui.BeginDisabled();
 
-                if (ImGui.Button($"{forgetLabel}##btn_{character.Name}_{character.HomeWorldId}", new Vector2(-1, 0))) {
-                    this.trackerService.ForgetCharacter(character.Name, character.HomeWorldId);
-                }
-
-                if (isActive) {
-                    ImGui.EndDisabled();
-                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-                        ImGui.SetTooltip(forgetTooltip);
-                    }
-                }
-
-                ImGui.EndTable();
+            if (ImGui.Button($"{forgetLabel}##btn_{character.Name}_{character.HomeWorldId}", new Vector2(-1, 0))) {
+                this.trackerService.ForgetCharacter(character.Name, character.HomeWorldId);
             }
 
-            if (isExpanded) {
-                float indent = ImGui.GetStyle().IndentSpacing;
-                ImGui.Unindent(indent);
-
-                var retainers = this.retainerDataPresenter.GetRetainers(character.Name, character.HomeWorldId);
-
-                if (retainers.Count == 0) {
-                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().CellPadding.X);
-                    ImGui.TextDisabled(noRetainersLabel);
+            if (isActive) {
+                ImGui.EndDisabled();
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                    ImGui.SetTooltip(this.localizationService.Translate("CharacterList_TooltipForget"));
                 }
-                else {
-                    float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
-                    var actionColumnWidth = ImGui.CalcTextSize(onSaleButtonLabel).X + ImGui.CalcTextSize(inventoryButtonLabel).X + (ImGui.GetStyle().FramePadding.X * 4) + ImGui.GetStyle().ItemSpacing.X;
-
-                    if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
-                        ImGui.TableSetupColumn(retainerColName, ImGuiTableColumnFlags.WidthStretch);
-                        ImGui.TableSetupColumn(gilColName, ImGuiTableColumnFlags.WidthFixed, 100f);
-                        ImGui.TableSetupColumn(listingsColName, ImGuiTableColumnFlags.WidthFixed, 60f);
-                        ImGui.TableSetupColumn(totalColName, ImGuiTableColumnFlags.WidthFixed, 100f);
-                        ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, actionColumnWidth);
-                        ImGui.TableHeadersRow();
-
-                        foreach (var retainer in retainers) {
-                            ImGui.TableNextRow();
-
-                            ImGui.TableNextColumn();
-                            ImGui.TextUnformatted(retainer.Name);
-
-                            ImGui.TableNextColumn();
-                            ImGui.TextUnformatted($"{retainer.Gil:N0}");
-
-                            var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
-                            var distinctItems = listings.Count;
-                            var totalValue = listings.Sum(l => l.TotalPrice);
-
-                            var needsPriceUpdate = distinctItems > 0 && listings.Any(l => l.PricePerUnit == 0);
-                            var isDesynced = distinctItems != retainer.MarketItemCount;
-
-                            ImGui.TableNextColumn();
-                            ImGui.TextUnformatted(retainer.MarketItemCount.ToString());
-
-                            ImGui.TableNextColumn();
-                            if (isDesynced || needsPriceUpdate) {
-                                ImGui.TextDisabled($"{totalValue:N0} (!)");
-                                if (ImGui.IsItemHovered()) {
-                                    ImGui.SetTooltip(isDesynced ? syncRequiredTooltip : updateRequiredTooltip);
-                                }
-                            }
-                            else {
-                                ImGui.TextUnformatted($"{totalValue:N0}");
-                            }
-
-                            ImGui.TableNextColumn();
-
-                            if (ImGui.Button($"{onSaleButtonLabel}##det_{retainer.RetainerId}")) {
-                                this.retainerDetailsWindow.OpenForRetainer(retainer.RetainerId, retainer.Name);
-                            }
-
-                            ImGui.SameLine();
-
-                            if (ImGui.Button($"{inventoryButtonLabel}##inv_{retainer.RetainerId}")) {
-                                this.inventoryView.OpenForRetainer(retainer.RetainerId, retainer.Name);
-                                this.navigationService.NavigateTo(this.inventoryView);
-                            }
-                        }
-
-                        ImGui.EndTable();
-                    }
-                }
-
-                ImGui.Indent(indent);
-                ImGui.Spacing();
-                ImGui.TreePop();
             }
+
+            ImGui.EndTable();
+        }
+
+        if (isExpanded) {
+            float indent = ImGui.GetStyle().IndentSpacing;
+            ImGui.Unindent(indent);
+            this.DrawRetainersTable(character);
+            ImGui.Indent(indent);
+            ImGui.Spacing();
+            ImGui.TreePop();
+        }
+    }
+
+    private void DrawRetainersTable(TrackedCharacter character) {
+        var retainers = this.retainerDataPresenter.GetRetainers(character.Name, character.HomeWorldId);
+
+        if (retainers.Count == 0) {
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().CellPadding.X);
+            ImGui.TextDisabled(this.localizationService.Translate("CharacterList_NoRetainers"));
+            return;
+        }
+
+        var onSaleLabel = this.localizationService.Translate("CharacterList_BtnOnSale");
+        var invLabel = this.localizationService.Translate("CharacterList_BtnInventory");
+        var actionColumnWidth = ImGui.CalcTextSize(onSaleLabel).X + ImGui.CalcTextSize(invLabel).X + (ImGui.GetStyle().FramePadding.X * 4) + ImGui.GetStyle().ItemSpacing.X;
+        float fullWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetCursorPosX();
+
+        if (ImGui.BeginTable($"RetainersTable_{character.Name}_{character.HomeWorldId}", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, new Vector2(fullWidth, 0))) {
+            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_RetainerColName"), ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColGil"), ImGuiTableColumnFlags.WidthFixed, 100f);
+            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColListingsCount"), ImGuiTableColumnFlags.WidthFixed, 60f);
+            ImGui.TableSetupColumn(this.localizationService.Translate("CharacterList_ColTotalValue"), ImGuiTableColumnFlags.WidthFixed, 100f);
+            ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, actionColumnWidth);
+            ImGui.TableHeadersRow();
+
+            foreach (var retainer in retainers) {
+                this.DrawRetainerRow(retainer, onSaleLabel, invLabel);
+            }
+            ImGui.EndTable();
+        }
+    }
+
+    private void DrawRetainerRow(RetainerDisplayData retainer, string onSaleLabel, string invLabel) {
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(retainer.Name);
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted($"{retainer.Gil:N0}");
+
+        var listings = this.marketListingTrackerService.GetListingsForRetainer(retainer.RetainerId);
+        var distinctItems = listings.Count;
+        var totalValue = listings.Sum(l => l.TotalPrice);
+        var needsPriceUpdate = distinctItems > 0 && listings.Any(l => l.PricePerUnit == 0);
+        var isDesynced = distinctItems != retainer.MarketItemCount;
+
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(retainer.MarketItemCount.ToString());
+        ImGui.TableNextColumn();
+
+        if (isDesynced || needsPriceUpdate) {
+            ImGui.TextDisabled($"{totalValue:N0} (!)");
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate(isDesynced ? "Dashboard_SyncRequired" : "Dashboard_PriceUpdateRequired"));
+        }
+        else ImGui.TextUnformatted($"{totalValue:N0}");
+
+        ImGui.TableNextColumn();
+        if (ImGui.Button($"{onSaleLabel}##det_{retainer.RetainerId}")) {
+            this.retainerDetailsWindow.OpenForRetainer(retainer.RetainerId, retainer.Name);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button($"{invLabel}##inv_{retainer.RetainerId}")) {
+            this.inventoryView.OpenForRetainer(retainer.RetainerId, retainer.Name);
+            this.navigationService.NavigateTo(this.inventoryView);
         }
     }
 }

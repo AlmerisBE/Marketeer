@@ -27,10 +27,7 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
 
     public unsafe bool IsHistoryWindowOpen() {
         var addonPtr = this.gameGui.GetAddonByName("RetainerHistory");
-
-        if (addonPtr.Address == IntPtr.Zero) {
-            return false;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return false;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         return addon->IsVisible;
@@ -41,16 +38,12 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
         var addonPtr = this.gameGui.GetAddonByName("RetainerHistory");
 
         if (addonPtr.Address == IntPtr.Zero) {
-            // Restored the missing warning log to satisfy the unit test constraints
             this.logger.Warning("Cannot scrape sales: 'RetainerHistory' pointer is null.");
             return records;
         }
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-
-        if (!addon->IsVisible) {
-            return records;
-        }
+        if (!addon->IsVisible) return records;
 
         AtkComponentNode* listComponentNode = null;
 
@@ -62,23 +55,16 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
             }
         }
 
-        if (listComponentNode == null || listComponentNode->Component == null) {
-            return records;
-        }
+        if (listComponentNode == null || listComponentNode->Component == null) return records;
 
         var listComponent = listComponentNode->Component;
 
         for (int i = 0; i < listComponent->UldManager.NodeListCount; i++) {
             var listItemNode = listComponent->UldManager.NodeList[i];
-
-            if (listItemNode == null || (ushort)listItemNode->Type < 1000 || !listItemNode->IsVisible()) {
-                continue;
-            }
+            if (listItemNode == null || (ushort)listItemNode->Type < 1000 || !listItemNode->IsVisible()) continue;
 
             var listItemComponent = ((AtkComponentNode*)listItemNode)->Component;
-            if (listItemComponent == null) {
-                continue;
-            }
+            if (listItemComponent == null) continue;
 
             try {
                 var textNodes = new Dictionary<uint, string>();
@@ -86,16 +72,11 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
 
                 for (int j = 0; j < listItemComponent->UldManager.NodeListCount; j++) {
                     var childNode = listItemComponent->UldManager.NodeList[j];
-                    if (childNode == null) {
-                        continue;
-                    }
+                    if (childNode == null) continue;
 
                     if (childNode->Type == NodeType.Text) {
-                        var text = this.ExtractString(((AtkTextNode*)childNode)->NodeText.StringPtr);
-
-                        if (childNode->IsVisible() && !string.IsNullOrWhiteSpace(text)) {
-                            textNodes[childNode->NodeId] = text;
-                        }
+                        var text = this.ExtractString((nint)(byte*)((AtkTextNode*)childNode)->NodeText.StringPtr);
+                        if (childNode->IsVisible() && !string.IsNullOrWhiteSpace(text)) textNodes[childNode->NodeId] = text;
                     }
                     else if ((ushort)childNode->Type >= 1000) {
                         var innerComponent = ((AtkComponentNode*)childNode)->Component;
@@ -106,21 +87,17 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
 
                                 if (innerChild != null && innerChild->Type == NodeType.Text && innerChild->IsVisible()) {
                                     var qtyTextNode = (AtkTextNode*)innerChild;
-                                    var qtyStr = this.ExtractString(qtyTextNode->NodeText.StringPtr);
+                                    var qtyStr = this.ExtractString((nint)(byte*)qtyTextNode->NodeText.StringPtr);
 
                                     var cleanQtyStr = Regex.Replace(qtyStr, @"[^\d]", "");
-                                    if (uint.TryParse(cleanQtyStr, out var parsedQty) && parsedQty > 0) {
-                                        quantity = parsedQty;
-                                    }
+                                    if (uint.TryParse(cleanQtyStr, out var parsedQty) && parsedQty > 0) quantity = parsedQty;
                                 }
                             }
                         }
                     }
                 }
 
-                if (textNodes.Count < 4) {
-                    continue;
-                }
+                if (textNodes.Count < 4) continue;
 
                 string itemNameRaw = textNodes.GetValueOrDefault(3u, string.Empty);
                 string priceStr = textNodes.GetValueOrDefault(6u, string.Empty);
@@ -137,26 +114,18 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
 
                         if (itemId != 0) {
                             itemNameRaw = kvp.Value;
-                            if (fallbackQty > 1) {
-                                parsedQtyFromName = fallbackQty;
-                            }
+                            if (fallbackQty > 1) parsedQtyFromName = fallbackQty;
                             break;
                         }
                     }
                 }
 
-                if (itemId == 0) {
-                    continue;
-                }
+                if (itemId == 0) continue;
 
-                if (parsedQtyFromName > 1) {
-                    quantity = parsedQtyFromName;
-                }
+                if (parsedQtyFromName > 1) quantity = parsedQtyFromName;
 
                 var cleanPrice = Regex.Replace(priceStr, @"[^\d]", "");
-                if (!uint.TryParse(cleanPrice, out var unitPrice)) {
-                    continue;
-                }
+                if (!uint.TryParse(cleanPrice, out var unitPrice)) continue;
 
                 DateTime saleDate = this.ParseSaleDate(dateStr);
 
@@ -177,7 +146,7 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
     }
 
     private (string Name, uint Quantity) ParseItemNameAndQuantity(string rawText) {
-        var name = rawText.Replace("", "").Trim();
+        var name = rawText.Replace("\uE03C", "").Trim();
         uint quantity = 1;
 
         var match = Regex.Match(name, @"^(.*?)\s*x(\d+)$");
@@ -190,15 +159,10 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
     }
 
     private DateTime ParseSaleDate(string dateStr) {
-        if (string.IsNullOrWhiteSpace(dateStr)) {
-            return DateTime.MinValue;
-        }
+        if (string.IsNullOrWhiteSpace(dateStr)) return DateTime.MinValue;
 
         var normalized = dateStr.Replace("h", ":").Replace("H", ":").Trim();
-
-        if (DateTime.TryParse(normalized, out var parsedDate)) {
-            return parsedDate;
-        }
+        if (DateTime.TryParse(normalized, out var parsedDate)) return parsedDate;
 
         var cleanForRegex = normalized.Replace(" ", "");
         var match = Regex.Match(cleanForRegex, @"^(\d+)[^\d]+(\d+)[^\d]+(\d+)[^\d]+(\d+)$");
@@ -222,10 +186,7 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
                 }
 
                 int year = DateTime.Now.Year;
-
-                if (month > DateTime.Now.Month) {
-                    year--;
-                }
+                if (month > DateTime.Now.Month) year--;
 
                 try {
                     return new DateTime(year, month, day, hour, minute, 0, DateTimeKind.Local);
@@ -239,11 +200,8 @@ public class SalesHistoryScraper : ISalesHistoryScraper {
         return DateTime.MinValue;
     }
 
-    private unsafe string ExtractString(byte* stringPtr) {
-        if (stringPtr == null) {
-            return string.Empty;
-        }
-
-        return MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue ?? string.Empty;
+    private unsafe string ExtractString(nint stringPtr) {
+        if (stringPtr == IntPtr.Zero) return string.Empty;
+        return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
     }
 }

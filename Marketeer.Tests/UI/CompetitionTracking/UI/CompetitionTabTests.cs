@@ -1,6 +1,6 @@
 ﻿using Marketeer.Core.CompetitionTracking.Contracts;
-using Marketeer.Core.CompetitionTracking.UI;
 using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.CompetitionTracking.UI;
 using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;

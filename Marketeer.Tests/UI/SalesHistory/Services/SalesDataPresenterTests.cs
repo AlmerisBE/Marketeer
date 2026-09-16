@@ -1,5 +1,5 @@
 ﻿using Marketeer.Core.SalesHistory.Models;
-using Marketeer.Core.SalesHistory.Services;
+using Marketeer.UI.SalesHistory.Presenters;
 using NSubstitute;
 using Xunit;
 

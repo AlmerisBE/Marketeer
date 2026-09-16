@@ -79,7 +79,6 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
             charData.CompanyTag = companyTag;
             charData.LastScanDate = DateTime.UtcNow;
 
-            // Read Gil directly from memory via InventoryManager (ItemId 1 = Gil)
             charData.CharacterGil = (ulong)this.inventoryService.GetItemCountInInventory(1);
 
             this.configService.Save();

@@ -1,7 +1,7 @@
-﻿using Marketeer.Core.Configuration.Commands;
-using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.UI;
+﻿using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.Configuration.Commands;
+using Marketeer.UI.Configuration.UI;
 using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.UI;
 using Marketeer.UI.Localization.Contracts;
