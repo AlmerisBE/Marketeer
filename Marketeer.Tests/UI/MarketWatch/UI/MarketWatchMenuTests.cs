@@ -1,4 +1,6 @@
-﻿using Marketeer.Core.MarketWatch.Contracts;
+﻿using Marketeer.API.GameData.Contracts;
+using Marketeer.API.GameData.Models;
+using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.MarketWatch.UI;
 using Marketeer.Core.SalesHistory.Contracts;
