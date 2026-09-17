@@ -1,7 +1,9 @@
 ﻿using Dalamud.Interface.Windowing;
 using Marketeer.Core.Framework;
+using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.RetainerOverlays.Components;
 using Marketeer.UI.RetainerOverlays.Contracts;
+using Marketeer.UI.RetainerOverlays.Providers;
 using Marketeer.UI.RetainerOverlays.Services;
 using Marketeer.UI.RetainerOverlays.UI;
 using Marketeer.UI.Shell.Contracts;
@@ -12,6 +14,8 @@ namespace Marketeer.UI.RetainerOverlays;
 
 public class RetainerOverlaysFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
+        services.AddSingleton<ILocalizationProvider, GuidanceLocalizationProvider>();
+
         // Services géométriques et moteur d'instructions
         services.AddSingleton<IWindowGeometryProvider, WindowGeometryProvider>();
         services.AddSingleton<GuidanceEngineService>();
