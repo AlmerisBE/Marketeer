@@ -2,9 +2,9 @@
 using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.InventoryBrowser.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -14,7 +14,7 @@ namespace Marketeer.UI.CharacterManagement.UI;
 public class CharacterOverviewMenu : INavigationNode {
     private ICharacterTrackerService trackerService;
     private IWorldDataPresenter worldDataPresenter;
-    private IDashboardNavigationService navigationService;
+    private INavigationService navigationService;
     private ICharacterSummaryView characterSummaryView;
     private IRetainerDataPresenter retainerDataPresenter;
     private IRetainerDetailsView retainerDetailsView;
@@ -31,7 +31,7 @@ public class CharacterOverviewMenu : INavigationNode {
     public CharacterOverviewMenu(
         ICharacterTrackerService trackerService,
         IWorldDataPresenter worldDataPresenter,
-        IDashboardNavigationService navigationService,
+        INavigationService navigationService,
         ICharacterSummaryView characterSummaryView,
         IRetainerDataPresenter retainerDataPresenter,
         IRetainerDetailsView retainerDetailsView,

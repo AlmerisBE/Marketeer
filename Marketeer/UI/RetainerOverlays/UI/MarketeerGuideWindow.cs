@@ -5,14 +5,14 @@ using Marketeer.API.GameInterop.Contracts;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.Guidance.Contracts;
 using Marketeer.UI.Guidance.Models;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.RetainerOverlays.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Marketeer.UI.Guidance.UI;
+namespace Marketeer.UI.RetainerOverlays.UI;
 
 public class MarketeerGuideWindow : Window {
     private readonly IWindowGeometryProvider geometryProvider;

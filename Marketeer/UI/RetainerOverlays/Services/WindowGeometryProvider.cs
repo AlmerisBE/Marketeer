@@ -1,9 +1,9 @@
 ﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Marketeer.UI.Guidance.Contracts;
+using Marketeer.UI.RetainerOverlays.Contracts;
 using System;
 
-namespace Marketeer.UI.Guidance.Services;
+namespace Marketeer.UI.RetainerOverlays.Services;
 
 public unsafe class WindowGeometryProvider : IWindowGeometryProvider {
     private IGameGui gameGui;

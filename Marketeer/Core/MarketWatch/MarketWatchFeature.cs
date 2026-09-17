@@ -2,10 +2,10 @@
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Repositories;
 using Marketeer.Core.MarketWatch.Services;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.MarketWatch.Providers;
 using Marketeer.UI.MarketWatch.UI;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

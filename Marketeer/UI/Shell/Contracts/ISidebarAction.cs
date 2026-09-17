@@ -1,4 +1,4 @@
-﻿namespace Marketeer.UI.Dashboard.Contracts;
+﻿namespace Marketeer.UI.Shell.Contracts;
 
 public interface ISidebarAction {
     string Name { get; }

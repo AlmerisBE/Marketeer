@@ -1,13 +1,13 @@
 ﻿using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Configuration.UI;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 
 namespace Marketeer.UI.Configuration.Commands;
 
 public class ConfigCommand : ICommand {
-    private IDashboardNavigationService navigationService;
+    private INavigationService navigationService;
     private DashboardWindow dashboardWindow;
     private ConfigMenu configMenu;
     private ILocalizationService localizationService;
@@ -16,7 +16,7 @@ public class ConfigCommand : ICommand {
     public string Description => this.localizationService.Translate("Command_Config_Description");
 
     public ConfigCommand(
-        IDashboardNavigationService navigationService,
+        INavigationService navigationService,
         DashboardWindow dashboardWindow,
         ConfigMenu configMenu,
         ILocalizationService localizationService) {

@@ -1,12 +1,12 @@
 ﻿using Marketeer.Core.Framework;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Command.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.SalesHistory.Commands;
 using Marketeer.UI.SalesHistory.Presenters;
 using Marketeer.UI.SalesHistory.Providers;
 using Marketeer.UI.SalesHistory.UI;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer.UI.SalesHistory;

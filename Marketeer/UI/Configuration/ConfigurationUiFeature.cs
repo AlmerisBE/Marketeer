@@ -3,8 +3,8 @@ using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Configuration.Commands;
 using Marketeer.UI.Configuration.Providers;
 using Marketeer.UI.Configuration.UI;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer.UI.Configuration;

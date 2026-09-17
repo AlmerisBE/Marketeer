@@ -1,6 +1,6 @@
 ﻿using Marketeer.UI.Guidance.Models;
 
-namespace Marketeer.UI.Guidance.Contracts;
+namespace Marketeer.UI.RetainerOverlays.Contracts;
 
 public interface IGuidanceInstructionProvider {
     GuidanceInstruction? GetCurrentInstruction();

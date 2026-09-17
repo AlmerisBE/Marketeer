@@ -5,6 +5,7 @@ using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.RetainerAutomation.Commands;
 using Marketeer.UI.RetainerAutomation.Providers;
+using Marketeer.UI.RetainerOverlays.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

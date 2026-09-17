@@ -1,5 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.UI.Guidance.Services;
+using Marketeer.UI.RetainerOverlays.Services;
 using NSubstitute;
 using Xunit;
 

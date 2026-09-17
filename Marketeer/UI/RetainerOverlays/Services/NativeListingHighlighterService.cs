@@ -15,7 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Marketeer.Core.MarketListings.Services;
+namespace Marketeer.UI.RetainerOverlays.Services;
 
 public class NativeListingHighlighterService : IDisposable {
     private readonly IAddonLifecycle addonLifecycle;

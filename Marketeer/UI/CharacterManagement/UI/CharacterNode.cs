@@ -2,7 +2,7 @@
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,7 +12,7 @@ public class CharacterNode : INavigationNode {
     public TrackedCharacter Character { get; }
 
     private IWorldDataPresenter worldDataPresenter;
-    private IDashboardNavigationService navigationService;
+    private INavigationService navigationService;
     private ICharacterSummaryView summaryView;
     private IRetainerDataPresenter retainerDataPresenter;
     private IRetainerDetailsView retainerDetailsView;
@@ -27,7 +27,7 @@ public class CharacterNode : INavigationNode {
     public CharacterNode(
         TrackedCharacter character,
         IWorldDataPresenter worldDataPresenter,
-        IDashboardNavigationService navigationService,
+        INavigationService navigationService,
         ICharacterSummaryView summaryView,
         IRetainerDataPresenter retainerDataPresenter,
         IRetainerDetailsView retainerDetailsView,

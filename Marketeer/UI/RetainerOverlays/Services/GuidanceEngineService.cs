@@ -4,12 +4,12 @@ using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
-using Marketeer.UI.Guidance.Contracts;
 using Marketeer.UI.Guidance.Models;
+using Marketeer.UI.RetainerOverlays.Contracts;
 using Marketeer.UI.UiInterop.Contracts;
 using System.Linq;
 
-namespace Marketeer.UI.Guidance.Services;
+namespace Marketeer.UI.RetainerOverlays.Services;
 
 public class GuidanceEngineService : IGuidanceInstructionProvider {
     private IMarketListingProvider listingProvider;

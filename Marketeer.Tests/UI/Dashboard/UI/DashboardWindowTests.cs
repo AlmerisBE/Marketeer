@@ -1,7 +1,7 @@
 ﻿using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -13,7 +13,7 @@ public class DashboardWindowTests {
         // Arrange
         var mockLocalization = Substitute.For<ILocalizationService>();
         var mockAutomationService = Substitute.For<IRetainerAutomationService>();
-        var mockNavigationService = Substitute.For<IDashboardNavigationService>();
+        var mockNavigationService = Substitute.For<INavigationService>();
 
         mockLocalization.Translate("Dashboard_Title").Returns("Marketeer - Dashboard");
 

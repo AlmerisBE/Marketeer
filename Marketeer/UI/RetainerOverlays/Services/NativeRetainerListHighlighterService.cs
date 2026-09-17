@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Marketeer.Core.MarketListings.Services;
+namespace Marketeer.UI.RetainerOverlays.Services;
 
 public class NativeRetainerListHighlighterService : IDisposable {
     private IAddonLifecycle addonLifecycle;

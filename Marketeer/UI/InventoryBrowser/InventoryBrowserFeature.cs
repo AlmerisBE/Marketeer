@@ -1,8 +1,8 @@
 ﻿using Marketeer.Core.Framework;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.InventoryBrowser.Providers;
 using Marketeer.UI.InventoryBrowser.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer.UI.InventoryBrowser;

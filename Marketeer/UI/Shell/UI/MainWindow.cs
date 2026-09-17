@@ -1,37 +1,34 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
-using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Marketeer.UI.Dashboard.UI;
+namespace Marketeer.UI.Shell.UI;
 
-public class DashboardWindow : Window {
+public class MainWindow : Window {
     private IReadOnlyList<INavigationNode> rootNodes;
+    private IReadOnlyList<ISidebarAction> sidebarActions;
     private ILocalizationService localizationService;
-    private IRetainerAutomationService automationService;
     private INavigationService navigationService;
 
-    public DashboardWindow(
+    public MainWindow(
         IEnumerable<INavigationNode> navigationNodes,
+        IEnumerable<ISidebarAction> sidebarActions,
         ILocalizationService localizationService,
-        IRetainerAutomationService automationService,
         INavigationService navigationService)
         : base(localizationService.Translate("Dashboard_Title"), ImGuiWindowFlags.None) {
 
         this.rootNodes = navigationNodes.OrderBy(node => node.Priority).ToList();
+        this.sidebarActions = sidebarActions.OrderBy(a => a.Priority).ToList();
         this.localizationService = localizationService;
-        this.automationService = automationService;
         this.navigationService = navigationService;
 
         if (this.navigationService.SelectedNode == null) {
             var defaultNode = this.rootNodes.FirstOrDefault();
-            if (defaultNode != null) {
-                this.navigationService.NavigateTo(defaultNode);
-            }
+            if (defaultNode != null) this.navigationService.NavigateTo(defaultNode);
         }
 
         this.SizeConstraints = new WindowSizeConstraints {
@@ -48,22 +45,19 @@ public class DashboardWindow : Window {
                     .OrderBy(g => g.Min(n => n.Priority));
 
                 foreach (var group in groupedNodes) {
-                    if (string.IsNullOrEmpty(group.Key)) {
+                    if (string.IsNullOrEmpty(group.Key)) this.DrawNodeTree(group);
+                    else if (ImGui.CollapsingHeader(group.Key, ImGuiTreeNodeFlags.DefaultOpen)) {
+                        ImGui.Indent(10f);
                         this.DrawNodeTree(group);
-                    }
-                    else {
-                        if (ImGui.CollapsingHeader(group.Key, ImGuiTreeNodeFlags.DefaultOpen)) {
-                            ImGui.Indent(10f);
-                            this.DrawNodeTree(group);
-                            ImGui.Unindent(10f);
-                        }
+                        ImGui.Unindent(10f);
                     }
                 }
                 ImGui.EndChild();
             }
 
-            if (ImGui.Button(this.localizationService.Translate("Dashboard_ScanRetainers"), new Vector2(-1, 24f))) {
-                this.automationService.TriggerScan();
+            // Affichage dynamique des actions injectées par les autres features
+            foreach (var action in this.sidebarActions) {
+                if (ImGui.Button(action.Name, new Vector2(-1, 24f))) action.Execute();
             }
 
             ImGui.EndChild();
@@ -75,7 +69,6 @@ public class DashboardWindow : Window {
             if (this.navigationService.SelectedNode != null && this.navigationService.SelectedNode.HasContent) {
                 this.navigationService.SelectedNode.DrawContent();
             }
-
             ImGui.EndChild();
         }
     }
@@ -86,23 +79,13 @@ public class DashboardWindow : Window {
             bool isLeaf = children.Count == 0;
 
             var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanAvailWidth;
-            if (isLeaf) {
-                flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
-            }
-
-            if (node.DefaultExpanded) {
-                flags |= ImGuiTreeNodeFlags.DefaultOpen;
-            }
-
-            if (this.navigationService.SelectedNode == node) {
-                flags |= ImGuiTreeNodeFlags.Selected;
-            }
+            if (isLeaf) flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+            if (node.DefaultExpanded) flags |= ImGuiTreeNodeFlags.DefaultOpen;
+            if (this.navigationService.SelectedNode == node) flags |= ImGuiTreeNodeFlags.Selected;
 
             bool isOpen = ImGui.TreeNodeEx(node.Name, flags);
 
-            if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) {
-                this.navigationService.NavigateTo(node);
-            }
+            if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) this.navigationService.NavigateTo(node);
 
             if (isOpen && !isLeaf) {
                 this.DrawNodeTree(children);

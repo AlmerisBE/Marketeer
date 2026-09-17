@@ -3,8 +3,8 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Framework;
 using Marketeer.UI.Configuration.UI;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.UI;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -69,7 +69,7 @@ public sealed class Plugin : IDalamudPlugin {
     }
 
     private void OnOpenConfigUi() {
-        var navService = this.serviceProvider.GetService<IDashboardNavigationService>();
+        var navService = this.serviceProvider.GetService<INavigationService>();
         var configMenu = this.serviceProvider.GetService<ConfigMenu>();
         var dashboardWindow = this.serviceProvider.GetService<DashboardWindow>();
 

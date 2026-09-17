@@ -2,11 +2,11 @@
 using Marketeer.Core.Framework;
 using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Guidance.Commands;
-using Marketeer.UI.Guidance.Contracts;
 using Marketeer.UI.Guidance.Providers;
-using Marketeer.UI.Guidance.Services;
-using Marketeer.UI.Guidance.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.RetainerOverlays.Contracts;
+using Marketeer.UI.RetainerOverlays.Services;
+using Marketeer.UI.RetainerOverlays.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer.UI.Guidance;

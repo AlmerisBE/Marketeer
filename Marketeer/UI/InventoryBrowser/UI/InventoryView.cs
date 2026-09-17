@@ -2,9 +2,9 @@
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.InventoryBrowser.Components;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 using System.Numerics;
 

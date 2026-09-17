@@ -1,7 +1,7 @@
 ﻿using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Dashboard.UI;
 
-namespace Marketeer.UI.Dashboard.Commands;
+namespace Marketeer.UI.Shell.Commands;
 
 public class MainCommand : ICommand {
     private DashboardWindow window;

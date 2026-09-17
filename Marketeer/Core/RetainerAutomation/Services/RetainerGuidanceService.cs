@@ -1,6 +1,6 @@
 ﻿using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.Guidance.Contracts;
 using Marketeer.UI.Guidance.Models;
+using Marketeer.UI.RetainerOverlays.Contracts;
 
 namespace Marketeer.Core.RetainerAutomation.Services;
 

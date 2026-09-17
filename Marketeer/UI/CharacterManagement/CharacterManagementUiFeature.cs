@@ -4,8 +4,8 @@ using Marketeer.Core.Framework;
 using Marketeer.UI.CharacterManagement.Providers;
 using Marketeer.UI.CharacterManagement.UI;
 using Marketeer.UI.Command.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer.UI.CharacterManagement;

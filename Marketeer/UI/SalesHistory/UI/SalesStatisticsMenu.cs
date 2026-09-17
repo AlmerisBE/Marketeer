@@ -1,8 +1,8 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Bindings.ImPlot;
 using Marketeer.Core.SalesHistory.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;

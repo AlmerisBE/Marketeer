@@ -3,9 +3,9 @@ using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.InventoryBrowser.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System;
 using System.Linq;
 
@@ -17,7 +17,7 @@ public class CharacterSummaryView : ICharacterSummaryView {
     private ILocalizationService localizationService;
     private IRetainerDataPresenter retainerDataPresenter;
     private IMarketListingTrackerService marketListingTrackerService;
-    private IDashboardNavigationService navigationService;
+    private INavigationService navigationService;
     private InventoryView inventoryView;
 
     public CharacterSummaryView(
@@ -26,7 +26,7 @@ public class CharacterSummaryView : ICharacterSummaryView {
         ILocalizationService localizationService,
         IRetainerDataPresenter retainerDataPresenter,
         IMarketListingTrackerService marketListingTrackerService,
-        IDashboardNavigationService navigationService,
+        INavigationService navigationService,
         InventoryView inventoryView) {
 
         this.trackerService = trackerService;

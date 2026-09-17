@@ -4,8 +4,8 @@ using Marketeer.Core.CraftingProfit.Services;
 using Marketeer.Core.Framework;
 using Marketeer.UI.CraftingProfit.Providers;
 using Marketeer.UI.CraftingProfit.UI;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

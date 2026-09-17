@@ -8,7 +8,7 @@ using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.UiInterop.Contracts;
 using System;
 
-namespace Marketeer.Core.RetainerAutomation.Services;
+namespace Marketeer.UI.RetainerOverlays.Services;
 
 public class RetainerContextMenuService : IDisposable {
     private IContextMenu contextMenu;

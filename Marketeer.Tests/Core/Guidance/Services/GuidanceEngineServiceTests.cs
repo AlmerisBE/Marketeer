@@ -9,7 +9,7 @@ using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
 using Marketeer.UI.Guidance.Models;
-using Marketeer.UI.Guidance.Services;
+using Marketeer.UI.RetainerOverlays.Services;
 using Marketeer.UI.UiInterop.Contracts;
 using NSubstitute;
 using Xunit;

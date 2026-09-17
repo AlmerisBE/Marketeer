@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Marketeer.UI.Dashboard.Contracts;
+namespace Marketeer.UI.Shell.Contracts;
 
 public interface INavigationNode {
     string GroupName { get; }

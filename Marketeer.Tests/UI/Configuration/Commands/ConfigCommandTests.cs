@@ -2,9 +2,9 @@
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Configuration.Commands;
 using Marketeer.UI.Configuration.UI;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Dashboard.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -14,7 +14,7 @@ public class ConfigCommandTests {
     [Fact]
     public void Execute_NavigatesToConfigMenuAndOpensDashboard() {
         // Arrange
-        var mockNavService = Substitute.For<IDashboardNavigationService>();
+        var mockNavService = Substitute.For<INavigationService>();
         var mockConfigService = Substitute.For<IConfigurationService>();
         var mockLocalization = Substitute.For<ILocalizationService>();
 

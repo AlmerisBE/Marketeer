@@ -1,7 +1,7 @@
 ﻿using Marketeer.UI.Localization.Providers;
 
-namespace Marketeer.UI.Dashboard.Providers;
+namespace Marketeer.UI.Shell.Providers;
 
-public class DashboardLocalizationProvider : JsonLocalizationProvider {
+public class ShellLocalizationProvider : JsonLocalizationProvider {
     protected override string ResourceBasePath => "Marketeer.UI.Dashboard.Resources";
 }

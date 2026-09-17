@@ -1,8 +1,8 @@
 ﻿using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 
-namespace Marketeer.Core.RetainerAutomation.Components;
+namespace Marketeer.UI.RetainerOverlays.Components;
 
 public class RetainerScanSidebarAction : ISidebarAction {
     private IRetainerAutomationService automationService;
@@ -16,7 +16,5 @@ public class RetainerScanSidebarAction : ISidebarAction {
         this.localizationService = localizationService;
     }
 
-    public void Execute() {
-        this.automationService.TriggerScan();
-    }
+    public void Execute() => this.automationService.TriggerScan();
 }

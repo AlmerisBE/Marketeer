@@ -3,10 +3,10 @@ using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.InventoryBrowser.UI;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.MarketListings.UI;
+using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -20,7 +20,7 @@ public class CharacterListMenu : INavigationNode {
     private IRetainerDataPresenter retainerDataPresenter;
     private IMarketListingTrackerService marketListingTrackerService;
     private RetainerDetailsWindow retainerDetailsWindow;
-    private IDashboardNavigationService navigationService;
+    private INavigationService navigationService;
     private InventoryView inventoryView;
 
     public string GroupName => string.Empty;
@@ -37,7 +37,7 @@ public class CharacterListMenu : INavigationNode {
         IRetainerDataPresenter retainerDataPresenter,
         IMarketListingTrackerService marketListingTrackerService,
         RetainerDetailsWindow retainerDetailsWindow,
-        IDashboardNavigationService navigationService,
+        INavigationService navigationService,
         InventoryView inventoryView) {
 
         this.trackerService = trackerService;
