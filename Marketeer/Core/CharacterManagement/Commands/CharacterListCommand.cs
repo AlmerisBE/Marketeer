@@ -1,8 +1,8 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
-using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 
 namespace Marketeer.Core.CharacterManagement.Commands;
 

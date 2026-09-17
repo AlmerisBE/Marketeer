@@ -1,4 +1,4 @@
-﻿namespace Marketeer.UI.Command.Contracts;
+﻿namespace Marketeer.UI.Shell.Contracts;
 
 public interface ICommand {
     string CommandTrigger { get; }

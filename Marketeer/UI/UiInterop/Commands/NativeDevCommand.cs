@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Core.Logging.Contracts;
-using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.UiInterop.Contracts;
 using System;
 using System.Linq;

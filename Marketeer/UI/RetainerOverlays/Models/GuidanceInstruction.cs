@@ -1,4 +1,4 @@
-﻿namespace Marketeer.UI.Guidance.Models;
+﻿namespace Marketeer.UI.RetainerOverlays.Models;
 
 public class GuidanceInstruction {
     public GuidanceActionType ActionType { get; set; }

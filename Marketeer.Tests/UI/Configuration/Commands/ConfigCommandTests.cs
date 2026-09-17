@@ -1,10 +1,9 @@
 ﻿using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Configuration.Commands;
 using Marketeer.UI.Configuration.UI;
-using Marketeer.UI.Dashboard.UI;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
+using Marketeer.UI.Shell.UI;
 using NSubstitute;
 using Xunit;
 
@@ -12,26 +11,20 @@ namespace Marketeer.Tests.UI.Configuration.Commands;
 
 public class ConfigCommandTests {
     [Fact]
-    public void Execute_NavigatesToConfigMenuAndOpensDashboard() {
-        // Arrange
-        var mockNavService = Substitute.For<INavigationService>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
+    public void Execute_ShouldNavigateToConfigMenuAndOpenWindow() {
+        var navService = Substitute.For<INavigationService>();
+        var localization = Substitute.For<ILocalizationService>();
+        var configService = Substitute.For<IConfigurationService>();
 
-        var configMenu = new ConfigMenu(mockConfigService, mockLocalization);
+        var configMenu = new ConfigMenu(configService, localization);
 
-        // Dummy dashboard window dependencies
-        var mockNodes = new List<INavigationNode>();
-        var mockAutomation = Substitute.For<IRetainerAutomationService>();
-        var dashboardWindow = new DashboardWindow(mockNodes, mockLocalization, mockAutomation, mockNavService);
+        var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService);
 
-        var command = new ConfigCommand(mockNavService, dashboardWindow, configMenu, mockLocalization);
+        var command = new ConfigCommand(navService, mainWindow, configMenu, localization);
 
-        // Act
-        command.Execute(string.Empty);
+        command.Execute("");
 
-        // Assert
-        mockNavService.Received(1).NavigateTo(configMenu);
-        Assert.True(dashboardWindow.IsOpen);
+        navService.Received(1).NavigateTo(configMenu);
+        Assert.True(mainWindow.IsOpen);
     }
 }

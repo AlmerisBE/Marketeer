@@ -5,7 +5,7 @@ using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Marketeer.UI.Dashboard.UI;
+namespace Marketeer.UI.Shell.UI;
 
 public class WelcomeMenu : INavigationNode {
     private IDalamudPluginInterface pluginInterface;

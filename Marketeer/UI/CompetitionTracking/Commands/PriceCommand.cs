@@ -2,8 +2,8 @@
 using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
-using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System;
 using System.Threading.Tasks;
 

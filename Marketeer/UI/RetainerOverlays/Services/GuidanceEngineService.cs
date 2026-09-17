@@ -4,8 +4,8 @@ using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
-using Marketeer.UI.Guidance.Models;
 using Marketeer.UI.RetainerOverlays.Contracts;
+using Marketeer.UI.RetainerOverlays.Models;
 using Marketeer.UI.UiInterop.Contracts;
 using System.Linq;
 

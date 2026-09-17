@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Shell.Contracts;
 
 namespace Marketeer.UI.RetainerAutomation.Commands;
 

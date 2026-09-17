@@ -1,8 +1,8 @@
-﻿using Marketeer.UI.Command.Contracts;
-using Marketeer.UI.Localization.Contracts;
+﻿using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.RetainerOverlays.UI;
+using Marketeer.UI.Shell.Contracts;
 
-namespace Marketeer.UI.Guidance.Commands;
+namespace Marketeer.UI.RetainerOverlays.Commands;
 
 public class GuidanceCommand : ICommand {
     private readonly MarketeerGuideWindow guideWindow;

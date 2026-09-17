@@ -1,7 +1,6 @@
 ﻿using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Services;
 using Marketeer.Core.Framework;
-using Marketeer.UI.Command.Contracts;
 using Marketeer.UI.CompetitionTracking.Commands;
 using Marketeer.UI.CompetitionTracking.Providers;
 using Marketeer.UI.CompetitionTracking.UI;

@@ -23,7 +23,7 @@
 	  <Folder Include="UI\Configuration\Resources\" />
 	  <Folder Include="UI\CraftingProfit\Resources\" />
 	  <Folder Include="UI\Financials\Resources\" />
-	  <Folder Include="UI\Guidance\Resources\" />
+	  <Folder Include="UI\RetainerOverlays\Resources\" />
 	  <Folder Include="UI\InventoryBrowser\Resources\" />
 	  <Folder Include="UI\MarketListings\Resources\" />
 	  <Folder Include="UI\MarketWatch\Resources\" />

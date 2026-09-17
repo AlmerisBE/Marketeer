@@ -1,15 +1,15 @@
-﻿using Marketeer.UI.Command.Contracts;
-using Marketeer.UI.Dashboard.UI;
+﻿using Marketeer.UI.Shell.Contracts;
+using Marketeer.UI.Shell.UI;
 
 namespace Marketeer.UI.Shell.Commands;
 
 public class MainCommand : ICommand {
-    private DashboardWindow window;
+    private MainWindow window;
 
     public string CommandTrigger => string.Empty;
     public string Description => "Opens the main Marketeer dashboard.";
 
-    public MainCommand(DashboardWindow window) {
+    public MainCommand(MainWindow window) {
         this.window = window;
     }
 

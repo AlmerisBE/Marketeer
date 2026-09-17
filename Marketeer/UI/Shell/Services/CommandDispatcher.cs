@@ -1,11 +1,11 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
-using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Marketeer.UI.Command.Services;
+namespace Marketeer.UI.Shell.Services;
 
 public class CommandDispatcher : IDisposable {
     private ICommandManager commandManager;

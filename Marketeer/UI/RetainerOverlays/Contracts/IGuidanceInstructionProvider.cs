@@ -1,4 +1,4 @@
-﻿using Marketeer.UI.Guidance.Models;
+﻿using Marketeer.UI.RetainerOverlays.Models;
 
 namespace Marketeer.UI.RetainerOverlays.Contracts;
 
