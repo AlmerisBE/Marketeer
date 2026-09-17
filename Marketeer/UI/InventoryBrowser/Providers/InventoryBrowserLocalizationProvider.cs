@@ -3,5 +3,5 @@
 namespace Marketeer.UI.InventoryBrowser.Providers;
 
 public class InventoryBrowserLocalizationProvider : JsonLocalizationProvider {
-    protected override string ResourceBasePath => "Marketeer.API.InventoryTracking.Resources";
+    protected override string ResourceBasePath => "Marketeer.UI.InventoryBrowser.Resources";
 }

@@ -3,5 +3,5 @@
 namespace Marketeer.UI.SalesHistory.Providers;
 
 public class SalesHistoryLocalizationProvider : JsonLocalizationProvider {
-    protected override string ResourceBasePath => "Marketeer.Core.SalesHistory.Resources";
+    protected override string ResourceBasePath => "Marketeer.UI.SalesHistory.Resources";
 }

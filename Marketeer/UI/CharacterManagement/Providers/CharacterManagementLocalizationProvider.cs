@@ -3,5 +3,5 @@
 namespace Marketeer.UI.CharacterManagement.Providers;
 
 public class CharacterManagementLocalizationProvider : JsonLocalizationProvider {
-    protected override string ResourceBasePath => "Marketeer.Core.CharacterManagement.Resources";
+    protected override string ResourceBasePath => "Marketeer.UI.CharacterManagement.Resources";
 }

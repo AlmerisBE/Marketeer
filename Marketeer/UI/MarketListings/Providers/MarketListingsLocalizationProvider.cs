@@ -3,5 +3,5 @@
 namespace Marketeer.UI.MarketListings.Providers;
 
 public class MarketListingsLocalizationProvider : JsonLocalizationProvider {
-    protected override string ResourceBasePath => "Marketeer.Core.MarketListings.Resources";
+    protected override string ResourceBasePath => "Marketeer.UI.MarketListings.Resources";
 }

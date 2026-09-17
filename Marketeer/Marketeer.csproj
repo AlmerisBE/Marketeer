@@ -26,7 +26,6 @@
 	  <Folder Include="UI\RetainerOverlays\Resources\" />
 	  <Folder Include="UI\InventoryBrowser\Resources\" />
 	  <Folder Include="UI\MarketListings\Resources\" />
-	  <Folder Include="UI\MarketWatch\Resources\" />
 	  <Folder Include="UI\RetainerAutomation\Resources\" />
 	  <Folder Include="UI\SalesHistory\Resources\" />
 	</ItemGroup>
