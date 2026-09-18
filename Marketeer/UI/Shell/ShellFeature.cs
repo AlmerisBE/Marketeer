@@ -7,6 +7,7 @@ using Marketeer.UI.Shell.Providers;
 using Marketeer.UI.Shell.Services;
 using Marketeer.UI.Shell.UI;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Marketeer.UI.Shell;
 
@@ -24,5 +25,12 @@ public class ShellFeature : IFeatureModule {
 
         // Commande d'ouverture
         services.AddSingleton<ICommand, MainCommand>();
+
+        services.AddSingleton<HotkeyTrackerService>();
+    }
+
+    public void Initialize(IServiceProvider provider) {
+        provider.GetRequiredService<CommandDispatcher>();
+        provider.GetRequiredService<HotkeyTrackerService>();
     }
 }

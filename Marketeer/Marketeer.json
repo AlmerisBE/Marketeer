@@ -9,5 +9,14 @@
   "LoadRequiredState": 0,
   "LoadSync": false,
   "LoadPriority": 0,
-  "Punchline": "Help yourself and your retainers !"
+  "Punchline": "Help yourself and your retainers !",
+  "Tags": [
+    "market",
+    "retainer",
+    "sales",
+    "inventory",
+    "crafting",
+    "automation",
+    "trading"
+  ]
 }

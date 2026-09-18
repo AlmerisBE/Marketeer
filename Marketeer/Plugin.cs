@@ -66,22 +66,29 @@ public sealed class Plugin : IDalamudPlugin {
 
         this.pluginInterface.UiBuilder.Draw += this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi += this.OnOpenConfigUi;
+        this.pluginInterface.UiBuilder.OpenMainUi += this.OnOpenMainUi;
     }
 
     private void OnOpenConfigUi() {
         var navService = this.serviceProvider.GetService<INavigationService>();
         var configMenu = this.serviceProvider.GetService<ConfigMenu>();
-        var dashboardWindow = this.serviceProvider.GetService<MainWindow>();
+        var mainWindow = this.serviceProvider.GetService<MainWindow>();
 
-        if (navService != null && configMenu != null && dashboardWindow != null) {
+        if (navService != null && configMenu != null && mainWindow != null) {
             navService.NavigateTo(configMenu);
-            dashboardWindow.IsOpen = true;
+            mainWindow.IsOpen = true;
         }
+    }
+
+    private void OnOpenMainUi() {
+        var mainWindow = this.serviceProvider.GetService<MainWindow>();
+        if (mainWindow != null) mainWindow.IsOpen = true;
     }
 
     public void Dispose() {
         this.pluginInterface.UiBuilder.Draw -= this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi -= this.OnOpenConfigUi;
+        this.pluginInterface.UiBuilder.OpenMainUi -= this.OnOpenMainUi;
 
         this.windowSystem.RemoveAllWindows();
         this.serviceProvider.Dispose();

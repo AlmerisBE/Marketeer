@@ -20,5 +20,9 @@
   "Config_AdvancedHeader": "Erweiterte Einstellungen",
   "Config_EnableDebugMode": "Debug-Modus aktivieren (Detaillierte Protokollierung und Entwicklertools)",
   "Config_EnforceVendorPriceMinimum": "Ignoriere Unterbieten unter dem Händlerpreis",
-  "Config_EnforceVendorPriceMinimum_Tooltip": "Verhindert, dass Marketeer dir vorschlägt, Preise zu unterbieten, die unter dem Betrag liegen, den NSC für den Gegenstand zahlen würden. Unrentable Angebote lösen stattdessen eine Abbruchwarnung aus."
+  "Config_EnforceVendorPriceMinimum_Tooltip": "Verhindert, dass Marketeer dir vorschlägt, Preise zu unterbieten, die unter dem Betrag liegen, den NSC für den Gegenstand zahlen würden. Unrentable Angebote lösen stattdessen eine Abbruchwarnung aus.",
+  "Config_HotkeyHeader": "Tastenkombinationen",
+  "Config_HotkeyLabel": "Dashboard-Tastenkombination:",
+  "Config_HotkeyWaiting": "Drücke eine beliebige Taste... (Esc zum Abbrechen)",
+  "Config_HotkeyNone": "Keine"
 }

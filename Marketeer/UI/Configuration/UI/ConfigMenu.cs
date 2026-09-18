@@ -1,8 +1,11 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Game.ClientState.Keys;
+using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -11,7 +14,10 @@ namespace Marketeer.UI.Configuration.UI;
 public class ConfigMenu : INavigationNode {
     private readonly IConfigurationService configurationService;
     private readonly ILocalizationService localizationService;
+    private readonly IKeyState keyState;
+
     private string newWhitelistName = string.Empty;
+    private bool isCapturingHotkey = false;
 
     public string GroupName => this.localizationService.Translate("Group_General");
     public string Name => this.localizationService.Translate("Config_TabName");
@@ -21,9 +27,10 @@ public class ConfigMenu : INavigationNode {
 
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public ConfigMenu(IConfigurationService configurationService, ILocalizationService localizationService) {
+    public ConfigMenu(IConfigurationService configurationService, ILocalizationService localizationService, IKeyState keyState) {
         this.configurationService = configurationService;
         this.localizationService = localizationService;
+        this.keyState = keyState;
     }
 
     public void DrawContent() {
@@ -153,6 +160,54 @@ public class ConfigMenu : INavigationNode {
         if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableDebugMode"), ref enableDebugMode)) {
             config.EnableDebugMode = enableDebugMode;
             isChanged = true;
+        }
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_HotkeyHeader"));
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_HotkeyLabel"));
+        ImGui.SameLine();
+
+        string keyName = config.DashboardHotkey == VirtualKey.NO_KEY ? this.localizationService.Translate("Config_HotkeyNone") : config.DashboardHotkey.ToString();
+
+        if (this.isCapturingHotkey) {
+            ImGui.Button(this.localizationService.Translate("Config_HotkeyWaiting"), new Vector2(250f, 0));
+
+            foreach (var key in Enum.GetValues<VirtualKey>()) {
+                if (this.keyState[key]) {
+                    if (key == VirtualKey.ESCAPE) {
+                        config.DashboardHotkey = VirtualKey.NO_KEY;
+                        config.DashboardHotkeyCtrl = false;
+                        config.DashboardHotkeyAlt = false;
+                        config.DashboardHotkeyShift = false;
+                        this.isCapturingHotkey = false;
+                        isChanged = true;
+                        break;
+                    }
+
+                    if (key != VirtualKey.CONTROL && key != VirtualKey.MENU && key != VirtualKey.SHIFT) {
+                        config.DashboardHotkey = key;
+                        config.DashboardHotkeyCtrl = this.keyState[VirtualKey.CONTROL];
+                        config.DashboardHotkeyAlt = this.keyState[VirtualKey.MENU];
+                        config.DashboardHotkeyShift = this.keyState[VirtualKey.SHIFT];
+                        this.isCapturingHotkey = false;
+                        isChanged = true;
+                        break;
+                    }
+                }
+            }
+        }
+        else {
+            string modifierStr = "";
+            if (config.DashboardHotkeyCtrl) modifierStr += "Ctrl + ";
+            if (config.DashboardHotkeyAlt) modifierStr += "Alt + ";
+            if (config.DashboardHotkeyShift) modifierStr += "Shift + ";
+
+            if (ImGui.Button($"{modifierStr}{keyName}##hotkeyBtn", new Vector2(250f, 0))) {
+                this.isCapturingHotkey = true;
+            }
         }
 
         if (isChanged) this.configurationService.Save();
