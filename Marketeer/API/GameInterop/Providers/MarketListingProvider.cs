@@ -46,7 +46,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
 
         var activeRetainerIdOpt = this.GetActiveRetainerId();
         if (!activeRetainerIdOpt.HasValue) {
-            this.logger.Debug("[MarketListingProvider] No active retainer detected. Aborting scan.");
+            //this.logger.Debug("[MarketListingProvider] No active retainer detected. Aborting scan.");
             return listings;
         }
 
@@ -71,7 +71,7 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
         }
 
         stopwatch.Stop();
-        this.logger.Debug($"[MarketListingProvider] Extracted {listings.Count} listings natively via FFXIVClientStructs in {stopwatch.ElapsedMilliseconds}ms.");
+        //this.logger.Debug($"[MarketListingProvider] Extracted {listings.Count} listings natively via FFXIVClientStructs in {stopwatch.ElapsedMilliseconds}ms.");
         return listings;
     }
 

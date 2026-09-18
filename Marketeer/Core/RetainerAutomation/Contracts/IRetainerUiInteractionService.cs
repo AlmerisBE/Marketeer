@@ -16,7 +16,7 @@ public interface IRetainerUiInteractionService {
     bool CloseSelectString();
     bool CloseSalesHistory();
 
-    void OpenComparePrices();
+    void OpenComparePrices(nint addonAddress = 0);
     void SetPriceAndConfirm(uint newPrice);
     void CloseItemSearchResult();
 

@@ -23,23 +23,17 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public bool IsAddonReady(string addonName) {
         var addonPtr = this.gameGui.GetAddonByName(addonName);
-        if (addonPtr.Address == IntPtr.Zero) {
-            return false;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return false;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         return addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded;
     }
 
     public bool IsRetainerAvailable(string retainerName) {
-        if (!this.IsAddonReady("RetainerList")) {
-            return false;
-        }
+        if (!this.IsAddonReady("RetainerList")) return false;
 
         var window = this.windowService.GetWindow("RetainerList");
-        if (window == null || !window.IsVisible) {
-            return false;
-        }
+        if (window == null || !window.IsVisible) return false;
 
         var pattern = $@"(?:^|\|\s*){Regex.Escape(retainerName)}$";
         return window.GetElements()
@@ -48,14 +42,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool SelectRetainer(string retainerName) {
-        if (!this.IsAddonReady("RetainerList")) {
-            return false;
-        }
+        if (!this.IsAddonReady("RetainerList")) return false;
 
         var window = this.windowService.GetWindow("RetainerList");
-        if (window == null || !window.IsVisible) {
-            return false;
-        }
+        if (window == null || !window.IsVisible) return false;
 
         var elements = window.GetElements().ToList();
         var retainerRows = elements
@@ -65,9 +55,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var pattern = $@"(?:^|\|\s*){Regex.Escape(retainerName)}$";
         var targetRetainer = retainerRows.FirstOrDefault(e => Regex.IsMatch(e.Text, pattern, RegexOptions.IgnoreCase));
 
-        if (targetRetainer == null) {
-            return false;
-        }
+        if (targetRetainer == null) return false;
 
         var retainerIndex = retainerRows.IndexOf(targetRetainer);
         this.SelectRetainer(retainerIndex);
@@ -76,9 +64,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public void SelectRetainer(int index) {
         var addonPtr = this.gameGui.GetAddonByName("RetainerList");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[2];
@@ -91,14 +77,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool IsMenuReadyForRetainer(string retainerName) {
-        if (!this.IsAddonReady("SelectString")) {
-            return false;
-        }
+        if (!this.IsAddonReady("SelectString")) return false;
 
         var window = this.windowService.GetWindow("SelectString");
-        if (window == null || !window.IsVisible) {
-            return false;
-        }
+        if (window == null || !window.IsVisible) return false;
 
         return window.GetElements()
             .Where(e => e.Type == NativeUiElementType.Text)
@@ -106,14 +88,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool IsMenuOptionAvailable(string optionText) {
-        if (!this.IsAddonReady("SelectString")) {
-            return false;
-        }
+        if (!this.IsAddonReady("SelectString")) return false;
 
         var window = this.windowService.GetWindow("SelectString");
-        if (window == null || !window.IsVisible) {
-            return false;
-        }
+        if (window == null || !window.IsVisible) return false;
 
         return window.GetElements()
             .Where(e => e.Type == NativeUiElementType.Button)
@@ -121,22 +99,16 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
     }
 
     public bool SelectMenuOption(string optionText) {
-        if (!this.IsAddonReady("SelectString")) {
-            return false;
-        }
+        if (!this.IsAddonReady("SelectString")) return false;
 
         var window = this.windowService.GetWindow("SelectString");
-        if (window == null || !window.IsVisible) {
-            return false;
-        }
+        if (window == null || !window.IsVisible) return false;
 
         var elements = window.GetElements().ToList();
         var menuRows = elements.Where(e => e.Type == NativeUiElementType.Button).ToList();
 
         var targetOption = menuRows.FirstOrDefault(e => e.Text.StartsWith(optionText, StringComparison.OrdinalIgnoreCase));
-        if (targetOption == null) {
-            return false;
-        }
+        if (targetOption == null) return false;
 
         var optionIndex = menuRows.IndexOf(targetOption);
         window.SendCallbackWithUpdateState(true, optionIndex);
@@ -145,9 +117,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public void OpenRetainerMarket() {
         var addonPtr = this.gameGui.GetAddonByName("SelectString");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[2];
@@ -159,14 +129,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public bool CloseRetainerMarket() {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return true;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return true;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        if (!addon->IsVisible) {
-            return true;
-        }
+        if (!addon->IsVisible) return true;
 
         var values = stackalloc AtkValue[1];
         values[0].Type = AtkValueType.Int;
@@ -178,14 +144,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public bool CloseSelectString() {
         var addonPtr = this.gameGui.GetAddonByName("SelectString");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return true;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return true;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        if (!addon->IsVisible) {
-            return true;
-        }
+        if (!addon->IsVisible) return true;
 
         var values = stackalloc AtkValue[1];
         values[0].Type = AtkValueType.Int;
@@ -197,16 +159,19 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public bool CloseSalesHistory() {
         var window = this.windowService.GetWindow("RetainerHistory");
-        if (window == null || !window.IsVisible) {
-            return true;
-        }
+        if (window == null || !window.IsVisible) return true;
 
         window.SendCallbackWithUpdateState(true, -1);
         return true;
     }
 
     private unsafe void SendNativeClick(nint listenerAddr, int eventType, uint eventParam, void* targetNode) {
-        if (listenerAddr == IntPtr.Zero || targetNode == null) return;
+        if (listenerAddr == IntPtr.Zero || targetNode == null) {
+            this.logger.Warning($"[SendNativeClick] Aborted due to null pointer. Listener: {listenerAddr:X}, Target: {(nint)targetNode:X}");
+            return;
+        }
+
+        this.logger.Debug($"[SendNativeClick] Dispatching event {eventType} (Param {eventParam}) to listener {listenerAddr:X} on target {(nint)targetNode:X}");
 
         var listener = (AtkEventListener*)listenerAddr;
         var eventData = System.Runtime.InteropServices.Marshal.AllocHGlobal(0x40);
@@ -223,14 +188,32 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         System.Runtime.InteropServices.Marshal.FreeHGlobal(eventParamData);
     }
 
-    public unsafe void OpenComparePrices() {
-        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
-        if (addonPtr.Address == IntPtr.Zero) return;
-
-        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)addonPtr.Address;
-        if (addon->ComparePrices != null) {
-            this.SendNativeClick(addonPtr.Address, 2, 4, addon->ComparePrices->AtkComponentBase.OwnerNode);
+    public unsafe void OpenComparePrices(nint addonAddress = 0) {
+        nint targetAddonAddr = addonAddress;
+        if (targetAddonAddr == IntPtr.Zero) {
+            var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+            targetAddonAddr = addonPtr.Address;
         }
+
+        if (targetAddonAddr == IntPtr.Zero) {
+            this.logger.Warning("[OpenComparePrices] RetainerSell addon pointer is null.");
+            return;
+        }
+
+        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)targetAddonAddr;
+        if (addon->ComparePrices == null) {
+            this.logger.Warning("[OpenComparePrices] AddonRetainerSell->ComparePrices is null.");
+            return;
+        }
+
+        var comparePricesNode = addon->ComparePrices->AtkComponentBase.OwnerNode;
+        if (comparePricesNode == null) {
+            this.logger.Warning("[OpenComparePrices] ComparePrices->AtkComponentBase.OwnerNode is null.");
+            return;
+        }
+
+        this.logger.Debug($"[OpenComparePrices] Triggering ComparePrices open for addon at {targetAddonAddr:X} via OwnerNode {(nint)comparePricesNode:X}");
+        this.SendNativeClick(targetAddonAddr, 2, 4, comparePricesNode);
     }
 
     public unsafe void SetPriceAndConfirm(uint newPrice) {
@@ -244,9 +227,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             if (priceNode != null && (ushort)priceNode->Type >= 1000) {
                 var compNode = (AtkComponentNode*)priceNode;
                 var numericInput = (AtkComponentNumericInput*)compNode->Component;
-                if (numericInput != null) {
-                    numericInput->SetValue((int)newPrice);
-                }
+                if (numericInput != null) numericInput->SetValue((int)newPrice);
             }
         }
 
@@ -255,9 +236,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[1].Type = AtkValueType.UInt; values[1].UInt = newPrice;
         addon->AtkUnitBase.FireCallback(2u, values, true);
 
-        if (addon->Confirm != null) {
-            this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm);
-        }
+        if (addon->Confirm != null) this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm);
     }
 
     public unsafe void CloseItemSearchResult() {
@@ -274,19 +253,17 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public void SelectItemInSellList(int uiIndex) {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[3];
 
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 0; // Event ID 0 is Left-Click/Select
+        values[0].Int = 0;
         values[1].Type = AtkValueType.Int;
         values[1].Int = uiIndex;
         values[2].Type = AtkValueType.Int;
-        values[2].Int = 0; // Button ID or auxiliary param required by newer FFXIV clients
+        values[2].Int = 0;
 
         this.logger.Debug($"[RetainerUiInteractionService] Firing Event ID 0 on RetainerSellList at UI index {uiIndex}.");
         addon->FireCallback(3u, values, true);
@@ -294,14 +271,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public int GetContextMenuItemIndex(string localizedText) {
         var addonPtr = this.gameGui.GetAddonByName("ContextMenu");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return -1;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return -1;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        if (!addon->IsVisible) {
-            return -1;
-        }
+        if (!addon->IsVisible) return -1;
 
         var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant();
 
@@ -312,9 +285,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (text != null) {
                         var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant();
-                        if (normalizedText.Contains(searchString)) {
-                            return i - 7;
-                        }
+                        if (normalizedText.Contains(searchString)) return i - 7;
                     }
                 }
             }
@@ -324,9 +295,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public void SelectContextMenuItem(int index) {
         var addonPtr = this.gameGui.GetAddonByName("ContextMenu");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[5];
@@ -346,9 +315,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public void ConfirmPriceUpdate(uint newPrice) {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[2];
@@ -362,9 +329,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public void ConfirmYesNo() {
         var addonPtr = this.gameGui.GetAddonByName("SelectYesNo");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[1];
@@ -378,14 +343,13 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         this.ForceCloseAddon("ContextMenu");
         this.ForceCloseAddon("InputNumeric");
         this.ForceCloseAddon("SelectYesNo");
+        this.ForceCloseAddon("ItemSearchResult");
         this.ForceCloseAddon("RetainerSell");
     }
 
     private void ForceCloseAddon(string name) {
         var addonPtr = this.gameGui.GetAddonByName(name);
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         if (addon->IsVisible) {
@@ -399,9 +363,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
     public void SkipDialogue() {
         var addonPtr = this.gameGui.GetAddonByName("Talk");
-        if (addonPtr.Address == IntPtr.Zero) {
-            return;
-        }
+        if (addonPtr.Address == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         if (addon->IsVisible) {

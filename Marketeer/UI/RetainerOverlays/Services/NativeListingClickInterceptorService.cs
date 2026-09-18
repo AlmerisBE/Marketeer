@@ -48,7 +48,6 @@ public class NativeListingClickInterceptorService : IDisposable {
                     this.logger.Info($"[ClickInterceptor] Exact match found for '{targetListing.ItemName}' at Slot {uiIndex}. Launching hybrid automation.");
                     this.hybridAutomation.TriggerAdjustment(targetListing);
                 }
-                else this.logger.Debug($"[ClickInterceptor] Failed to match active listing for UI Index {uiIndex}. It may be an empty slot.");
             }
         }
     }
