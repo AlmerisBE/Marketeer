@@ -5,6 +5,7 @@ using Marketeer.Core.Framework;
 using Marketeer.UI.Configuration.UI;
 using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.Shell.UI;
+using Marketeer.UI.Themes.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -66,9 +67,15 @@ public sealed class Plugin : IDalamudPlugin {
             this.windowSystem.AddWindow(window);
         }
 
-        this.pluginInterface.UiBuilder.Draw += this.windowSystem.Draw;
+        this.pluginInterface.UiBuilder.Draw += this.OnDrawUi;
         this.pluginInterface.UiBuilder.OpenConfigUi += this.OnOpenConfigUi;
-        this.pluginInterface.UiBuilder.OpenMainUi += this.OnOpenMainUi;
+    }
+
+    private void OnDrawUi() {
+        var themeService = this.serviceProvider.GetService<IThemeService>();
+
+        using var scope = themeService?.ApplyTheme();
+        this.windowSystem.Draw();
     }
 
     private void OnOpenConfigUi() {
@@ -82,15 +89,9 @@ public sealed class Plugin : IDalamudPlugin {
         }
     }
 
-    private void OnOpenMainUi() {
-        var mainWindow = this.serviceProvider.GetService<MainWindow>();
-        if (mainWindow != null) mainWindow.IsOpen = true;
-    }
-
     public void Dispose() {
-        this.pluginInterface.UiBuilder.Draw -= this.windowSystem.Draw;
+        this.pluginInterface.UiBuilder.Draw -= this.OnDrawUi;
         this.pluginInterface.UiBuilder.OpenConfigUi -= this.OnOpenConfigUi;
-        this.pluginInterface.UiBuilder.OpenMainUi -= this.OnOpenMainUi;
 
         this.windowSystem.RemoveAllWindows();
         this.serviceProvider.Dispose();

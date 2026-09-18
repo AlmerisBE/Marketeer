@@ -22,7 +22,7 @@ public class ConfigCommandTests {
 
         var configMenu = new ConfigMenu(configService, localization, mockKeyState, mockThemeService);
 
-        var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService, mockThemeService);
+        var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService);
 
         var command = new ConfigCommand(navService, mainWindow, configMenu, localization);
 

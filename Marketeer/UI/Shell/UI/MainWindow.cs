@@ -2,7 +2,6 @@
 using Dalamud.Interface.Windowing;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
-using Marketeer.UI.Themes.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -14,21 +13,18 @@ public class MainWindow : Window {
     private IReadOnlyList<ISidebarAction> sidebarActions;
     private ILocalizationService localizationService;
     private INavigationService navigationService;
-    private IThemeService themeService;
 
     public MainWindow(
         IEnumerable<INavigationNode> navigationNodes,
         IEnumerable<ISidebarAction> sidebarActions,
         ILocalizationService localizationService,
-        INavigationService navigationService,
-        IThemeService themeService)
+        INavigationService navigationService)
         : base(localizationService.Translate("Dashboard_Title"), ImGuiWindowFlags.None) {
 
         this.rootNodes = navigationNodes.OrderBy(node => node.Priority).ToList();
         this.sidebarActions = sidebarActions.OrderBy(a => a.Priority).ToList();
         this.localizationService = localizationService;
         this.navigationService = navigationService;
-        this.themeService = themeService;
 
         if (this.navigationService.SelectedNode == null) {
             var defaultNode = this.rootNodes.FirstOrDefault();
@@ -42,9 +38,6 @@ public class MainWindow : Window {
     }
 
     public override void Draw() {
-        // Applique le thème sur l'ensemble de la fenêtre et assure le nettoyage via Dispose
-        using var themeScope = this.themeService.ApplyTheme();
-
         if (ImGui.BeginChild("Sidebar", new Vector2(220, 0), true)) {
             if (ImGui.BeginChild("TreeArea", new Vector2(0, -30), false)) {
                 var groupedNodes = this.rootNodes

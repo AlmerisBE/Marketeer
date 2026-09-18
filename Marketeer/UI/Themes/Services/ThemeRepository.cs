@@ -39,11 +39,11 @@ public class ThemeRepository : IThemeRepository {
                     { "StatusFallbackOnline", "#6DD86DFF" }, { "StatusFallbackOffline", "#7F7F7FFF" }, { "StatusFallbackDeleted", "#CC3333FF" },
                     { "WindowBg", "#262323F2" }, { "Text", "#E5E5E5FF" }, { "ChildBg", "#1E1C1C7F" }, { "PopupBg", "#262323F2" },
                     { "FrameBg", "#333333FF" }, { "FrameBgHovered", "#3F3F3FFF" }, { "FrameBgActive", "#4C4C4CFF" },
-                    { "TitleBg", "#1E1C1CFF" }, { "TitleBgActive", "#332626FF" }, { "TitleBgCollapsed", "#191919FF" },
+                    { "TitleBg", "#1E1C1CFF" }, { "TitleBgActive", "#333333FF" }, { "TitleBgCollapsed", "#191919FF" },
                     { "TableHeaderBg", "#2D2B2BFF" }, { "TableRowBg", "#262323FF" }, { "TableRowBgAlt", "#2D2B2BFF" },
-                    { "Border", "#4C3F3FFF" }, { "Tab", "#262323FF" }, { "TabHovered", "#3F3333FF" },
-                    { "TabActive", "#4C3F3FFF" }, { "TabUnfocused", "#1E1C1CFF" }, { "TabUnfocusedActive", "#2D2B2BFF" },
-                    { "Button", "#3F3333FF" }, { "ButtonHovered", "#593F3FFF" }, { "ButtonActive", "#664C4CFF" }
+                    { "Border", "#4C4C4CFF" }, { "Tab", "#262323FF" }, { "TabHovered", "#3F3F3FFF" },
+                    { "TabActive", "#4C4C4CFF" }, { "TabUnfocused", "#1E1C1CFF" }, { "TabUnfocusedActive", "#2D2B2BFF" },
+                    { "Button", "#333333FF" }, { "ButtonHovered", "#595959FF" }, { "ButtonActive", "#666666FF" }
                 }
             };
             File.WriteAllText(darkPath, JsonSerializer.Serialize(darkTheme, new JsonSerializerOptions { WriteIndented = true }));
