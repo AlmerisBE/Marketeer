@@ -3,10 +3,10 @@ using Marketeer.API.GameInterop.Contracts;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.Guidance.Commands;
-using Marketeer.UI.Guidance.Contracts;
-using Marketeer.UI.Guidance.UI;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.RetainerOverlays.Commands;
+using Marketeer.UI.RetainerOverlays.Contracts;
+using Marketeer.UI.RetainerOverlays.UI;
 using NSubstitute;
 using Xunit;
 

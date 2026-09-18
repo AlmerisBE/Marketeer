@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Core.SalesHistory.Contracts;
-using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System;
 
 namespace Marketeer.UI.SalesHistory.Commands;

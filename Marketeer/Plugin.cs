@@ -3,8 +3,8 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Framework;
 using Marketeer.UI.Configuration.UI;
-using Marketeer.UI.Dashboard.Contracts;
-using Marketeer.UI.Dashboard.UI;
+using Marketeer.UI.Shell.Contracts;
+using Marketeer.UI.Shell.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marketeer;
@@ -29,7 +29,8 @@ public sealed class Plugin : IDalamudPlugin {
         ICondition condition,
         IAddonLifecycle addonLifecycle,
         ITextureProvider textureProvider,
-        IContextMenu contextMenu) {
+        IContextMenu contextMenu,
+        IKeyState keyState) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -49,6 +50,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(textureProvider);
         services.AddSingleton(contextMenu);
+        services.AddSingleton(keyState);
 
         services.AddPluginFeatures();
 
@@ -66,22 +68,29 @@ public sealed class Plugin : IDalamudPlugin {
 
         this.pluginInterface.UiBuilder.Draw += this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi += this.OnOpenConfigUi;
+        this.pluginInterface.UiBuilder.OpenMainUi += this.OnOpenMainUi;
     }
 
     private void OnOpenConfigUi() {
-        var navService = this.serviceProvider.GetService<IDashboardNavigationService>();
+        var navService = this.serviceProvider.GetService<INavigationService>();
         var configMenu = this.serviceProvider.GetService<ConfigMenu>();
-        var dashboardWindow = this.serviceProvider.GetService<DashboardWindow>();
+        var mainWindow = this.serviceProvider.GetService<MainWindow>();
 
-        if (navService != null && configMenu != null && dashboardWindow != null) {
+        if (navService != null && configMenu != null && mainWindow != null) {
             navService.NavigateTo(configMenu);
-            dashboardWindow.IsOpen = true;
+            mainWindow.IsOpen = true;
         }
+    }
+
+    private void OnOpenMainUi() {
+        var mainWindow = this.serviceProvider.GetService<MainWindow>();
+        if (mainWindow != null) mainWindow.IsOpen = true;
     }
 
     public void Dispose() {
         this.pluginInterface.UiBuilder.Draw -= this.windowSystem.Draw;
         this.pluginInterface.UiBuilder.OpenConfigUi -= this.OnOpenConfigUi;
+        this.pluginInterface.UiBuilder.OpenMainUi -= this.OnOpenMainUi;
 
         this.windowSystem.RemoveAllWindows();
         this.serviceProvider.Dispose();

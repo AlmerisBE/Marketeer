@@ -2,8 +2,8 @@
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.Core.RetainerAutomation.Services;
 using Marketeer.UI.Localization.Contracts;
+using Marketeer.UI.RetainerOverlays.Services;
 using Marketeer.UI.UiInterop.Contracts;
 using NSubstitute;
 using Xunit;

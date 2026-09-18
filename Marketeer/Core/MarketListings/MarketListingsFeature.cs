@@ -2,10 +2,11 @@
 using Marketeer.Core.Framework;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Services;
-using Marketeer.UI.Dashboard.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.MarketListings.Providers;
 using Marketeer.UI.MarketListings.UI;
+using Marketeer.UI.RetainerOverlays.Services;
+using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

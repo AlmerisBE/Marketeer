@@ -4,8 +4,8 @@ using Marketeer.API.GameInterop.Contracts;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.Core.MarketListings.Services;
 using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.UI.RetainerOverlays.Services;
 using NSubstitute;
 using Xunit;
 

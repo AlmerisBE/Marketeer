@@ -1,5 +1,5 @@
 ﻿using Marketeer.Core.Framework;
-using Marketeer.UI.Command.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.UiInterop.Commands;
 using Marketeer.UI.UiInterop.Contracts;
 using Marketeer.UI.UiInterop.Providers;

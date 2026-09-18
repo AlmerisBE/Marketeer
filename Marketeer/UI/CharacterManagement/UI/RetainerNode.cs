@@ -1,6 +1,6 @@
 ﻿using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.UI.Dashboard.Contracts;
+using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
 
 namespace Marketeer.UI.CharacterManagement.UI;

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Configuration;
+using Dalamud.Game.ClientState.Keys;
 using Marketeer.API.InventoryTracking.Models;
 using Marketeer.Core.CraftingProfit.Models;
 using Marketeer.Core.Financials.Models;
@@ -33,10 +34,13 @@ public class PluginConfiguration : IPluginConfiguration {
     public int AutomationDelayMax { get; set; } = 3;
 
     public bool EnableChatNotifications { get; set; } = true;
-
     public bool EnforceVendorPriceMinimum { get; set; } = false;
-
     public bool EnableDebugMode { get; set; } = false;
+
+    public VirtualKey DashboardHotkey { get; set; } = VirtualKey.NO_KEY;
+    public bool DashboardHotkeyCtrl { get; set; } = false;
+    public bool DashboardHotkeyAlt { get; set; } = false;
+    public bool DashboardHotkeyShift { get; set; } = false;
 
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
     public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];
