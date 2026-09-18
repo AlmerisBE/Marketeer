@@ -60,7 +60,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.IsActive = true;
         this.step = 1;
         this.SetDelay(0.1);
-        this.logger.Info($"[HybridAutomation] Starting hybrid adjustment for {listing.ItemName}");
+        this.logger.Info($"[HybridAutomation] Sequence started for {listing.ItemName}");
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -69,8 +69,11 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         switch (this.step) {
             case 1:
                 if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-                    var index = this.uiInteraction.GetContextMenuItemIndex(this.localization.Translate("ContextMenu_Compete"));
-                    if (index == -1) index = 1; // Fallback
+                    var adjustText = this.localization.Translate("RetainerMenu_AdjustPrice");
+                    var index = this.uiInteraction.GetContextMenuItemIndex(adjustText);
+
+                    if (index == -1) index = 1;
+
                     this.uiInteraction.SelectContextMenuItem(index);
                     this.step++;
                     this.SetDelay(0.2);
@@ -105,26 +108,24 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
                 if (prices.Count > 0) {
                     var lowest = prices.OrderBy(p => p.Price).First();
+                    var config = this.configService.GetConfig();
+                    var vendorPrice = this.itemResolver.ResolveVendorPrice(this.currentListing.ItemId);
 
                     if (this.IsOurRetainer(lowest.RetainerName)) {
                         newPrice = lowest.Price;
                     }
+                    else if (lowest.Price <= vendorPrice) {
+                        newPrice = this.currentListing.PricePerUnit;
+                    }
                     else {
-                        var config = this.configService.GetConfig();
-                        var vendorPrice = this.itemResolver.ResolveVendorPrice(this.currentListing.ItemId);
-
-                        if (config.EnforceVendorPriceMinimum && lowest.Price <= vendorPrice) {
-                            newPrice = this.currentListing.PricePerUnit;
-                        }
-                        else {
-                            newPrice = (uint)Math.Max(1, (int)lowest.Price - (int)config.UndercutAmount);
-                            if (config.EnforceVendorPriceMinimum && newPrice < vendorPrice) newPrice = vendorPrice;
-                        }
+                        newPrice = (uint)Math.Max(1, (int)lowest.Price - (int)config.UndercutAmount);
+                        if (newPrice < vendorPrice) newPrice = vendorPrice;
                     }
                 }
 
                 this.uiInteraction.SetPriceAndConfirm(newPrice);
                 this.step++;
+
                 this.SetDelay(2.0);
                 break;
 

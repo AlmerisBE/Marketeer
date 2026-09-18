@@ -239,6 +239,17 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)addonPtr.Address;
 
+        if (addon->AtkUnitBase.UldManager.NodeListCount > 15) {
+            var priceNode = addon->AtkUnitBase.UldManager.NodeList[15];
+            if (priceNode != null && (ushort)priceNode->Type >= 1000) {
+                var compNode = (AtkComponentNode*)priceNode;
+                var numericInput = (AtkComponentNumericInput*)compNode->Component;
+                if (numericInput != null) {
+                    numericInput->SetValue((int)newPrice);
+                }
+            }
+        }
+
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int; values[0].Int = 0;
         values[1].Type = AtkValueType.UInt; values[1].UInt = newPrice;

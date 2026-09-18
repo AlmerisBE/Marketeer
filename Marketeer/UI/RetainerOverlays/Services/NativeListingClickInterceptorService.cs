@@ -36,9 +36,13 @@ public class NativeListingClickInterceptorService : IDisposable {
     }
 
     private unsafe void OnDraw() {
-        if (!ImGui.IsMouseClicked(ImGuiMouseButton.Left)) return;
         if (this.hybridAutomation.IsActive) return;
+        if (!ImGui.IsMouseClicked(ImGuiMouseButton.Left)) return;
 
+        this.CheckForClick();
+    }
+
+    private unsafe void CheckForClick() {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
         if (addonPtr.Address == IntPtr.Zero) return;
 
@@ -49,25 +53,32 @@ public class NativeListingClickInterceptorService : IDisposable {
         if (activeListings.Count == 0) return;
 
         var mousePos = ImGui.GetMousePos();
-        this.TraverseAndHitTest(&addon->UldManager, addon, mousePos, activeListings);
+
+        float rootX = addon->X;
+        float rootY = addon->Y;
+        float scale = addon->Scale;
+
+        this.TraverseAndHitTest(&addon->UldManager, addon, mousePos, activeListings, rootX, rootY, scale);
     }
 
-    private unsafe bool TraverseAndHitTest(AtkUldManager* uldManager, AtkUnitBase* addon, System.Numerics.Vector2 mousePos, IReadOnlyList<Core.MarketListings.Models.TrackedListing> listings) {
+    private unsafe bool TraverseAndHitTest(AtkUldManager* uldManager, AtkUnitBase* addon, System.Numerics.Vector2 mousePos, IReadOnlyList<Core.MarketListings.Models.TrackedListing> listings, float parentX = 0, float parentY = 0, float scale = 1f) {
         if (uldManager == null) return false;
 
         for (int i = uldManager->NodeListCount - 1; i >= 0; i--) {
             var node = uldManager->NodeList[i];
             if (node == null || !node->IsVisible()) continue;
 
+            var (nodeX, nodeY) = this.GetNodeAbsolutePosition(node, parentX, parentY, scale);
+            float nodeW = node->Width * scale * node->ScaleX;
+            float nodeH = node->Height * scale * node->ScaleY;
+
             if ((ushort)node->Type >= 1000) {
                 var compNode = (AtkComponentNode*)node;
                 var comp = compNode->Component;
 
                 if (comp != null) {
-                    var box = this.GetNodeBoundingBox(node, addon);
-
-                    if (mousePos.X >= box.X && mousePos.X <= box.X + box.W &&
-                        mousePos.Y >= box.Y && mousePos.Y <= box.Y + box.H) {
+                    if (mousePos.X >= nodeX && mousePos.X <= nodeX + nodeW &&
+                        mousePos.Y >= nodeY && mousePos.Y <= nodeY + nodeH) {
 
                         var textNodes = new List<nint>();
                         this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
@@ -92,14 +103,14 @@ public class NativeListingClickInterceptorService : IDisposable {
                         if (matchedItemName != null) {
                             foreach (var listing in listings) {
                                 if (listing.ItemName == matchedItemName && rowNumbers.Contains(listing.PricePerUnit) && rowNumbers.Contains(listing.Quantity)) {
-                                    this.logger.Info($"[HybridAutomation] Intercepted native click on {listing.ItemName}. Launching sequence.");
+                                    this.logger.Info($"[ClickInterceptor] Clicked on listing: {listing.ItemName}. Launching hybrid automation.");
                                     this.hybridAutomation.TriggerAdjustment(listing);
                                     return true;
                                 }
                             }
                         }
 
-                        if (this.TraverseAndHitTest(&comp->UldManager, addon, mousePos, listings)) return true;
+                        if (this.TraverseAndHitTest(&comp->UldManager, addon, mousePos, listings, nodeX, nodeY, scale * node->ScaleX)) return true;
                     }
                 }
             }
@@ -122,26 +133,18 @@ public class NativeListingClickInterceptorService : IDisposable {
         }
     }
 
-    private unsafe (float X, float Y, float W, float H) GetNodeBoundingBox(AtkResNode* node, AtkUnitBase* addon) {
-        float x = node->X;
-        float y = node->Y;
+    private unsafe (float X, float Y) GetNodeAbsolutePosition(AtkResNode* node, float parentX, float parentY, float scale) {
+        float x = node->X * scale;
+        float y = node->Y * scale;
         var parent = node->ParentNode;
 
         while (parent != null) {
-            x += parent->X;
-            y += parent->Y;
+            x += parent->X * scale;
+            y += parent->Y * scale;
             parent = parent->ParentNode;
         }
 
-        x *= addon->Scale;
-        y *= addon->Scale;
-        x += addon->X;
-        y += addon->Y;
-
-        float w = node->Width * addon->Scale;
-        float h = node->Height * addon->Scale;
-
-        return (x, y, w, h);
+        return (parentX + x, parentY + y);
     }
 
     protected virtual string? GetMatchingItemName(string uiText, IEnumerable<string> allItemNames) {
