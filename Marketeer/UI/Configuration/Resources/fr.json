@@ -24,5 +24,6 @@
   "Config_HotkeyHeader": "Raccourcis Clavier",
   "Config_HotkeyLabel": "Raccourci du Tableau de bord :",
   "Config_HotkeyWaiting": "Appuyez sur une touche... (Échap pour annuler)",
-  "Config_HotkeyNone": "Aucun"
+  "Config_HotkeyNone": "Aucun",
+  "Config_ThemeLabel": "Thème de l'interface :"
 }

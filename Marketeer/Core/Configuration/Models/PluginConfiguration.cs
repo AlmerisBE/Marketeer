@@ -42,6 +42,8 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool DashboardHotkeyAlt { get; set; } = false;
     public bool DashboardHotkeyShift { get; set; } = false;
 
+    public string SelectedTheme { get; set; } = "Dark";
+
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
     public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];
 }

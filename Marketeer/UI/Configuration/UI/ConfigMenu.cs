@@ -4,6 +4,7 @@ using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
+using Marketeer.UI.Themes.Contracts;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -13,6 +14,7 @@ public class ConfigMenu : INavigationNode {
     private readonly IConfigurationService configurationService;
     private readonly ILocalizationService localizationService;
     private readonly IKeyState keyState;
+    private readonly IThemeService themeService;
 
     private string newWhitelistName = string.Empty;
     private bool isCapturingHotkey = false;
@@ -25,10 +27,11 @@ public class ConfigMenu : INavigationNode {
 
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public ConfigMenu(IConfigurationService configurationService, ILocalizationService localizationService, IKeyState keyState) {
+    public ConfigMenu(IConfigurationService configurationService, ILocalizationService localizationService, IKeyState keyState, IThemeService themeService) {
         this.configurationService = configurationService;
         this.localizationService = localizationService;
         this.keyState = keyState;
+        this.themeService = themeService;
     }
 
     public void DrawContent() {
@@ -160,6 +163,19 @@ public class ConfigMenu : INavigationNode {
             isChanged = true;
         }
 
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_ThemeLabel"));
+
+        if (ImGui.BeginCombo("##themeCombo", config.SelectedTheme)) {
+            foreach (var theme in this.themeService.GetAvailableThemes()) {
+                if (ImGui.Selectable(theme.Name, config.SelectedTheme == theme.Name)) {
+                    config.SelectedTheme = theme.Name;
+                    this.themeService.SetTheme(theme.Name);
+                    isChanged = true;
+                }
+            }
+            ImGui.EndCombo();
+        }
+
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
@@ -173,7 +189,6 @@ public class ConfigMenu : INavigationNode {
         if (this.isCapturingHotkey) {
             ImGui.Button(this.localizationService.Translate("Config_HotkeyWaiting"), new Vector2(250f, 0));
 
-            // FIX: Retrieve only explicit safely mapped keys from Dalamud to prevent IndexOutOfRange Exceptions.
             foreach (var key in this.keyState.GetValidVirtualKeys()) {
                 if (this.keyState[key]) {
                     if (key == Dalamud.Game.ClientState.Keys.VirtualKey.ESCAPE) {

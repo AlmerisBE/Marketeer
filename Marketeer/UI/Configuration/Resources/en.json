@@ -24,5 +24,6 @@
   "Config_HotkeyHeader": "Keyboard Shortcuts",
   "Config_HotkeyLabel": "Dashboard Hotkey:",
   "Config_HotkeyWaiting": "Press any key... (Esc to cancel)",
-  "Config_HotkeyNone": "None"
+  "Config_HotkeyNone": "None",
+  "Config_ThemeLabel": "Interface Theme:"
 }

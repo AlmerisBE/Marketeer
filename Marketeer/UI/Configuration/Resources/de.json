@@ -24,5 +24,6 @@
   "Config_HotkeyHeader": "Tastenkombinationen",
   "Config_HotkeyLabel": "Dashboard-Tastenkombination:",
   "Config_HotkeyWaiting": "Drücke eine beliebige Taste... (Esc zum Abbrechen)",
-  "Config_HotkeyNone": "Keine"
+  "Config_HotkeyNone": "Keine",
+  "Config_ThemeLabel": "UI-Thema:"
 }
