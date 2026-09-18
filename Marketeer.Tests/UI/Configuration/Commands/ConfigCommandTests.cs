@@ -5,6 +5,7 @@ using Marketeer.UI.Configuration.UI;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.Shell.UI;
+using Marketeer.UI.Themes.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -17,10 +18,11 @@ public class ConfigCommandTests {
         var localization = Substitute.For<ILocalizationService>();
         var configService = Substitute.For<IConfigurationService>();
         var mockKeyState = Substitute.For<IKeyState>();
+        var mockThemeService = Substitute.For<IThemeService>();
 
-        var configMenu = new ConfigMenu(configService, localization, mockKeyState);
+        var configMenu = new ConfigMenu(configService, localization, mockKeyState, mockThemeService);
 
-        var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService);
+        var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService, mockThemeService);
 
         var command = new ConfigCommand(navService, mainWindow, configMenu, localization);
 

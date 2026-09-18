@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
@@ -163,6 +164,10 @@ public class ConfigMenu : INavigationNode {
             isChanged = true;
         }
 
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
         ImGui.TextUnformatted(this.localizationService.Translate("Config_ThemeLabel"));
 
         if (ImGui.BeginCombo("##themeCombo", config.SelectedTheme)) {
@@ -184,15 +189,19 @@ public class ConfigMenu : INavigationNode {
         ImGui.TextUnformatted(this.localizationService.Translate("Config_HotkeyLabel"));
         ImGui.SameLine();
 
-        string keyName = config.DashboardHotkey == Dalamud.Game.ClientState.Keys.VirtualKey.NO_KEY ? this.localizationService.Translate("Config_HotkeyNone") : config.DashboardHotkey.ToString();
+        string keyName = config.DashboardHotkey == VirtualKey.NO_KEY ? this.localizationService.Translate("Config_HotkeyNone") : config.DashboardHotkey.ToString();
+
+        bool ctrlPressed = this.keyState[VirtualKey.CONTROL] || this.keyState[VirtualKey.LCONTROL] || this.keyState[VirtualKey.RCONTROL];
+        bool altPressed = this.keyState[VirtualKey.MENU] || this.keyState[VirtualKey.LMENU] || this.keyState[VirtualKey.RMENU];
+        bool shiftPressed = this.keyState[VirtualKey.SHIFT] || this.keyState[VirtualKey.LSHIFT] || this.keyState[VirtualKey.RSHIFT];
 
         if (this.isCapturingHotkey) {
             ImGui.Button(this.localizationService.Translate("Config_HotkeyWaiting"), new Vector2(250f, 0));
 
             foreach (var key in this.keyState.GetValidVirtualKeys()) {
                 if (this.keyState[key]) {
-                    if (key == Dalamud.Game.ClientState.Keys.VirtualKey.ESCAPE) {
-                        config.DashboardHotkey = Dalamud.Game.ClientState.Keys.VirtualKey.NO_KEY;
+                    if (key == VirtualKey.ESCAPE) {
+                        config.DashboardHotkey = VirtualKey.NO_KEY;
                         config.DashboardHotkeyCtrl = false;
                         config.DashboardHotkeyAlt = false;
                         config.DashboardHotkeyShift = false;
@@ -201,11 +210,14 @@ public class ConfigMenu : INavigationNode {
                         break;
                     }
 
-                    if (key != Dalamud.Game.ClientState.Keys.VirtualKey.CONTROL && key != Dalamud.Game.ClientState.Keys.VirtualKey.MENU && key != Dalamud.Game.ClientState.Keys.VirtualKey.SHIFT) {
+                    if (key != VirtualKey.CONTROL && key != VirtualKey.LCONTROL && key != VirtualKey.RCONTROL &&
+                        key != VirtualKey.MENU && key != VirtualKey.LMENU && key != VirtualKey.RMENU &&
+                        key != VirtualKey.SHIFT && key != VirtualKey.LSHIFT && key != VirtualKey.RSHIFT) {
+
                         config.DashboardHotkey = key;
-                        config.DashboardHotkeyCtrl = this.keyState[Dalamud.Game.ClientState.Keys.VirtualKey.CONTROL];
-                        config.DashboardHotkeyAlt = this.keyState[Dalamud.Game.ClientState.Keys.VirtualKey.MENU];
-                        config.DashboardHotkeyShift = this.keyState[Dalamud.Game.ClientState.Keys.VirtualKey.SHIFT];
+                        config.DashboardHotkeyCtrl = ctrlPressed;
+                        config.DashboardHotkeyAlt = altPressed;
+                        config.DashboardHotkeyShift = shiftPressed;
                         this.isCapturingHotkey = false;
                         isChanged = true;
                         break;
