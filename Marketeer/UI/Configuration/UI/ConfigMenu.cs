@@ -1,11 +1,9 @@
 ﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
-using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -170,15 +168,16 @@ public class ConfigMenu : INavigationNode {
         ImGui.TextUnformatted(this.localizationService.Translate("Config_HotkeyLabel"));
         ImGui.SameLine();
 
-        string keyName = config.DashboardHotkey == VirtualKey.NO_KEY ? this.localizationService.Translate("Config_HotkeyNone") : config.DashboardHotkey.ToString();
+        string keyName = config.DashboardHotkey == Dalamud.Game.ClientState.Keys.VirtualKey.NO_KEY ? this.localizationService.Translate("Config_HotkeyNone") : config.DashboardHotkey.ToString();
 
         if (this.isCapturingHotkey) {
             ImGui.Button(this.localizationService.Translate("Config_HotkeyWaiting"), new Vector2(250f, 0));
 
-            foreach (var key in Enum.GetValues<VirtualKey>()) {
+            // FIX: Retrieve only explicit safely mapped keys from Dalamud to prevent IndexOutOfRange Exceptions.
+            foreach (var key in this.keyState.GetValidVirtualKeys()) {
                 if (this.keyState[key]) {
-                    if (key == VirtualKey.ESCAPE) {
-                        config.DashboardHotkey = VirtualKey.NO_KEY;
+                    if (key == Dalamud.Game.ClientState.Keys.VirtualKey.ESCAPE) {
+                        config.DashboardHotkey = Dalamud.Game.ClientState.Keys.VirtualKey.NO_KEY;
                         config.DashboardHotkeyCtrl = false;
                         config.DashboardHotkeyAlt = false;
                         config.DashboardHotkeyShift = false;
@@ -187,11 +186,11 @@ public class ConfigMenu : INavigationNode {
                         break;
                     }
 
-                    if (key != VirtualKey.CONTROL && key != VirtualKey.MENU && key != VirtualKey.SHIFT) {
+                    if (key != Dalamud.Game.ClientState.Keys.VirtualKey.CONTROL && key != Dalamud.Game.ClientState.Keys.VirtualKey.MENU && key != Dalamud.Game.ClientState.Keys.VirtualKey.SHIFT) {
                         config.DashboardHotkey = key;
-                        config.DashboardHotkeyCtrl = this.keyState[VirtualKey.CONTROL];
-                        config.DashboardHotkeyAlt = this.keyState[VirtualKey.MENU];
-                        config.DashboardHotkeyShift = this.keyState[VirtualKey.SHIFT];
+                        config.DashboardHotkeyCtrl = this.keyState[Dalamud.Game.ClientState.Keys.VirtualKey.CONTROL];
+                        config.DashboardHotkeyAlt = this.keyState[Dalamud.Game.ClientState.Keys.VirtualKey.MENU];
+                        config.DashboardHotkeyShift = this.keyState[Dalamud.Game.ClientState.Keys.VirtualKey.SHIFT];
                         this.isCapturingHotkey = false;
                         isChanged = true;
                         break;
