@@ -29,7 +29,8 @@ public sealed class Plugin : IDalamudPlugin {
         ICondition condition,
         IAddonLifecycle addonLifecycle,
         ITextureProvider textureProvider,
-        IContextMenu contextMenu) {
+        IContextMenu contextMenu,
+        IKeyState keyState) {
 
         this.pluginInterface = pluginInterface;
         this.windowSystem = new WindowSystem("Marketeer");
@@ -49,6 +50,7 @@ public sealed class Plugin : IDalamudPlugin {
         services.AddSingleton(addonLifecycle);
         services.AddSingleton(textureProvider);
         services.AddSingleton(contextMenu);
+        services.AddSingleton(keyState);
 
         services.AddPluginFeatures();
 

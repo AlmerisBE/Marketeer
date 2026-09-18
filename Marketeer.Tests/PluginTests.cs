@@ -20,8 +20,8 @@ public class PluginTests {
         var mockCondition = Substitute.For<ICondition>();
         var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
         var mockTextureProvider = Substitute.For<ITextureProvider>();
-
-        var mockContextMenu = Substitute.For<IContextMenu>(); // Mock de IContextMenu
+        var mockContextMenu = Substitute.For<IContextMenu>();
+        var mockKeyState = Substitute.For<IKeyState>();
 
         var exception = Record.Exception(() => new Plugin(
             mockPluginInterface,
@@ -36,7 +36,8 @@ public class PluginTests {
             mockCondition,
             mockAddonLifecycle,
             mockTextureProvider,
-            mockContextMenu // Injection du mock manquant
+            mockContextMenu,
+            mockKeyState
         ));
 
         Assert.Null(exception);
