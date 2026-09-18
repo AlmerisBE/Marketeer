@@ -73,7 +73,10 @@ public class ThemeRepository : IThemeRepository {
     }
 
     public IEnumerable<ThemeDefinition> GetAvailableThemes() {
-        var themes = new List<ThemeDefinition>();
+        var themes = new List<ThemeDefinition> {
+            new ThemeDefinition { Name = "Default", Author = "System" }
+        };
+
         if (!Directory.Exists(this.themeDirectory)) return themes;
 
         foreach (var file in Directory.GetFiles(this.themeDirectory, "*.json")) {

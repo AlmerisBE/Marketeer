@@ -25,5 +25,6 @@
   "Config_HotkeyLabel": "Dashboard Hotkey:",
   "Config_HotkeyWaiting": "Press any key... (Esc to cancel)",
   "Config_HotkeyNone": "None",
-  "Config_ThemeLabel": "Interface Theme:"
+  "Config_ThemeLabel": "Interface Theme:",
+  "Theme_Default": "Default (Dalamud)"
 }

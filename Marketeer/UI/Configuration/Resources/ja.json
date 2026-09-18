@@ -25,5 +25,6 @@
   "Config_HotkeyLabel": "ダッシュボードのホットキー:",
   "Config_HotkeyWaiting": "キーを押してください...（Escでキャンセル）",
   "Config_HotkeyNone": "なし",
-  "Config_ThemeLabel": "インターフェーステーマ:"
+  "Config_ThemeLabel": "インターフェーステーマ:",
+  "Theme_Default": "デフォルト (Dalamud)"
 }

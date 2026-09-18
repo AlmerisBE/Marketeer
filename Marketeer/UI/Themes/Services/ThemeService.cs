@@ -22,7 +22,11 @@ public class ThemeService : IThemeService {
         this.logger = logger;
 
         this.CurrentTheme = new ThemeDefinition { Name = "Default" };
-        this.SetTheme(this.configService.GetConfig().SelectedTheme);
+
+        var selectedTheme = this.configService.GetConfig().SelectedTheme;
+        if (string.IsNullOrEmpty(selectedTheme)) selectedTheme = "Default";
+
+        this.SetTheme(selectedTheme);
     }
 
     public IEnumerable<ThemeDefinition> GetAvailableThemes() => this.repository.GetAvailableThemes();
@@ -30,7 +34,10 @@ public class ThemeService : IThemeService {
     public void SetTheme(string themeName) {
         var theme = this.repository.GetTheme(themeName);
         if (theme != null) this.CurrentTheme = theme;
-        else this.logger.Warning($"Theme '{themeName}' could not be loaded. Falling back to default.");
+        else {
+            this.logger.Warning($"Theme '{themeName}' could not be loaded. Falling back to default.");
+            this.CurrentTheme = this.repository.GetTheme("Default") ?? new ThemeDefinition { Name = "Default" };
+        }
     }
 
     public Vector4 GetCustomColor(string key, Vector4 fallback) {

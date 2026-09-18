@@ -25,5 +25,6 @@
   "Config_HotkeyLabel": "Dashboard-Tastenkombination:",
   "Config_HotkeyWaiting": "Drücke eine beliebige Taste... (Esc zum Abbrechen)",
   "Config_HotkeyNone": "Keine",
-  "Config_ThemeLabel": "UI-Thema:"
+  "Config_ThemeLabel": "UI-Thema:",
+  "Theme_Default": "Standard (Dalamud)"
 }
