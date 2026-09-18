@@ -72,7 +72,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                     var adjustText = this.localization.Translate("RetainerMenu_AdjustPrice");
                     var index = this.uiInteraction.GetContextMenuItemIndex(adjustText);
 
-                    if (index == -1) index = 1;
+                    if (index == -1) index = 0;
 
                     this.uiInteraction.SelectContextMenuItem(index);
                     this.step++;

@@ -57,9 +57,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     }
 
     public void TriggerPriceUpdate() {
-        if (this.IsUpdating) {
-            return;
-        }
+        if (this.IsUpdating) return;
 
         var localPlayer = this.objectTable.LocalPlayer;
         if (localPlayer == null || localPlayer.Name == null) {
@@ -85,9 +83,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     }
 
     public void TriggerSingleItemUpdate(uint itemId, uint? price = null, uint? quantity = null) {
-        if (this.IsUpdating) {
-            return;
-        }
+        if (this.IsUpdating) return;
 
         var localPlayer = this.objectTable.LocalPlayer;
         if (localPlayer == null || localPlayer.Name == null) {
@@ -127,13 +123,9 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
     }
 
     public bool OnTick() {
-        if (DateTime.Now < this.actionAvailableAt) {
-            return false;
-        }
+        if (DateTime.Now < this.actionAvailableAt) return false;
 
-        if (this.currentItemTask == null) {
-            return this.ProcessNextItem();
-        }
+        if (this.currentItemTask == null) return this.ProcessNextItem();
 
         if (DateTime.Now - this.currentItemStartTime > TimeSpan.FromSeconds(5)) {
             this.logger.Error($"Timeout while updating price for {this.currentItemTask.ItemName}. Attempting recovery.");
@@ -150,12 +142,12 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         }
 
         switch (this.step) {
-            case 0: // Select Item
+            case 0:
                 var uiIndex = this.inventoryService.GetUiIndexForRetainerMarketItem(this.currentItemTask.SlotIndex);
                 if (uiIndex != -1) {
                     this.uiInteraction.SelectItemInSellList(uiIndex);
                     this.step = 1;
-                    this.SetDelay(0.2); // Brief pause to allow the context menu to spawn
+                    this.SetDelay(0.2);
                 }
                 else {
                     this.logger.Warning($"Cannot find UI index for {this.currentItemTask.ItemName}. Skipping.");
@@ -163,28 +155,25 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
                 }
                 break;
 
-            case 1: // Interact with Context Menu or RetainerSell dialog
+            case 1:
                 if (this.uiInteraction.IsAddonReady("RetainerSell")) {
                     this.uiInteraction.ConfirmPriceUpdate(targetPrice);
-                    this.step = 2; // Wait for price update
+                    this.step = 2;
                     this.SetDelay(0.5);
                 }
                 else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
                     var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
                     var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
 
-                    // Fallback to hardcoded index 1 ("Adjust Price") if localization text is not found
-                    if (menuIndex == -1) {
-                        menuIndex = 1;
-                    }
+                    if (menuIndex == -1) menuIndex = 0;
 
                     this.uiInteraction.SelectContextMenuItem(menuIndex);
-                    this.SetDelay(0.2); // Remain in step 1 to catch RetainerSell naturally on the next ticks
+                    this.SetDelay(0.2);
                 }
                 break;
 
-            case 2: // Awaiting server response and item price modification
-                // Automatically handled at the beginning of the tick (currentPrice == targetPrice)
+            case 2:
+                // Implicit wait for server sync
                 break;
         }
 
@@ -211,9 +200,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         if (config.EnableAutomationDelay) {
             var min = config.AutomationDelayMin;
             var max = config.AutomationDelayMax;
-            if (min > max) {
-                min = max;
-            }
+            if (min > max) min = max;
 
             randomDelay = min + (new Random().NextDouble() * (max - min));
         }

@@ -178,13 +178,10 @@ public class CancelListingsAutomationService : ICancelListingsAutomationService,
                         menuIndex = this.uiInteraction.GetContextMenuItemIndex(stopText);
                     }
 
-                    if (menuIndex == -1) {
-                        menuIndex = 2;
-                    }
+                    // Fallback to hardcoded index 1 ("Return to Inventory")
+                    if (menuIndex == -1) menuIndex = 1;
 
                     this.uiInteraction.SelectContextMenuItem(menuIndex);
-
-                    // Stay in step 1 so the next tick catches the SelectYesNo dialog
                     this.SetDelay(0.2);
                 }
                 break;
