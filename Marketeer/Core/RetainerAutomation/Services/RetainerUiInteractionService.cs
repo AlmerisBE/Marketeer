@@ -171,12 +171,15 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             return;
         }
 
-        this.logger.Debug($"[SendNativeClick] Dispatching event {eventType} (Param {eventParam}) to listener {listenerAddr:X} on target {(nint)targetNode:X}");
-
         var listener = (AtkEventListener*)listenerAddr;
+
+        // Allocation native conforme à la structure AtkEvent de FFXIV
         var eventData = System.Runtime.InteropServices.Marshal.AllocHGlobal(0x40);
         for (var i = 0; i < 0x40; i++) System.Runtime.InteropServices.Marshal.WriteByte(eventData, i, 0);
+
+        // Offset 0x08: Target AtkResNode/AtkComponentNode
         System.Runtime.InteropServices.Marshal.WriteIntPtr(eventData, 0x8, new IntPtr(targetNode));
+        // Offset 0x10: Listener/Owner Addon Pointer (AtkUnitBase)
         System.Runtime.InteropServices.Marshal.WriteIntPtr(eventData, 0x10, listenerAddr);
 
         var eventParamData = System.Runtime.InteropServices.Marshal.AllocHGlobal(0x40);
@@ -195,25 +198,27 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             targetAddonAddr = addonPtr.Address;
         }
 
-        if (targetAddonAddr == IntPtr.Zero) {
-            this.logger.Warning("[OpenComparePrices] RetainerSell addon pointer is null.");
-            return;
-        }
+        if (targetAddonAddr == IntPtr.Zero) return;
 
-        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)targetAddonAddr;
-        if (addon->ComparePrices == null) {
-            this.logger.Warning("[OpenComparePrices] AddonRetainerSell->ComparePrices is null.");
-            return;
-        }
+        var addon = (AtkUnitBase*)targetAddonAddr;
+        if (!addon->IsVisible) return;
 
-        var comparePricesNode = addon->ComparePrices->AtkComponentBase.OwnerNode;
-        if (comparePricesNode == null) {
-            this.logger.Warning("[OpenComparePrices] ComparePrices->AtkComponentBase.OwnerNode is null.");
-            return;
-        }
+        // FFXIV RetainerSell callback signature for "Compare Prices" button is Event ID 1 (or 4 depending on internal index)
+        // FireCallback directly triggers the native internal handler without manual AtkEvent marshaling
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 4; // Action ID 4 corresponds to Compare Prices button callback
+        values[1].Type = AtkValueType.Int;
+        values[1].Int = 0;
 
-        this.logger.Debug($"[OpenComparePrices] Triggering ComparePrices open for addon at {targetAddonAddr:X} via OwnerNode {(nint)comparePricesNode:X}");
-        this.SendNativeClick(targetAddonAddr, 2, 4, comparePricesNode);
+        this.logger.Debug($"[RetainerUiInteractionService] FireCallback(4) dispatched to RetainerSell at {targetAddonAddr:X}");
+        addon->FireCallback(2u, values, true);
+
+        // Fallback: If FireCallback(4) is ignored by specific game versions, try FireCallback(1) which handles default sub-actions
+        var fallbackValues = stackalloc AtkValue[1];
+        fallbackValues[0].Type = AtkValueType.Int;
+        fallbackValues[0].Int = 1;
+        addon->FireCallback(1u, fallbackValues, true);
     }
 
     public unsafe void SetPriceAndConfirm(uint newPrice) {
