@@ -26,5 +26,6 @@
   "Config_HotkeyWaiting": "キーを押してください...（Escでキャンセル）",
   "Config_HotkeyNone": "なし",
   "Config_ThemeLabel": "インターフェーステーマ:",
-  "Theme_Default": "デフォルト (Dalamud)"
+  "Theme_Default": "デフォルト (Dalamud)",
+  "Config_UndercutAmount": "値下げ額 (ギル)"
 }

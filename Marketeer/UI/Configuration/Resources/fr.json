@@ -26,5 +26,6 @@
   "Config_HotkeyWaiting": "Appuyez sur une touche... (Échap pour annuler)",
   "Config_HotkeyNone": "Aucun",
   "Config_ThemeLabel": "Thème de l'interface :",
-  "Theme_Default": "Par défaut (Dalamud)"
+  "Theme_Default": "Par défaut (Dalamud)",
+  "Config_UndercutAmount": "Montant de la baisse (Gils)"
 }

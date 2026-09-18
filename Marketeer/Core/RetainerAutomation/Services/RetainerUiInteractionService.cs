@@ -205,6 +205,62 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         return true;
     }
 
+    private unsafe void SendNativeClick(nint listenerAddr, int eventType, uint eventParam, void* targetNode) {
+        if (listenerAddr == IntPtr.Zero || targetNode == null) return;
+
+        var listener = (AtkEventListener*)listenerAddr;
+        var eventData = System.Runtime.InteropServices.Marshal.AllocHGlobal(0x40);
+        for (var i = 0; i < 0x40; i++) System.Runtime.InteropServices.Marshal.WriteByte(eventData, i, 0);
+        System.Runtime.InteropServices.Marshal.WriteIntPtr(eventData, 0x8, new IntPtr(targetNode));
+        System.Runtime.InteropServices.Marshal.WriteIntPtr(eventData, 0x10, listenerAddr);
+
+        var eventParamData = System.Runtime.InteropServices.Marshal.AllocHGlobal(0x40);
+        for (var i = 0; i < 0x40; i++) System.Runtime.InteropServices.Marshal.WriteByte(eventParamData, i, 0);
+
+        listener->ReceiveEvent((AtkEventType)eventType, (int)eventParam, (AtkEvent*)eventData, (AtkEventData*)eventParamData);
+
+        System.Runtime.InteropServices.Marshal.FreeHGlobal(eventData);
+        System.Runtime.InteropServices.Marshal.FreeHGlobal(eventParamData);
+    }
+
+    public unsafe void OpenComparePrices() {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+        if (addonPtr.Address == IntPtr.Zero) return;
+
+        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)addonPtr.Address;
+        if (addon->ComparePrices != null) {
+            this.SendNativeClick(addonPtr.Address, 2, 4, addon->ComparePrices->AtkComponentBase.OwnerNode);
+        }
+    }
+
+    public unsafe void SetPriceAndConfirm(uint newPrice) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+        if (addonPtr.Address == IntPtr.Zero) return;
+
+        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)addonPtr.Address;
+
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int; values[0].Int = 0;
+        values[1].Type = AtkValueType.UInt; values[1].UInt = newPrice;
+        addon->AtkUnitBase.FireCallback(2u, values, true);
+
+        if (addon->Confirm != null) {
+            this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm);
+        }
+    }
+
+    public unsafe void CloseItemSearchResult() {
+        var addonPtr = this.gameGui.GetAddonByName("ItemSearchResult");
+        if (addonPtr.Address == IntPtr.Zero) return;
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        if (!addon->IsVisible) return;
+
+        var values = stackalloc AtkValue[1];
+        values[0].Type = AtkValueType.Int; values[0].Int = -1;
+        addon->FireCallback(1u, values, true);
+    }
+
     public void SelectItemInSellList(int uiIndex) {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
         if (addonPtr.Address == IntPtr.Zero) {

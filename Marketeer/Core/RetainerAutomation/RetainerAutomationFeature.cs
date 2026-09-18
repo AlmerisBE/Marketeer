@@ -39,6 +39,9 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<CancelAndSellAutomationService>();
         services.AddSingleton<ICancelAndSellAutomationService>(provider => provider.GetRequiredService<CancelAndSellAutomationService>());
 
+        services.AddSingleton<HybridAutomationService>();
+        services.AddSingleton<IHybridAutomationService>(provider => provider.GetRequiredService<HybridAutomationService>());
+
         services.AddSingleton<ICommand, RetainerCommand>();
         services.AddSingleton<ICommand, RetainerMenuCommand>();
     }

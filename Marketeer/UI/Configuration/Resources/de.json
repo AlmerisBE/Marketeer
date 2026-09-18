@@ -26,5 +26,6 @@
   "Config_HotkeyWaiting": "Drücke eine beliebige Taste... (Esc zum Abbrechen)",
   "Config_HotkeyNone": "Keine",
   "Config_ThemeLabel": "UI-Thema:",
-  "Theme_Default": "Standard (Dalamud)"
+  "Theme_Default": "Standard (Dalamud)",
+  "Config_UndercutAmount": "Unterbietungsbetrag (Gil)"
 }

@@ -26,5 +26,6 @@
   "Config_HotkeyWaiting": "Press any key... (Esc to cancel)",
   "Config_HotkeyNone": "None",
   "Config_ThemeLabel": "Interface Theme:",
-  "Theme_Default": "Default (Dalamud)"
+  "Theme_Default": "Default (Dalamud)",
+  "Config_UndercutAmount": "Undercut amount (Gil)"
 }
