@@ -10,7 +10,6 @@ public class MainWindowTests {
     [Fact]
     public void Constructor_InitializesSuccessfully() {
         var pluginInterface = Substitute.For<IDalamudPluginInterface>();
-
         var navService = Substitute.For<INavigationService>();
         var mockNode = Substitute.For<INavigationNode>();
 
@@ -19,6 +18,7 @@ public class MainWindowTests {
         var mainWindow = new MainWindow(
             pluginInterface,
             navService,
+            new List<INavigationNode>(),
             new List<IToolbarAction>(),
             new List<IStatusBarProvider>()
         );

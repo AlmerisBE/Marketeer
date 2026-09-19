@@ -19,6 +19,7 @@ public class ConfigCommandTests {
         var mainWindow = new MainWindow(
             pluginInterface,
             navService,
+            new List<INavigationNode>(),
             new List<IToolbarAction>(),
             new List<IStatusBarProvider>()
         );

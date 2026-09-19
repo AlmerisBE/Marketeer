@@ -28,33 +28,29 @@ public class HotkeyTrackerServiceTests {
         };
         configService.GetConfig().Returns(config);
 
-        // Alignment with the new MainWindow constructor signature
         var mainWindow = new MainWindow(
             pluginInterface,
             navService,
+            new List<INavigationNode>(),
             new List<IToolbarAction>(),
             new List<IStatusBarProvider>()
         );
 
         mainWindow.IsOpen = false;
 
-        // Capture the framework update event registration using Dalamud's exact delegate
         IFramework.OnUpdateDelegate? capturedUpdate = null;
         framework.When(f => f.Update += Arg.Any<IFramework.OnUpdateDelegate>())
                  .Do(callInfo => capturedUpdate = callInfo.Arg<IFramework.OnUpdateDelegate>());
 
         var service = new HotkeyTrackerService(framework, keyState, configService, mainWindow);
 
-        // Simulate the hotkey being pressed (Ctrl + G)
         keyState[VirtualKey.G].Returns(true);
         keyState[VirtualKey.CONTROL].Returns(true);
         keyState[VirtualKey.MENU].Returns(false);
         keyState[VirtualKey.SHIFT].Returns(false);
 
-        // Act - Trigger the update loop manually
         if (capturedUpdate != null) capturedUpdate.Invoke(framework);
 
-        // Assert - The window should now be open
         Assert.True(mainWindow.IsOpen);
     }
 }
