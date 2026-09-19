@@ -43,6 +43,42 @@ public class ConfigMenu : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
+        if (ImGui.BeginTabBar("ConfigTabBar")) {
+            if (ImGui.BeginTabItem(this.localizationService.Translate("Config_Tab_Universalis"))) {
+                isChanged |= this.DrawUniversalisTab(config);
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(this.localizationService.Translate("Config_Tab_Competition"))) {
+                isChanged |= this.DrawCompetitionTab(config);
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(this.localizationService.Translate("Config_Tab_Theme"))) {
+                isChanged |= this.DrawThemeTab(config);
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(this.localizationService.Translate("Config_Tab_Hotkeys"))) {
+                isChanged |= this.DrawHotkeysTab(config);
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(this.localizationService.Translate("Config_Tab_Other"))) {
+                isChanged |= this.DrawOtherTab(config);
+                ImGui.EndTabItem();
+            }
+
+            ImGui.EndTabBar();
+        }
+
+        if (isChanged) this.configurationService.Save();
+    }
+
+    private bool DrawUniversalisTab(PluginConfiguration config) {
+        bool isChanged = false;
+        ImGui.Spacing();
+
         int cache = config.UniversalisCacheMinutes;
         if (ImGui.InputInt(this.localizationService.Translate("Config_CacheLabel"), ref cache)) {
             if (cache < 0) cache = 0;
@@ -50,37 +86,27 @@ public class ConfigMenu : INavigationNode {
             isChanged = true;
         }
 
-        ImGui.Spacing();
-        ImGui.Separator();
+        return isChanged;
+    }
+
+    private bool DrawCompetitionTab(PluginConfiguration config) {
+        bool isChanged = false;
         ImGui.Spacing();
 
-        bool enableDelay = config.EnableAutomationDelay;
-        if (ImGui.Checkbox(this.localizationService.Translate("Config_AutomationDelayToggle"), ref enableDelay)) {
-            config.EnableAutomationDelay = enableDelay;
+        int undercut = (int)config.UndercutAmount;
+        if (ImGui.InputInt(this.localizationService.Translate("Config_UndercutAmount"), ref undercut)) {
+            if (undercut < 0) undercut = 0;
+            config.UndercutAmount = (uint)undercut;
             isChanged = true;
         }
 
-        if (enableDelay) {
-            ImGui.Indent();
-            int min = config.AutomationDelayMin;
-            int max = config.AutomationDelayMax;
-
-            ImGui.SetNextItemWidth(100f);
-            if (ImGui.InputInt(this.localizationService.Translate("Config_AutomationDelayMin"), ref min)) {
-                if (min < 0) min = 0;
-                config.AutomationDelayMin = min;
-                if (min > config.AutomationDelayMax) config.AutomationDelayMax = min;
-                isChanged = true;
-            }
-
-            ImGui.SetNextItemWidth(100f);
-            if (ImGui.InputInt(this.localizationService.Translate("Config_AutomationDelayMax"), ref max)) {
-                if (max < config.AutomationDelayMin) max = config.AutomationDelayMin;
-                config.AutomationDelayMax = max;
-                isChanged = true;
-            }
-            ImGui.Unindent();
+        bool enforceVendorPrice = config.EnforceVendorPriceMinimum;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnforceVendorPriceMinimum"), ref enforceVendorPrice)) {
+            config.EnforceVendorPriceMinimum = enforceVendorPrice;
+            isChanged = true;
         }
+
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_EnforceVendorPriceMinimum_Tooltip"));
 
         ImGui.Spacing();
         ImGui.Separator();
@@ -126,7 +152,6 @@ public class ConfigMenu : INavigationNode {
         ImGui.TextUnformatted(this.localizationService.Translate("Config_WhitelistBehaviorLabel"));
 
         int behavior = (int)config.CompetitorWhitelistBehavior;
-
         if (ImGui.RadioButton(this.localizationService.Translate("Config_WhitelistBehavior_Ignore"), ref behavior, 0)) {
             config.CompetitorWhitelistBehavior = WhitelistBehavior.Ignore;
             isChanged = true;
@@ -137,35 +162,11 @@ public class ConfigMenu : INavigationNode {
             isChanged = true;
         }
 
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
+        return isChanged;
+    }
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_AdvancedHeader"));
-
-        bool enforceVendorPrice = config.EnforceVendorPriceMinimum;
-        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnforceVendorPriceMinimum"), ref enforceVendorPrice)) {
-            config.EnforceVendorPriceMinimum = enforceVendorPrice;
-            isChanged = true;
-        }
-        if (ImGui.IsItemHovered()) {
-            ImGui.SetTooltip(this.localizationService.Translate("Config_EnforceVendorPriceMinimum_Tooltip"));
-        }
-
-        bool enableChatNotifications = config.EnableChatNotifications;
-        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableChatNotifications"), ref enableChatNotifications)) {
-            config.EnableChatNotifications = enableChatNotifications;
-            isChanged = true;
-        }
-
-        bool enableDebugMode = config.EnableDebugMode;
-        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableDebugMode"), ref enableDebugMode)) {
-            config.EnableDebugMode = enableDebugMode;
-            isChanged = true;
-        }
-
-        ImGui.Spacing();
-        ImGui.Separator();
+    private bool DrawThemeTab(PluginConfiguration config) {
+        bool isChanged = false;
         ImGui.Spacing();
 
         ImGui.TextUnformatted(this.localizationService.Translate("Config_ThemeLabel"));
@@ -185,11 +186,13 @@ public class ConfigMenu : INavigationNode {
             ImGui.EndCombo();
         }
 
-        ImGui.Spacing();
-        ImGui.Separator();
+        return isChanged;
+    }
+
+    private bool DrawHotkeysTab(PluginConfiguration config) {
+        bool isChanged = false;
         ImGui.Spacing();
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_HotkeyHeader"));
         ImGui.TextUnformatted(this.localizationService.Translate("Config_HotkeyLabel"));
         ImGui.SameLine();
 
@@ -240,8 +243,57 @@ public class ConfigMenu : INavigationNode {
             }
         }
 
-        if (isChanged) {
-            this.configurationService.Save();
+        return isChanged;
+    }
+
+    private bool DrawOtherTab(PluginConfiguration config) {
+        bool isChanged = false;
+        ImGui.Spacing();
+
+        bool enableDelay = config.EnableAutomationDelay;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_AutomationDelayToggle"), ref enableDelay)) {
+            config.EnableAutomationDelay = enableDelay;
+            isChanged = true;
         }
+
+        if (enableDelay) {
+            ImGui.Indent();
+            int min = config.AutomationDelayMin;
+            int max = config.AutomationDelayMax;
+
+            ImGui.SetNextItemWidth(100f);
+            if (ImGui.InputInt(this.localizationService.Translate("Config_AutomationDelayMin"), ref min)) {
+                if (min < 0) min = 0;
+                config.AutomationDelayMin = min;
+                if (min > config.AutomationDelayMax) config.AutomationDelayMax = min;
+                isChanged = true;
+            }
+
+            ImGui.SetNextItemWidth(100f);
+            if (ImGui.InputInt(this.localizationService.Translate("Config_AutomationDelayMax"), ref max)) {
+                if (max < config.AutomationDelayMin) max = config.AutomationDelayMin;
+                config.AutomationDelayMax = max;
+                isChanged = true;
+            }
+            ImGui.Unindent();
+        }
+
+        ImGui.Spacing();
+
+        bool enableChatNotifications = config.EnableChatNotifications;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableChatNotifications"), ref enableChatNotifications)) {
+            config.EnableChatNotifications = enableChatNotifications;
+            isChanged = true;
+        }
+
+        ImGui.Spacing();
+
+        bool enableDebugMode = config.EnableDebugMode;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableDebugMode"), ref enableDebugMode)) {
+            config.EnableDebugMode = enableDebugMode;
+            isChanged = true;
+        }
+
+        return isChanged;
     }
 }

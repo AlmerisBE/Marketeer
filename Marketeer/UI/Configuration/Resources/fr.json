@@ -29,5 +29,11 @@
   "Theme_Default": "Par défaut (Dalamud)",
   "Config_UndercutAmount": "Montant de la baisse (Gils)",
   "Config_AutoCloseMarketList": "Fermer automatiquement la liste des ventes après l'ajustement",
-  "Config_AutoCloseMarketListDelay": "Délai avant fermeture (s)"
+  "Config_AutoCloseMarketListDelay": "Délai avant fermeture (s)",
+  "Config_Tab_Universalis": "Cache Universalis",
+  "Config_Tab_Competition": "Gestion de concurrence",
+  "Config_Tab_Theme": "Thème",
+  "Config_Tab_Hotkeys": "Raccourcis",
+  "Config_Tab_Other": "Autres",
+  "Group_Configuration": "Configuration"
 }

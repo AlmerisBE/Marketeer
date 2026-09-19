@@ -20,7 +20,7 @@ public class ConfigCommandTests {
         var mockKeyState = Substitute.For<IKeyState>();
         var mockThemeService = Substitute.For<IThemeService>();
 
-        var configMenu = new ConfigMenu(configService, localization, mockKeyState, mockThemeService);
+        var configMenu = new UniversalisConfigMenu(configService, localization);
 
         var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService);
 

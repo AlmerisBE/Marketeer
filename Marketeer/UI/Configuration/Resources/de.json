@@ -29,5 +29,11 @@
   "Theme_Default": "Standard (Dalamud)",
   "Config_UndercutAmount": "Unterbietungsbetrag (Gil)",
   "Config_AutoCloseMarketList": "Gehilfen-Marktliste nach Preisaktualisierung automatisch schließen",
-  "Config_AutoCloseMarketListDelay": "Schließverzögerung (s)"
+  "Config_AutoCloseMarketListDelay": "Schließverzögerung (s)",
+  "Config_Tab_Universalis": "Universalis Cache",
+  "Config_Tab_Competition": "Konkurrenzverwaltung",
+  "Config_Tab_Theme": "Thema",
+  "Config_Tab_Hotkeys": "Tastenkombinationen",
+  "Config_Tab_Other": "Andere",
+  "Group_Configuration": "Konfiguration"
 }

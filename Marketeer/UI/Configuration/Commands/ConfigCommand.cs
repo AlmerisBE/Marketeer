@@ -8,7 +8,7 @@ namespace Marketeer.UI.Configuration.Commands;
 public class ConfigCommand : ICommand {
     private INavigationService navigationService;
     private MainWindow mainWindow;
-    private ConfigMenu configMenu;
+    private UniversalisConfigMenu defaultMenu;
     private ILocalizationService localizationService;
 
     public string CommandTrigger => "config";
@@ -17,17 +17,17 @@ public class ConfigCommand : ICommand {
     public ConfigCommand(
         INavigationService navigationService,
         MainWindow mainWindow,
-        ConfigMenu configMenu,
+        UniversalisConfigMenu defaultMenu,
         ILocalizationService localizationService) {
 
         this.navigationService = navigationService;
         this.mainWindow = mainWindow;
-        this.configMenu = configMenu;
+        this.defaultMenu = defaultMenu;
         this.localizationService = localizationService;
     }
 
     public void Execute(string arguments) {
-        this.navigationService.NavigateTo(this.configMenu);
+        this.navigationService.NavigateTo(this.defaultMenu);
         this.mainWindow.IsOpen = true;
     }
 }

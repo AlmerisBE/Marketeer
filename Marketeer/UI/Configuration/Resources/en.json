@@ -29,5 +29,11 @@
   "Theme_Default": "Default (Dalamud)",
   "Config_UndercutAmount": "Undercut amount (Gil)",
   "Config_AutoCloseMarketList": "Auto-close retainer market list after price update",
-  "Config_AutoCloseMarketListDelay": "Auto-close delay (s)"
+  "Config_AutoCloseMarketListDelay": "Auto-close delay (s)",
+  "Config_Tab_Universalis": "Universalis Cache",
+  "Config_Tab_Competition": "Competition Management",
+  "Config_Tab_Theme": "Theme",
+  "Config_Tab_Hotkeys": "Hotkeys",
+  "Config_Tab_Other": "Other",
+  "Group_Configuration": "Configuration"
 }

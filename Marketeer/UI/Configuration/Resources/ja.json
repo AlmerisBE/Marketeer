@@ -29,5 +29,11 @@
   "Theme_Default": "デフォルト (Dalamud)",
   "Config_UndercutAmount": "値下げ額 (ギル)",
   "Config_AutoCloseMarketList": "価格調整後にリテイナーの出品一覧を自動で閉じる",
-  "Config_AutoCloseMarketListDelay": "自動で閉じるまでの遅延（秒）"
+  "Config_AutoCloseMarketListDelay": "自動で閉じるまでの遅延（秒）",
+  "Config_Tab_Universalis": "Universalisキャッシュ",
+  "Config_Tab_Competition": "競合管理",
+  "Config_Tab_Theme": "テーマ",
+  "Config_Tab_Hotkeys": "ショートカット",
+  "Config_Tab_Other": "その他",
+  "Group_Configuration": "設定"
 }
