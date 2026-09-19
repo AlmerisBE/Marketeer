@@ -3,6 +3,7 @@ using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.RetainerAutomation.Services;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.RetainerAutomation.Commands;
+using Marketeer.UI.RetainerAutomation.Components;
 using Marketeer.UI.RetainerAutomation.Providers;
 using Marketeer.UI.RetainerOverlays.Contracts;
 using Marketeer.UI.RetainerOverlays.Services;
@@ -48,6 +49,8 @@ public class RetainerAutomationFeature : IFeatureModule {
 
         services.AddSingleton<ICommand, RetainerCommand>();
         services.AddSingleton<ICommand, RetainerMenuCommand>();
+
+        services.AddSingleton<IToolbarAction, ScanRetainersToolbarAction>();
     }
 
     public void Initialize(IServiceProvider provider) {

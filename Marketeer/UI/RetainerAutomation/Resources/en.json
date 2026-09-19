@@ -7,5 +7,7 @@
   "RetainerMenu_ReturnToInventory": "Return to Inventory",
   "ContextMenu_HaveRetainerSell": "Have retainer sell items",
   "ContextMenu_Compete": "Adjust Price",
-  "ContextMenu_CancelAndSell": "Auto-Cancel Listing"
+  "ContextMenu_CancelAndSell": "Auto-Cancel Listing",
+  "Toolbar_ScanRetainers": "Scan Retainers",
+  "Toolbar_ScanRetainers_Tooltip": "Starts the automated scan of registered retainers."
 }

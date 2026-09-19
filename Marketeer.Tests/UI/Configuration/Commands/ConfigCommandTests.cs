@@ -1,11 +1,10 @@
-﻿using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.UI.Configuration.Commands;
 using Marketeer.UI.Configuration.UI;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.Shell.UI;
-using Marketeer.UI.Themes.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -13,22 +12,27 @@ namespace Marketeer.Tests.UI.Configuration.Commands;
 
 public class ConfigCommandTests {
     [Fact]
-    public void Execute_ShouldNavigateToConfigMenuAndOpenWindow() {
+    public void Execute_NavigatesToUniversalisConfigAndOpensWindow() {
         var navService = Substitute.For<INavigationService>();
-        var localization = Substitute.For<ILocalizationService>();
+        var pluginInterface = Substitute.For<IDalamudPluginInterface>();
+
+        var mainWindow = new MainWindow(
+            pluginInterface,
+            navService,
+            new List<IToolbarAction>(),
+            new List<IStatusBarProvider>()
+        );
+
         var configService = Substitute.For<IConfigurationService>();
-        var mockKeyState = Substitute.For<IKeyState>();
-        var mockThemeService = Substitute.For<IThemeService>();
+        var localization = Substitute.For<ILocalizationService>();
+        var defaultMenu = new UniversalisConfigMenu(configService, localization);
 
-        var configMenu = new UniversalisConfigMenu(configService, localization);
+        var command = new ConfigCommand(navService, mainWindow, defaultMenu, localization);
 
-        var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService);
+        mainWindow.IsOpen = false;
+        command.Execute(string.Empty);
 
-        var command = new ConfigCommand(navService, mainWindow, configMenu, localization);
-
-        command.Execute("");
-
-        navService.Received(1).NavigateTo(configMenu);
+        navService.Received(1).NavigateTo(defaultMenu);
         Assert.True(mainWindow.IsOpen);
     }
 }

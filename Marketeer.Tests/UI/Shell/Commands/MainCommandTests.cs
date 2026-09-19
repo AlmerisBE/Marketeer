@@ -1,4 +1,5 @@
-﻿using Marketeer.UI.Localization.Contracts;
+﻿using Dalamud.Plugin;
+using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Commands;
 using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.Shell.UI;
@@ -9,16 +10,25 @@ namespace Marketeer.Tests.UI.Shell.Commands;
 
 public class MainCommandTests {
     [Fact]
-    public void Execute_ShouldToggleWindow() {
+    public void Execute_TogglesMainWindowVisibility() {
         var navService = Substitute.For<INavigationService>();
-        var localization = Substitute.For<ILocalizationService>();
-        var mainWindow = new MainWindow(new List<INavigationNode>(), new List<ISidebarAction>(), localization, navService);
+        var pluginInterface = Substitute.For<IDalamudPluginInterface>();
 
+        var mainWindow = new MainWindow(
+            pluginInterface,
+            navService,
+            new List<IToolbarAction>(),
+            new List<IStatusBarProvider>()
+        );
+
+        var localization = Substitute.For<ILocalizationService>();
         var command = new MainCommand(mainWindow);
 
-        bool initialStatus = mainWindow.IsOpen;
-        command.Execute("");
+        mainWindow.IsOpen = false;
+        command.Execute(string.Empty);
+        Assert.True(mainWindow.IsOpen);
 
-        Assert.NotEqual(initialStatus, mainWindow.IsOpen);
+        command.Execute(string.Empty);
+        Assert.False(mainWindow.IsOpen);
     }
 }

@@ -7,5 +7,7 @@
   "RetainerMenu_ReturnToInventory": "所持品に戻す",
   "ContextMenu_HaveRetainerSell": "リテイナーに売却を依頼する",
   "ContextMenu_Compete": "価格を調整する",
-  "ContextMenu_CancelAndSell": "出品を取り消す"
+  "ContextMenu_CancelAndSell": "出品を取り消す",
+  "Toolbar_ScanRetainers": "リテイナーをスキャン",
+  "Toolbar_ScanRetainers_Tooltip": "登録されたリテイナーの自動スキャンを開始します。"
 }

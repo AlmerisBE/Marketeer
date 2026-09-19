@@ -7,5 +7,7 @@
   "RetainerMenu_ReturnToInventory": "Ins Inventar verschieben",
   "ContextMenu_HaveRetainerSell": "Durch Gehilfen verkaufen lassen",
   "ContextMenu_Compete": "Preis anpassen",
-  "ContextMenu_CancelAndSell": "Angebot stornieren"
+  "ContextMenu_CancelAndSell": "Angebot stornieren",
+  "Toolbar_ScanRetainers": "Gehilfen scannen",
+  "Toolbar_ScanRetainers_Tooltip": "Startet den automatischen Scan der registrierten Gehilfen."
 }

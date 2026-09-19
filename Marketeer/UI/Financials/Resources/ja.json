@@ -7,5 +7,8 @@
   "Financials_ColHeader_LiquidGil": "所持ギル",
   "Financials_ColHeader_MarketValue": "市場価値",
   "Financials_ColHeader_CombinedTotal": "合計",
-  "Financials_Inventory": "(所持品)"
+  "Financials_Inventory": "(所持品)",
+  "StatusBar_ItemsOnSale": "出品中のアイテム: {0}",
+  "StatusBar_MarketValue": "市場価値: {0:N0} ギル",
+  "StatusBar_TotalGil": "総ギル: {0:N0}"
 }

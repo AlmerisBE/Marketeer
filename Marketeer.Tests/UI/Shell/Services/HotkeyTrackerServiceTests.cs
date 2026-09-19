@@ -1,7 +1,9 @@
 ﻿using Dalamud.Game.ClientState.Keys;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
+using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.Shell.Services;
 using Marketeer.UI.Shell.UI;
 using NSubstitute;
@@ -12,35 +14,47 @@ namespace Marketeer.Tests.UI.Shell.Services;
 public class HotkeyTrackerServiceTests {
     [Fact]
     public void Update_WhenConfiguredHotkeyAndModifiersMatch_TogglesMainWindow() {
-        var framework = Substitute.For<IFramework>();
-        var keyState = Substitute.For<IKeyState>();
         var configService = Substitute.For<IConfigurationService>();
+        var keyState = Substitute.For<IKeyState>();
+        var framework = Substitute.For<IFramework>();
+        var pluginInterface = Substitute.For<IDalamudPluginInterface>();
+        var navService = Substitute.For<INavigationService>();
 
         var config = new PluginConfiguration {
-            DashboardHotkey = VirtualKey.M,
+            DashboardHotkey = VirtualKey.G,
             DashboardHotkeyCtrl = true,
             DashboardHotkeyAlt = false,
-            DashboardHotkeyShift = true
+            DashboardHotkeyShift = false
         };
         configService.GetConfig().Returns(config);
 
-        keyState[VirtualKey.M].Returns(true);
-        keyState[VirtualKey.CONTROL].Returns(true);
-        keyState[VirtualKey.MENU].Returns(false);
-        keyState[VirtualKey.SHIFT].Returns(true);
+        // Alignment with the new MainWindow constructor signature
+        var mainWindow = new MainWindow(
+            pluginInterface,
+            navService,
+            new List<IToolbarAction>(),
+            new List<IStatusBarProvider>()
+        );
 
-        var mainWindow = Substitute.ForPartsOf<MainWindow>(
-            new List<Marketeer.UI.Shell.Contracts.INavigationNode>(),
-            new List<Marketeer.UI.Shell.Contracts.ISidebarAction>(),
-            Substitute.For<Marketeer.UI.Localization.Contracts.ILocalizationService>(),
-            Substitute.For<Marketeer.UI.Shell.Contracts.INavigationService>());
+        mainWindow.IsOpen = false;
+
+        // Capture the framework update event registration using Dalamud's exact delegate
+        IFramework.OnUpdateDelegate? capturedUpdate = null;
+        framework.When(f => f.Update += Arg.Any<IFramework.OnUpdateDelegate>())
+                 .Do(callInfo => capturedUpdate = callInfo.Arg<IFramework.OnUpdateDelegate>());
 
         var service = new HotkeyTrackerService(framework, keyState, configService, mainWindow);
 
-        // Trigger the event manually
-        framework.Update += Raise.Event<IFramework.OnUpdateDelegate>(framework);
+        // Simulate the hotkey being pressed (Ctrl + G)
+        keyState[VirtualKey.G].Returns(true);
+        keyState[VirtualKey.CONTROL].Returns(true);
+        keyState[VirtualKey.MENU].Returns(false);
+        keyState[VirtualKey.SHIFT].Returns(false);
 
-        // Assert that the window toggle mechanism was invoked
-        mainWindow.Received(1).Toggle();
+        // Act - Trigger the update loop manually
+        if (capturedUpdate != null) capturedUpdate.Invoke(framework);
+
+        // Assert - The window should now be open
+        Assert.True(mainWindow.IsOpen);
     }
 }

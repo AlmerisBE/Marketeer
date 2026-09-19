@@ -7,5 +7,8 @@
   "Financials_ColHeader_LiquidGil": "Gils Disponibles",
   "Financials_ColHeader_MarketValue": "Valeur Marchande",
   "Financials_ColHeader_CombinedTotal": "Total Combiné",
-  "Financials_Inventory": "(Inventaire)"
+  "Financials_Inventory": "(Inventaire)",
+  "StatusBar_ItemsOnSale": "Objets en vente : {0}",
+  "StatusBar_MarketValue": "Valeur marchande : {0:N0} Gils",
+  "StatusBar_TotalGil": "Gils totaux : {0:N0}"
 }

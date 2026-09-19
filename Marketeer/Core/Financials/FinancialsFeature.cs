@@ -1,6 +1,7 @@
 ﻿using Marketeer.Core.Financials.Contracts;
 using Marketeer.Core.Financials.Services;
 using Marketeer.Core.Framework;
+using Marketeer.UI.Financials.Components;
 using Marketeer.UI.Financials.Providers;
 using Marketeer.UI.Financials.UI;
 using Marketeer.UI.Localization.Contracts;
@@ -16,6 +17,8 @@ public class FinancialsFeature : IFeatureModule {
 
         // Core implementations
         services.AddSingleton<IFinancialService, FinancialService>();
+
+        services.AddSingleton<IStatusBarProvider, FinancialStatusBarProvider>();
 
         // UI implementations
         services.AddSingleton<FinancialsMenu>();

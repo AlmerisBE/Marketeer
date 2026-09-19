@@ -3,9 +3,13 @@
 namespace Marketeer.UI.Shell.Services;
 
 public class NavigationService : INavigationService {
-    public INavigationNode? SelectedNode { get; private set; }
+    public INavigationNode? CurrentNode { get; private set; }
 
     public void NavigateTo(INavigationNode node) {
-        this.SelectedNode = node;
+        if (node != null) this.CurrentNode = node;
+    }
+
+    public void Draw() {
+        if (this.CurrentNode != null) this.CurrentNode.DrawContent();
     }
 }

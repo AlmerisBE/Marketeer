@@ -7,5 +7,7 @@
   "RetainerMenu_ReturnToInventory": "Mettre dans l'inventaire",
   "ContextMenu_HaveRetainerSell": "Faire vendre par le servant",
   "ContextMenu_Compete": "Ajuster le prix",
-  "ContextMenu_CancelAndSell": "Annuler la vente"
+  "ContextMenu_CancelAndSell": "Annuler la vente",
+  "Toolbar_ScanRetainers": "Scanner les servants",
+  "Toolbar_ScanRetainers_Tooltip": "Lance le scan automatique des servants enregistrés."
 }
