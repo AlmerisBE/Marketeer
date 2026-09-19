@@ -27,5 +27,7 @@
   "Config_HotkeyNone": "Keine",
   "Config_ThemeLabel": "UI-Thema:",
   "Theme_Default": "Standard (Dalamud)",
-  "Config_UndercutAmount": "Unterbietungsbetrag (Gil)"
+  "Config_UndercutAmount": "Unterbietungsbetrag (Gil)",
+  "Config_AutoCloseMarketList": "Gehilfen-Marktliste nach Preisaktualisierung automatisch schließen",
+  "Config_AutoCloseMarketListDelay": "Schließverzögerung (s)"
 }

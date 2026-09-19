@@ -240,6 +240,8 @@ public class ConfigMenu : INavigationNode {
             }
         }
 
-        if (isChanged) this.configurationService.Save();
+        if (isChanged) {
+            this.configurationService.Save();
+        }
     }
 }

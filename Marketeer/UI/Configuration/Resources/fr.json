@@ -27,5 +27,7 @@
   "Config_HotkeyNone": "Aucun",
   "Config_ThemeLabel": "Thème de l'interface :",
   "Theme_Default": "Par défaut (Dalamud)",
-  "Config_UndercutAmount": "Montant de la baisse (Gils)"
+  "Config_UndercutAmount": "Montant de la baisse (Gils)",
+  "Config_AutoCloseMarketList": "Fermer automatiquement la liste des ventes après l'ajustement",
+  "Config_AutoCloseMarketListDelay": "Délai avant fermeture (s)"
 }

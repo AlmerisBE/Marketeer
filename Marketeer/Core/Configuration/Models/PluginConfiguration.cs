@@ -35,7 +35,6 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public bool EnableChatNotifications { get; set; } = true;
 
-    // NOUVELLE RÈGLE DE GESTION
     public uint UndercutAmount { get; set; } = 1;
     public bool EnforceVendorPriceMinimum { get; set; } = true;
 

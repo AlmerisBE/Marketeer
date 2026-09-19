@@ -200,19 +200,21 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
         if (addonPtr.Address == IntPtr.Zero) return false;
 
-        var addon = (AtkUnitBase*)addonPtr.Address;
+        var addon = (FFXIVClientStructs.FFXIV.Component.GUI.AtkUnitBase*)addonPtr.Address;
         if (!addon->IsVisible) return false;
 
         for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
             var node = addon->UldManager.NodeList[i];
-            if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
-                var textNode = (AtkTextNode*)node;
+            if (node != null && node->Type == FFXIVClientStructs.FFXIV.Component.GUI.NodeType.Text && node->IsVisible()) {
+                var textNode = (FFXIVClientStructs.FFXIV.Component.GUI.AtkTextNode*)node;
 
                 var ptr = (byte*)textNode->NodeText.StringPtr;
                 if (ptr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (!string.IsNullOrWhiteSpace(text)) {
-                        windowTexts.Add(text.Replace("\uE03C", "").Replace("", "").Trim());
+                        // Normalize any combination of newlines, tabs, and non-breaking spaces into a single space
+                        var cleanText = System.Text.RegularExpressions.Regex.Replace(text.Replace("\uE03C", "").Replace("", ""), @"\s+", " ").Trim();
+                        windowTexts.Add(cleanText);
                     }
                 }
             }
@@ -221,8 +223,8 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         if (addon->UldManager.NodeListCount > 15) {
             var priceNode = addon->UldManager.NodeList[15];
             if (priceNode != null && (ushort)priceNode->Type >= 1000) {
-                var compNode = (AtkComponentNode*)priceNode;
-                var numericInput = (AtkComponentNumericInput*)compNode->Component;
+                var compNode = (FFXIVClientStructs.FFXIV.Component.GUI.AtkComponentNode*)priceNode;
+                var numericInput = (FFXIVClientStructs.FFXIV.Component.GUI.AtkComponentNumericInput*)compNode->Component;
                 if (numericInput != null) currentPrice = (uint)numericInput->Value;
             }
         }
@@ -293,26 +295,17 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addonPtr = this.gameGui.GetAddonByName("ItemSearchResult");
         if (addonPtr.Address == IntPtr.Zero) return;
 
-        var addon = (AtkUnitBase*)addonPtr.Address;
+        var addon = (FFXIVClientStructs.FFXIV.Component.GUI.AtkUnitBase*)addonPtr.Address;
         if (!addon->IsVisible) return;
 
-        var windowNode = addon->WindowNode;
-        if (windowNode != null && windowNode->Component != null && windowNode->Component->UldManager.NodeListCount > 7) {
-            var closeNode = windowNode->Component->UldManager.NodeList[7];
-            if (closeNode != null && (ushort)closeNode->Type >= 1000) {
-                var closeComponent = ((AtkComponentNode*)closeNode)->Component;
-                if (closeComponent != null && closeComponent->OwnerNode != null) {
-                    this.SendNativeClick(new IntPtr(windowNode->Component), 2, 2, closeComponent->OwnerNode);
-                    return;
-                }
-            }
-        }
-
-        // Failsafe native callback
-        var values = stackalloc AtkValue[1];
-        values[0].Type = AtkValueType.Int;
+        // Failsafe callback to cleanly interrupt any pending operations on the window
+        var values = stackalloc FFXIVClientStructs.FFXIV.Component.GUI.AtkValue[1];
+        values[0].Type = FFXIVClientStructs.FFXIV.Component.GUI.AtkValueType.Int;
         values[0].Int = -1;
         addon->FireCallback(1u, values, true);
+
+        // Forcibly instruct the UI Manager to unload and close the addon
+        addon->Close(true);
     }
 
     public void SelectItemInSellList(int uiIndex) {

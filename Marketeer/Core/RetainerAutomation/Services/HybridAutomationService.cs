@@ -32,6 +32,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
     private DateTime lastActionTime;
+    private DateTime searchResultOpenTime;
     private Task<IReadOnlyList<LowestPriceResult>>? priceFetchTask;
     private bool isFetchingPrice;
 
@@ -60,6 +61,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.logger = logger;
         this.listingProvider = listingProvider;
 
+        this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellSetup);
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ItemSearchResult", this.OnItemSearchResultSetup);
@@ -73,6 +75,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.isFetchingPrice = false;
         this.sequenceStartTime = DateTime.Now;
         this.lastActionTime = DateTime.Now;
+        this.searchResultOpenTime = DateTime.MinValue;
+        this.priceFetchTask = null;
         this.logger.Info("[HybridAutomation] Event-driven sequence armed by Shift + left-click.");
 
         if (this.uiInteraction.IsAddonReady("ContextMenu")) this.HandleContextMenu();
@@ -86,6 +90,17 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         if (index == -1) index = 0;
 
         this.uiInteraction.SelectContextMenuItem(index);
+    }
+
+    private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
+        var listing = this.currentListing;
+        if (!this.IsActive || !this.isFetchingPrice || listing == null || this.priceFetchTask != null) return;
+
+        if (updatedItemIds.Contains(listing.ItemId)) {
+            this.logger.Info("[HybridAutomation] Live market data intercepted from scanner.");
+            var localPlayer = this.objectTable.LocalPlayer;
+            if (localPlayer != null && localPlayer.CurrentWorld.RowId == worldId) this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, worldId, false);
+        }
     }
 
     private void OnContextMenuSetup(AddonEvent type, AddonArgs args) {
@@ -104,35 +119,39 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         var activeListings = this.listingProvider.GetActiveRetainerListings();
 
-        this.currentListing = activeListings.FirstOrDefault(l =>
-            texts.Any(t => string.Equals(t, l.ItemName, StringComparison.InvariantCultureIgnoreCase)) && l.PricePerUnit == originalPrice);
+        var matchedListing = activeListings.FirstOrDefault(l => {
+            var normalizedName = System.Text.RegularExpressions.Regex.Replace(l.ItemName, @"\s+", " ").Trim();
+            return texts.Any(t => string.Equals(t, normalizedName, StringComparison.InvariantCultureIgnoreCase)) && l.PricePerUnit == originalPrice;
+        });
 
-        if (this.currentListing == null) {
-            this.currentListing = activeListings.FirstOrDefault(l =>
-                texts.Any(t => t.Contains(l.ItemName, StringComparison.InvariantCultureIgnoreCase)));
+        if (matchedListing == null) {
+            matchedListing = activeListings.FirstOrDefault(l => {
+                var normalizedName = System.Text.RegularExpressions.Regex.Replace(l.ItemName, @"\s+", " ").Trim();
+                return texts.Any(t => t.Contains(normalizedName, StringComparison.InvariantCultureIgnoreCase));
+            });
         }
 
-        if (this.currentListing == null) {
+        if (matchedListing == null) {
             this.logger.Error($"[HybridAutomation] Item not found. Scraped texts: {string.Join(", ", texts)}");
             this.Abort();
             return;
         }
 
-        this.logger.Info($"[HybridAutomation] RetainerSell PostSetup for {this.currentListing.ItemName}. Triggering ComparePrices.");
+        this.currentListing = matchedListing;
+        this.logger.Info($"[HybridAutomation] RetainerSell PostSetup for {matchedListing.ItemName}. Triggering ComparePrices.");
         this.uiInteraction.OpenComparePrices(args.Addon.Address);
         this.isFetchingPrice = true;
         this.lastActionTime = DateTime.Now;
+        this.searchResultOpenTime = DateTime.MinValue;
+        this.priceFetchTask = null;
     }
 
     private void OnItemSearchResultSetup(AddonEvent type, AddonArgs args) {
-        if (!this.IsActive || !this.isFetchingPrice || this.currentListing == null) return;
+        var listing = this.currentListing;
+        if (!this.IsActive || !this.isFetchingPrice || listing == null) return;
 
-        this.logger.Info("[HybridAutomation] ItemSearchResult opened natively. Fetching Universalis prices.");
-        var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null) { this.Abort(); return; }
-
-        this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { this.currentListing.ItemId }, localPlayer.CurrentWorld.RowId, false);
-        this.lastActionTime = DateTime.Now;
+        this.logger.Info("[HybridAutomation] ItemSearchResult opened natively. Awaiting live scanner data...");
+        this.searchResultOpenTime = DateTime.Now;
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -144,34 +163,49 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
             return;
         }
 
-        if (this.isFetchingPrice && this.priceFetchTask == null && (DateTime.Now - this.lastActionTime).TotalSeconds > 1.0) {
-            if (!this.uiInteraction.IsAddonReady("ItemSearchResult") && this.uiInteraction.IsAddonReady("RetainerSell")) {
-                this.logger.Debug("[HybridAutomation] ItemSearchResult missed setup. Retrying ComparePrices.");
-                this.uiInteraction.OpenComparePrices();
-                this.lastActionTime = DateTime.Now;
-            }
-        }
+        if (this.isFetchingPrice) {
+            var fetchTask = this.priceFetchTask;
+            var listing = this.currentListing;
 
-        if (this.isFetchingPrice && this.priceFetchTask != null && this.priceFetchTask.IsCompleted) {
-            this.ApplyPriceAndFinish();
+            if (fetchTask == null && (DateTime.Now - this.lastActionTime).TotalSeconds > 1.0) {
+                if (!this.uiInteraction.IsAddonReady("ItemSearchResult") && this.uiInteraction.IsAddonReady("RetainerSell")) {
+                    this.logger.Debug("[HybridAutomation] ItemSearchResult missed setup. Retrying ComparePrices.");
+                    this.uiInteraction.OpenComparePrices();
+                    this.lastActionTime = DateTime.Now;
+                }
+            }
+
+            if (fetchTask == null && this.searchResultOpenTime != DateTime.MinValue && (DateTime.Now - this.searchResultOpenTime).TotalSeconds > 2.5) {
+                this.logger.Warning("[HybridAutomation] Live scanner timed out or market is empty. Falling back to API.");
+                var localPlayer = this.objectTable.LocalPlayer;
+                if (localPlayer != null && listing != null) this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                this.searchResultOpenTime = DateTime.MinValue;
+            }
+
+            if (fetchTask != null && fetchTask.IsCompleted) {
+                this.ApplyPriceAndFinish();
+            }
         }
     }
 
     private void ApplyPriceAndFinish() {
-        if (this.currentListing == null || this.priceFetchTask == null) return;
+        var listing = this.currentListing;
+        var fetchTask = this.priceFetchTask;
+
+        if (listing == null || fetchTask == null) return;
 
         this.isFetchingPrice = false;
 
-        var prices = this.priceFetchTask.Result.Where(p => p.ItemId == this.currentListing.ItemId).ToList();
-        uint newPrice = this.currentListing.PricePerUnit;
+        var prices = fetchTask.Result.Where(p => p.ItemId == listing.ItemId).ToList();
+        uint newPrice = listing.PricePerUnit;
 
         if (prices.Count > 0) {
             var lowest = prices.OrderBy(p => p.Price).First();
             var config = this.configService.GetConfig();
-            var vendorPrice = this.itemResolver.ResolveVendorPrice(this.currentListing.ItemId);
+            var vendorPrice = this.itemResolver.ResolveVendorPrice(listing.ItemId);
 
             if (this.IsOurRetainer(lowest.RetainerName)) newPrice = lowest.Price;
-            else if (config.EnforceVendorPriceMinimum && lowest.Price <= vendorPrice) newPrice = this.currentListing.PricePerUnit;
+            else if (config.EnforceVendorPriceMinimum && lowest.Price <= vendorPrice) newPrice = listing.PricePerUnit;
             else {
                 newPrice = (uint)Math.Max(1, (int)lowest.Price - (int)config.UndercutAmount);
                 if (config.EnforceVendorPriceMinimum && newPrice < vendorPrice) newPrice = vendorPrice;
@@ -204,6 +238,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     }
 
     public void Dispose() {
+        this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellSetup);
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "ItemSearchResult", this.OnItemSearchResultSetup);
