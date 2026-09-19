@@ -232,7 +232,9 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             if (priceNode != null && (ushort)priceNode->Type >= 1000) {
                 var compNode = (AtkComponentNode*)priceNode;
                 var numericInput = (AtkComponentNumericInput*)compNode->Component;
-                if (numericInput != null) numericInput->SetValue((int)newPrice);
+                if (numericInput != null) {
+                    numericInput->SetValue((int)newPrice);
+                }
             }
         }
 
@@ -241,7 +243,30 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[1].Type = AtkValueType.UInt; values[1].UInt = newPrice;
         addon->AtkUnitBase.FireCallback(2u, values, true);
 
-        if (addon->Confirm != null) this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm);
+        // Corrected: Passing the Confirm button's OwnerNode instead of the Component
+        if (addon->Confirm != null && addon->Confirm->AtkComponentBase.OwnerNode != null) {
+            this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm->AtkComponentBase.OwnerNode);
+        }
+    }
+
+    public unsafe void ConfirmPriceUpdate(uint newPrice) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+        if (addonPtr.Address == IntPtr.Zero) return;
+
+        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)addonPtr.Address;
+
+        var values = stackalloc AtkValue[2];
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = 0;
+        values[1].Type = AtkValueType.UInt;
+        values[1].UInt = newPrice;
+
+        addon->AtkUnitBase.FireCallback(2u, values, true);
+
+        // Corrected: Ensure bulk updates also click the OwnerNode properly
+        if (addon->Confirm != null && addon->Confirm->AtkComponentBase.OwnerNode != null) {
+            this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm->AtkComponentBase.OwnerNode);
+        }
     }
 
     public unsafe void CloseItemSearchResult() {
@@ -316,20 +341,6 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[4].Int = 0;
 
         addon->FireCallback(5u, values, true);
-    }
-
-    public void ConfirmPriceUpdate(uint newPrice) {
-        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
-        if (addonPtr.Address == IntPtr.Zero) return;
-
-        var addon = (AtkUnitBase*)addonPtr.Address;
-        var values = stackalloc AtkValue[2];
-        values[0].Type = AtkValueType.Int;
-        values[0].Int = 0;
-        values[1].Type = AtkValueType.UInt;
-        values[1].UInt = newPrice;
-
-        addon->FireCallback(2u, values, true);
     }
 
     public void ConfirmYesNo() {
