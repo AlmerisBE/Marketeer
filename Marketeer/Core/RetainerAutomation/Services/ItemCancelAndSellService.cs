@@ -101,13 +101,11 @@ public class ItemCancelAndSellService : IItemCancelAndSellService, IDisposable {
                 else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
                     var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
                     var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
-                    if (menuIndex == -1) {
-                        menuIndex = 2;
-                    }
+
+                    // Fallback to hardcoded index 1 ("Return to Inventory")
+                    if (menuIndex == -1) menuIndex = 1;
 
                     this.uiInteraction.SelectContextMenuItem(menuIndex);
-
-                    // Stay in stateMachineIndex 1 to catch SelectYesNo on the next tick
                     this.nextActionAt = DateTime.Now.AddSeconds(0.2);
                 }
                 break;

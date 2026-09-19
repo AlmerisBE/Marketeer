@@ -34,7 +34,10 @@ public class PluginConfiguration : IPluginConfiguration {
     public int AutomationDelayMax { get; set; } = 3;
 
     public bool EnableChatNotifications { get; set; } = true;
-    public bool EnforceVendorPriceMinimum { get; set; } = false;
+
+    public uint UndercutAmount { get; set; } = 1;
+    public bool EnforceVendorPriceMinimum { get; set; } = true;
+
     public bool EnableDebugMode { get; set; } = false;
 
     public VirtualKey DashboardHotkey { get; set; } = VirtualKey.NO_KEY;
@@ -42,7 +45,7 @@ public class PluginConfiguration : IPluginConfiguration {
     public bool DashboardHotkeyAlt { get; set; } = false;
     public bool DashboardHotkeyShift { get; set; } = false;
 
-    public string SelectedTheme { get; set; } = "Dark";
+    public string SelectedTheme { get; set; } = "Default";
 
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
     public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];

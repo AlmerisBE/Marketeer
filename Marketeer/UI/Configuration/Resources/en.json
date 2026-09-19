@@ -25,5 +25,9 @@
   "Config_HotkeyLabel": "Dashboard Hotkey:",
   "Config_HotkeyWaiting": "Press any key... (Esc to cancel)",
   "Config_HotkeyNone": "None",
-  "Config_ThemeLabel": "Interface Theme:"
+  "Config_ThemeLabel": "Interface Theme:",
+  "Theme_Default": "Default (Dalamud)",
+  "Config_UndercutAmount": "Undercut amount (Gil)",
+  "Config_AutoCloseMarketList": "Auto-close retainer market list after price update",
+  "Config_AutoCloseMarketListDelay": "Auto-close delay (s)"
 }

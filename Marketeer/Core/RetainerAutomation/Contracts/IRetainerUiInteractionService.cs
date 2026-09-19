@@ -1,4 +1,6 @@
-﻿namespace Marketeer.Core.RetainerAutomation.Contracts;
+﻿using System.Collections.Generic;
+
+namespace Marketeer.Core.RetainerAutomation.Contracts;
 
 public interface IRetainerUiInteractionService {
     bool IsAddonReady(string addonName);
@@ -16,6 +18,10 @@ public interface IRetainerUiInteractionService {
     bool CloseSelectString();
     bool CloseSalesHistory();
 
+    void OpenComparePrices(nint addonAddress = 0);
+    void SetPriceAndConfirm(uint newPrice);
+    void CloseItemSearchResult();
+
     void SelectItemInSellList(int uiIndex);
     void SelectContextMenuItem(int index);
     void ConfirmPriceUpdate(uint newPrice);
@@ -24,4 +30,6 @@ public interface IRetainerUiInteractionService {
     int GetContextMenuItemIndex(string localizedText);
     void CloseUnexpectedWindows();
     void SkipDialogue();
+
+    bool GetActiveRetainerSellItemData(out List<string> windowTexts, out uint currentPrice);
 }

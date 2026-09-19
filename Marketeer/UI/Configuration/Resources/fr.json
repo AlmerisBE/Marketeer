@@ -25,5 +25,9 @@
   "Config_HotkeyLabel": "Raccourci du Tableau de bord :",
   "Config_HotkeyWaiting": "Appuyez sur une touche... (Échap pour annuler)",
   "Config_HotkeyNone": "Aucun",
-  "Config_ThemeLabel": "Thème de l'interface :"
+  "Config_ThemeLabel": "Thème de l'interface :",
+  "Theme_Default": "Par défaut (Dalamud)",
+  "Config_UndercutAmount": "Montant de la baisse (Gils)",
+  "Config_AutoCloseMarketList": "Fermer automatiquement la liste des ventes après l'ajustement",
+  "Config_AutoCloseMarketListDelay": "Délai avant fermeture (s)"
 }

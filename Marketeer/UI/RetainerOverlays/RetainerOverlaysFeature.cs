@@ -25,11 +25,12 @@ public class RetainerOverlaysFeature : IFeatureModule {
         services.AddSingleton<MarketeerGuideWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<MarketeerGuideWindow>());
 
-        // Surlignages natifs (Rapatriés depuis le Core/MarketListings)
+        // Surlignages et interactions natives
         services.AddSingleton<NativeListingHighlighterService>();
         services.AddSingleton<NativeRetainerListHighlighterService>();
+        services.AddSingleton<NativeListingClickInterceptorService>();
 
-        // Menus contextuels (Rapatrié depuis le Core/RetainerAutomation)
+        // Menus contextuels
         services.AddSingleton<RetainerContextMenuService>();
 
         // Injection de l'action dans la Sidebar du Shell
@@ -40,6 +41,7 @@ public class RetainerOverlaysFeature : IFeatureModule {
         // Initialisation des hooks UI natifs
         provider.GetRequiredService<NativeListingHighlighterService>();
         provider.GetRequiredService<NativeRetainerListHighlighterService>();
+        provider.GetRequiredService<NativeListingClickInterceptorService>();
         provider.GetRequiredService<RetainerContextMenuService>();
     }
 }

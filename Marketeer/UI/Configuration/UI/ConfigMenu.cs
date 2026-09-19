@@ -170,9 +170,13 @@ public class ConfigMenu : INavigationNode {
 
         ImGui.TextUnformatted(this.localizationService.Translate("Config_ThemeLabel"));
 
-        if (ImGui.BeginCombo("##themeCombo", config.SelectedTheme)) {
+        string currentDisplayName = config.SelectedTheme == "Default" ? this.localizationService.Translate("Theme_Default") : config.SelectedTheme;
+
+        if (ImGui.BeginCombo("##themeCombo", currentDisplayName)) {
             foreach (var theme in this.themeService.GetAvailableThemes()) {
-                if (ImGui.Selectable(theme.Name, config.SelectedTheme == theme.Name)) {
+                string displayName = theme.Name == "Default" ? this.localizationService.Translate("Theme_Default") : theme.Name;
+
+                if (ImGui.Selectable(displayName, config.SelectedTheme == theme.Name)) {
                     config.SelectedTheme = theme.Name;
                     this.themeService.SetTheme(theme.Name);
                     isChanged = true;
@@ -236,6 +240,8 @@ public class ConfigMenu : INavigationNode {
             }
         }
 
-        if (isChanged) this.configurationService.Save();
+        if (isChanged) {
+            this.configurationService.Save();
+        }
     }
 }

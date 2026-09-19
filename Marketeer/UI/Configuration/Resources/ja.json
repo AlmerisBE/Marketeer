@@ -25,5 +25,9 @@
   "Config_HotkeyLabel": "ダッシュボードのホットキー:",
   "Config_HotkeyWaiting": "キーを押してください...（Escでキャンセル）",
   "Config_HotkeyNone": "なし",
-  "Config_ThemeLabel": "インターフェーステーマ:"
+  "Config_ThemeLabel": "インターフェーステーマ:",
+  "Theme_Default": "デフォルト (Dalamud)",
+  "Config_UndercutAmount": "値下げ額 (ギル)",
+  "Config_AutoCloseMarketList": "価格調整後にリテイナーの出品一覧を自動で閉じる",
+  "Config_AutoCloseMarketListDelay": "自動で閉じるまでの遅延（秒）"
 }
