@@ -1,8 +1,8 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.SalesHistory.Contracts;
@@ -15,14 +15,14 @@ namespace Marketeer.Core.MarketWatch.Services;
 
 public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
     private IMarketWatchRepository repository;
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IObjectTable objectTable;
     private IItemResolverService itemResolver;
     private ILoggerService logger;
 
     public MarketWatchAnalysisService(
         IMarketWatchRepository repository,
-        IServerPriceProvider priceProvider,
+        IMarketPriceCacheService priceProvider,
         IObjectTable objectTable,
         IItemResolverService itemResolver,
         ILoggerService logger) {

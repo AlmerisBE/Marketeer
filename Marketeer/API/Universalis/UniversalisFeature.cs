@@ -9,6 +9,6 @@ namespace Marketeer.API.Universalis;
 public class UniversalisFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<HttpClient>();
-        services.AddSingleton<IServerPriceProvider, UniversalisClientService>();
+        services.AddSingleton<IUniversalisClient, UniversalisClientService>();
     }
 }

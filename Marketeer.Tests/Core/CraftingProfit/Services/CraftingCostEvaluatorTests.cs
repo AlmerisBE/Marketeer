@@ -1,23 +1,23 @@
 ﻿using Marketeer.API.GameData.Contracts;
 using Marketeer.API.GameData.Models;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.CraftingProfit.Models;
 using Marketeer.Core.CraftingProfit.Services;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using NSubstitute;
 using Xunit;
 
 namespace Marketeer.Tests.Core.CraftingProfit.Services;
 
 public class CraftingCostEvaluatorTests {
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IRecipeDataService recipeDataService;
     private ILoggerService logger;
     private CraftingCostEvaluator evaluator;
 
     public CraftingCostEvaluatorTests() {
-        this.priceProvider = Substitute.For<IServerPriceProvider>();
+        this.priceProvider = Substitute.For<IMarketPriceCacheService>();
         this.recipeDataService = Substitute.For<IRecipeDataService>();
         this.logger = Substitute.For<ILoggerService>();
 

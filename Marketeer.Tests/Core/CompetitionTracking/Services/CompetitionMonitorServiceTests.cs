@@ -1,5 +1,4 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
@@ -8,6 +7,7 @@ using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
@@ -19,7 +19,7 @@ public class CompetitionMonitorServiceTests {
     [Fact]
     public async Task CheckUndercutsAsync_ShouldUpdateStateAndNotify_WhenUndercutsFound() {
         var retainerState = Substitute.For<IRetainerStateService>();
-        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var competitionState = Substitute.For<ICompetitionStateService>();
         var itemResolver = Substitute.For<IItemResolverService>();
         var configService = Substitute.For<IConfigurationService>();
@@ -70,7 +70,7 @@ public class CompetitionMonitorServiceTests {
     [Fact]
     public async Task CheckUndercutsAsync_ShouldMatchPrice_WhenCompetitorIsWhitelistedAndBehaviorIsMatch() {
         var retainerState = Substitute.For<IRetainerStateService>();
-        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var competitionState = Substitute.For<ICompetitionStateService>();
         var itemResolver = Substitute.For<IItemResolverService>();
         var configService = Substitute.For<IConfigurationService>();
@@ -123,7 +123,7 @@ public class CompetitionMonitorServiceTests {
     [Fact]
     public async Task CheckUndercutsAsync_ShouldIgnoreCompetitor_WhenCompetitorIsWhitelistedAndBehaviorIsIgnore() {
         var retainerState = Substitute.For<IRetainerStateService>();
-        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var competitionState = Substitute.For<ICompetitionStateService>();
         var itemResolver = Substitute.For<IItemResolverService>();
         var configService = Substitute.For<IConfigurationService>();
@@ -176,7 +176,7 @@ public class CompetitionMonitorServiceTests {
     [Fact]
     public async Task CheckUndercutsAsync_ShouldIgnoreCompetitor_WhenBelowVendorPriceAndEnforcementEnabled() {
         var retainerState = Substitute.For<IRetainerStateService>();
-        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var competitionState = Substitute.For<ICompetitionStateService>();
         var itemResolver = Substitute.For<IItemResolverService>();
         var configService = Substitute.For<IConfigurationService>();
@@ -229,7 +229,7 @@ public class CompetitionMonitorServiceTests {
     [Fact]
     public async Task CheckUndercutsAsync_ShouldClampTargetPriceToVendorPrice_WhenCompetitorAboveVendorPriceAndEnforcementEnabled() {
         var retainerState = Substitute.For<IRetainerStateService>();
-        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var competitionState = Substitute.For<ICompetitionStateService>();
         var itemResolver = Substitute.For<IItemResolverService>();
         var configService = Substitute.For<IConfigurationService>();

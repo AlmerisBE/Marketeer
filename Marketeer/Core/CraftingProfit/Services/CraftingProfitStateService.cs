@@ -1,8 +1,8 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.CraftingProfit.Contracts;
 using Marketeer.Core.CraftingProfit.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace Marketeer.Core.CraftingProfit.Services;
 public class CraftingProfitStateService : ICraftingProfitStateService, IDisposable {
     private ICraftingProfitRepository repository;
     private ICraftingCostEvaluator evaluator;
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IObjectTable objectTable;
     private IClientState clientState;
     private IFramework framework;
@@ -28,7 +28,7 @@ public class CraftingProfitStateService : ICraftingProfitStateService, IDisposab
     public CraftingProfitStateService(
         ICraftingProfitRepository repository,
         ICraftingCostEvaluator evaluator,
-        IServerPriceProvider priceProvider,
+        IMarketPriceCacheService priceProvider,
         IObjectTable objectTable,
         IClientState clientState,
         IFramework framework,

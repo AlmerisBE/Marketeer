@@ -1,50 +1,39 @@
-﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Services;
-using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.Models;
+﻿using Marketeer.API.Universalis.Services;
 using Marketeer.Core.Logging.Contracts;
 using NSubstitute;
 using System.Net;
 using Xunit;
 
-namespace Marketeer.Tests.Core.Universalis.Services;
+namespace Marketeer.Tests.API.Universalis.Services;
 
 public class UniversalisClientServiceTests {
     [Fact]
     public void Constructor_InitializesCorrectly() {
         var httpClient = new HttpClient();
         var logger = Substitute.For<ILoggerService>();
-        var configService = Substitute.For<IConfigurationService>();
-        var framework = Substitute.For<IFramework>();
 
-        var config = new PluginConfiguration { UniversalisCacheMinutes = 30 };
-        configService.GetConfig().Returns(config);
-
-        // Ajout du paramètre à l'instanciation
-        var service = new UniversalisClientService(httpClient, logger, configService, framework);
+        var service = new UniversalisClientService(httpClient, logger);
 
         Assert.NotNull(service);
     }
 
     [Fact]
-    public async Task GetLowestPricesAsync_WithMultipleItems_ParsesDictionaryAndReturnsResults() {
+    public async Task FetchPricesAsync_WithMultipleItems_ParsesDictionaryAndReturnsResults() {
         var mockLogger = Substitute.For<ILoggerService>();
-        var mockConfigService = Substitute.For<IConfigurationService>();
-        mockConfigService.GetConfig().Returns(new PluginConfiguration { UniversalisCacheMinutes = 30 });
 
         var jsonResponse = @"{
             ""items"": {
                 ""1234"": {
                     ""itemID"": 1234,
                     ""listings"": [
-                        { ""pricePerUnit"": 600, ""retainerName"": ""ExpensiveRetainer"" },
-                        { ""pricePerUnit"": 500, ""retainerName"": ""CheapRetainer"" }
+                        { ""pricePerUnit"": 600, ""retainerName"": ""ExpensiveRetainer"", ""hq"": false },
+                        { ""pricePerUnit"": 500, ""retainerName"": ""CheapRetainer"", ""hq"": true }
                     ]
                 },
                 ""5678"": {
                     ""itemID"": 5678,
                     ""listings"": [
-                        { ""pricePerUnit"": 1000, ""retainerName"": ""SoloRetainer"" }
+                        { ""pricePerUnit"": 1000, ""retainerName"": ""SoloRetainer"", ""hq"": false }
                     ]
                 }
             }
@@ -54,16 +43,32 @@ public class UniversalisClientServiceTests {
         var httpClient = new HttpClient(mockHandler) {
             BaseAddress = new Uri("https://universalis.app/api/v2/")
         };
-        var framework = Substitute.For<IFramework>();
 
-        var service = new UniversalisClientService(httpClient, mockLogger, mockConfigService, framework);
+        var service = new UniversalisClientService(httpClient, mockLogger);
 
-        var results = await service.GetLowestPricesAsync(new[] { 1234u, 5678u }, 33);
+        var results = await service.FetchPricesAsync(new[] { 1234u, 5678u }, 33);
 
         Assert.NotNull(results);
         Assert.Equal(2, results.Count);
 
-        Assert.Contains(results, r => r.ItemId == 1234u && r.Price == 500u && r.RetainerName == "CheapRetainer");
-        Assert.Contains(results, r => r.ItemId == 5678u && r.Price == 1000u && r.RetainerName == "SoloRetainer");
+        Assert.Contains(results, r => r.ItemId == 1234u && r.Price == 500u && r.RetainerName == "CheapRetainer" && r.IsHq);
+        Assert.Contains(results, r => r.ItemId == 5678u && r.Price == 1000u && r.RetainerName == "SoloRetainer" && !r.IsHq);
+    }
+}
+
+public class MockHttpMessageHandler : HttpMessageHandler {
+    private string response;
+    private HttpStatusCode statusCode;
+
+    public MockHttpMessageHandler(string response, HttpStatusCode statusCode) {
+        this.response = response;
+        this.statusCode = statusCode;
+    }
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
+        return Task.FromResult(new HttpResponseMessage {
+            StatusCode = this.statusCode,
+            Content = new StringContent(this.response)
+        });
     }
 }

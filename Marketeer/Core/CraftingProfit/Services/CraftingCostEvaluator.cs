@@ -1,9 +1,9 @@
 ﻿using Marketeer.API.GameData.Contracts;
 using Marketeer.API.GameData.Models;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.CraftingProfit.Contracts;
 using Marketeer.Core.CraftingProfit.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 namespace Marketeer.Core.CraftingProfit.Services;
 
 public class CraftingCostEvaluator : ICraftingCostEvaluator {
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IRecipeDataService recipeDataService;
     private ILoggerService logger;
 
-    public CraftingCostEvaluator(IServerPriceProvider priceProvider, IRecipeDataService recipeDataService, ILoggerService logger) {
+    public CraftingCostEvaluator(IMarketPriceCacheService priceProvider, IRecipeDataService recipeDataService, ILoggerService logger) {
         this.priceProvider = priceProvider;
         this.recipeDataService = recipeDataService;
         this.logger = logger;

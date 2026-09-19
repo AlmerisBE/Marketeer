@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Marketeer.UI.CompetitionTracking.Commands;
 
 public class PriceCommand : ICommand {
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IObjectTable objectTable;
     private IItemResolverService itemResolver;
     private IChatGui chatGui;
@@ -21,7 +21,7 @@ public class PriceCommand : ICommand {
     public string Description => "Fetches current market price for a given item by name.";
 
     public PriceCommand(
-        IServerPriceProvider priceProvider,
+        IMarketPriceCacheService priceProvider,
         IObjectTable objectTable,
         IItemResolverService itemResolver,
         IChatGui chatGui,

@@ -1,8 +1,8 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.MarketWatch.Services;
@@ -14,7 +14,7 @@ namespace Marketeer.Tests.Core.MarketWatch.Services;
 
 public class MarketWatchAnalysisServiceTests {
     private IMarketWatchRepository repository;
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IObjectTable objectTable;
     private IItemResolverService itemResolver;
     private ILoggerService logger;
@@ -22,7 +22,7 @@ public class MarketWatchAnalysisServiceTests {
 
     public MarketWatchAnalysisServiceTests() {
         this.repository = Substitute.For<IMarketWatchRepository>();
-        this.priceProvider = Substitute.For<IServerPriceProvider>();
+        this.priceProvider = Substitute.For<IMarketPriceCacheService>();
         this.objectTable = Substitute.For<IObjectTable>();
         this.itemResolver = Substitute.For<IItemResolverService>();
         this.logger = Substitute.For<ILoggerService>();

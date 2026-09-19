@@ -4,9 +4,9 @@ using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ namespace Marketeer.API.GameInterop.Services;
 
 public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
     private readonly IAddonLifecycle addonLifecycle;
-    private readonly IServerPriceProvider priceProvider;
+    private readonly IMarketPriceCacheService priceCache;
     private readonly IItemResolverService itemResolver;
     private readonly IObjectTable objectTable;
     private readonly ILoggerService logger;
@@ -26,13 +26,13 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
     public LocalMarketViewScanner(
         IAddonLifecycle addonLifecycle,
-        IServerPriceProvider priceProvider,
+        IMarketPriceCacheService priceCache,
         IItemResolverService itemResolver,
         IObjectTable objectTable,
         ILoggerService logger) {
 
         this.addonLifecycle = addonLifecycle;
-        this.priceProvider = priceProvider;
+        this.priceCache = priceCache;
         this.itemResolver = itemResolver;
         this.objectTable = objectTable;
         this.logger = logger;
@@ -76,7 +76,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                 if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
                     var textNode = (AtkTextNode*)node;
 
-                    // CORRECTION: Cast to byte* first to use CStringPointer implicit conversion, then to nint
                     var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr).Trim();
 
                     if (!string.IsNullOrWhiteSpace(text)) {
@@ -105,7 +104,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
             }
 
             if (results.Count > 0) {
-                this.priceProvider.UpdateLocalCache(targetItemId, worldId, results);
+                this.priceCache.UpdateLocalPrices(targetItemId, worldId, results);
                 this.lastScanTime = DateTime.Now;
             }
         }

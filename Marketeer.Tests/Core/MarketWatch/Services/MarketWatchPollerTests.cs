@@ -1,9 +1,9 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.MarketWatch.Services;
@@ -17,7 +17,7 @@ public class MarketWatchPollerTests {
     private IMarketWatchAnalysisService analysisService;
     private IMarketWatchAlertState alertState;
     private IMarketWatchRepository repository;
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IClientState clientState;
     private ILoggerService logger;
     private IFramework framework;
@@ -28,7 +28,7 @@ public class MarketWatchPollerTests {
         this.analysisService = Substitute.For<IMarketWatchAnalysisService>();
         this.alertState = Substitute.For<IMarketWatchAlertState>();
         this.repository = Substitute.For<IMarketWatchRepository>();
-        this.priceProvider = Substitute.For<IServerPriceProvider>();
+        this.priceProvider = Substitute.For<IMarketPriceCacheService>();
         this.clientState = Substitute.For<IClientState>();
         this.logger = Substitute.For<ILoggerService>();
         this.framework = Substitute.For<IFramework>();

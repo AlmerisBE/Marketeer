@@ -1,11 +1,11 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using System;
@@ -17,7 +17,7 @@ namespace Marketeer.Core.CompetitionTracking.Services;
 
 public class CompetitionMonitorService : ICompetitionMonitorService {
     private IRetainerStateService retainerState;
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private ICompetitionStateService competitionState;
     private IItemResolverService itemResolver;
     private IMarketListingTrackerService marketListingTracker;
@@ -33,7 +33,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
     public CompetitionMonitorService(
         IRetainerStateService retainerState,
-        IServerPriceProvider priceProvider,
+        IMarketPriceCacheService priceProvider,
         ICompetitionStateService competitionState,
         IItemResolverService itemResolver,
         IMarketListingTrackerService marketListingTracker,

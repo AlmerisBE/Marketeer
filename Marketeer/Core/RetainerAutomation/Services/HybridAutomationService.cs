@@ -2,12 +2,12 @@
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
@@ -21,7 +21,7 @@ namespace Marketeer.Core.RetainerAutomation.Services;
 public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private IFramework framework;
     private IRetainerUiInteractionService uiInteraction;
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IItemResolverService itemResolver;
     private IConfigurationService configService;
     private IObjectTable objectTable;
@@ -44,7 +44,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     public HybridAutomationService(
         IFramework framework,
         IRetainerUiInteractionService uiInteraction,
-        IServerPriceProvider priceProvider,
+        IMarketPriceCacheService priceProvider,
         IItemResolverService itemResolver,
         IConfigurationService configService,
         IObjectTable objectTable,

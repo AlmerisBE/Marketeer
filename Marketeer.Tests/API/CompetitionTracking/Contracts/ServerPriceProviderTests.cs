@@ -1,5 +1,5 @@
-﻿using Marketeer.API.Universalis.Contracts;
-using Marketeer.API.Universalis.Models;
+﻿using Marketeer.API.Universalis.Models;
+using Marketeer.Core.MarketPricing.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -10,7 +10,7 @@ public class ServerPriceProviderTests {
     [Fact]
     public async Task GetLowestPricesAsync_ReturnsListOfResults() {
         // Arrange
-        var mockProvider = Substitute.For<IServerPriceProvider>();
+        var mockProvider = Substitute.For<IMarketPriceCacheService>();
 
         var expectedResults = new List<LowestPriceResult> {
             new LowestPriceResult { ItemId = 1234, Price = 500, RetainerName = "Almeris" },

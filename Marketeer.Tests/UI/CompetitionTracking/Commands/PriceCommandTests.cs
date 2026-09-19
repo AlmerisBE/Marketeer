@@ -2,9 +2,9 @@
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.CompetitionTracking.Commands;
 using Marketeer.UI.Localization.Contracts;
@@ -18,7 +18,7 @@ public class PriceCommandTests {
     [Fact]
     public async Task Execute_WithPlainItemName_ResolvesItemIdAndFetchesPrice() {
         // Arrange
-        var mockProvider = Substitute.For<IServerPriceProvider>();
+        var mockProvider = Substitute.For<IMarketPriceCacheService>();
         var mockObjectTable = Substitute.For<IObjectTable>();
         var mockResolver = Substitute.For<IItemResolverService>();
         var mockChatGui = Substitute.For<IChatGui>();

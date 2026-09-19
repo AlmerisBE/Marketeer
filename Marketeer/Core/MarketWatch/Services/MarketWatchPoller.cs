@@ -1,8 +1,8 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
 using System;
@@ -17,7 +17,7 @@ public class MarketWatchPoller : IDisposable {
     private IMarketWatchAnalysisService analysisService;
     private IMarketWatchAlertState alertState;
     private IMarketWatchRepository repository;
-    private IServerPriceProvider priceProvider;
+    private IMarketPriceCacheService priceProvider;
     private IClientState clientState;
     private ILoggerService logger;
     private IFramework framework;
@@ -30,7 +30,7 @@ public class MarketWatchPoller : IDisposable {
         IMarketWatchAnalysisService analysisService,
         IMarketWatchAlertState alertState,
         IMarketWatchRepository repository,
-        IServerPriceProvider priceProvider,
+        IMarketPriceCacheService priceProvider,
         IClientState clientState,
         ILoggerService logger,
         IFramework framework,

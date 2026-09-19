@@ -1,8 +1,8 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Services;
-using Marketeer.API.Universalis.Contracts;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using NSubstitute;
 using Xunit;
@@ -13,7 +13,7 @@ public class LocalMarketViewScannerTests {
     [Fact]
     public void Enable_ShouldRegisterLifecycleEvent() {
         var lifecycle = Substitute.For<IAddonLifecycle>();
-        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var itemResolver = Substitute.For<IItemResolverService>();
         var objectTable = Substitute.For<IObjectTable>();
         var logger = Substitute.For<ILoggerService>();
@@ -28,7 +28,7 @@ public class LocalMarketViewScannerTests {
     [Fact]
     public void Disable_ShouldUnregisterLifecycleEvent() {
         var lifecycle = Substitute.For<IAddonLifecycle>();
-        var priceProvider = Substitute.For<IServerPriceProvider>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var itemResolver = Substitute.For<IItemResolverService>();
         var objectTable = Substitute.For<IObjectTable>();
         var logger = Substitute.For<ILoggerService>();
