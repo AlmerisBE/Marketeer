@@ -27,6 +27,8 @@ public class CompetitionMonitorServiceTests {
         var localization = Substitute.For<ILocalizationService>();
         var logger = Substitute.For<ILoggerService>();
         var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
+        var clientState = Substitute.For<IClientState>();
+        var framework = Substitute.For<IFramework>();
 
         var config = new PluginConfiguration {
             AutoWhitelistOwnRetainers = false,
@@ -55,7 +57,7 @@ public class CompetitionMonitorServiceTests {
 
         var service = new CompetitionMonitorService(
             retainerState, priceProvider, competitionState, itemResolver, marketListingTracker,
-            chatGui, localization, logger, configService);
+            chatGui, localization, logger, configService, clientState, framework);
 
         await service.CheckUndercutsAsync();
 
@@ -76,6 +78,8 @@ public class CompetitionMonitorServiceTests {
         var localization = Substitute.For<ILocalizationService>();
         var logger = Substitute.For<ILoggerService>();
         var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
+        var clientState = Substitute.For<IClientState>();
+        var framework = Substitute.For<IFramework>();
 
         var config = new PluginConfiguration {
             AutoWhitelistOwnRetainers = false,
@@ -106,7 +110,7 @@ public class CompetitionMonitorServiceTests {
 
         var service = new CompetitionMonitorService(
             retainerState, priceProvider, competitionState, itemResolver, marketListingTracker,
-            chatGui, localization, logger, configService);
+            chatGui, localization, logger, configService, clientState, framework);
 
         await service.CheckUndercutsAsync();
 
@@ -127,6 +131,8 @@ public class CompetitionMonitorServiceTests {
         var localization = Substitute.For<ILocalizationService>();
         var logger = Substitute.For<ILoggerService>();
         var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
+        var clientState = Substitute.For<IClientState>();
+        var framework = Substitute.For<IFramework>();
 
         var config = new PluginConfiguration {
             AutoWhitelistOwnRetainers = false,
@@ -157,7 +163,7 @@ public class CompetitionMonitorServiceTests {
 
         var service = new CompetitionMonitorService(
             retainerState, priceProvider, competitionState, itemResolver, marketListingTracker,
-            chatGui, localization, logger, configService);
+            chatGui, localization, logger, configService, clientState, framework);
 
         await service.CheckUndercutsAsync();
 
@@ -178,6 +184,8 @@ public class CompetitionMonitorServiceTests {
         var localization = Substitute.For<ILocalizationService>();
         var logger = Substitute.For<ILoggerService>();
         var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
+        var clientState = Substitute.For<IClientState>();
+        var framework = Substitute.For<IFramework>();
 
         var config = new PluginConfiguration {
             AutoWhitelistOwnRetainers = false,
@@ -208,7 +216,7 @@ public class CompetitionMonitorServiceTests {
 
         var service = new CompetitionMonitorService(
             retainerState, priceProvider, competitionState, itemResolver, marketListingTracker,
-            chatGui, localization, logger, configService);
+            chatGui, localization, logger, configService, clientState, framework);
 
         await service.CheckUndercutsAsync();
 
@@ -229,6 +237,8 @@ public class CompetitionMonitorServiceTests {
         var localization = Substitute.For<ILocalizationService>();
         var logger = Substitute.For<ILoggerService>();
         var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
+        var clientState = Substitute.For<IClientState>();
+        var framework = Substitute.For<IFramework>();
 
         var config = new PluginConfiguration {
             AutoWhitelistOwnRetainers = false,
@@ -259,7 +269,7 @@ public class CompetitionMonitorServiceTests {
 
         var service = new CompetitionMonitorService(
             retainerState, priceProvider, competitionState, itemResolver, marketListingTracker,
-            chatGui, localization, logger, configService);
+            chatGui, localization, logger, configService, clientState, framework);
 
         await service.CheckUndercutsAsync();
 

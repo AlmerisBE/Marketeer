@@ -4,6 +4,7 @@ using Marketeer.Core.RetainerAutomation.Services;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.RetainerAutomation.Commands;
 using Marketeer.UI.RetainerAutomation.Providers;
+using Marketeer.UI.RetainerOverlays.Contracts;
 using Marketeer.UI.RetainerOverlays.Services;
 using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,8 +20,11 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<IRetainerUiInteractionService, RetainerUiInteractionService>();
         services.AddSingleton<IRetainerOrchestratorService, RetainerOrchestratorService>();
 
-        // Injection de notre nouveau service
         services.AddSingleton<IRetainerSwitcherService, RetainerSwitcherService>();
+
+        services.AddSingleton<RetainerGuidanceService>();
+        services.AddSingleton<IRetainerGuidanceService>(provider => provider.GetRequiredService<RetainerGuidanceService>());
+        services.AddSingleton<IGuidanceInstructionProvider>(provider => provider.GetRequiredService<RetainerGuidanceService>());
 
         services.AddSingleton<RetainerContextMenuService>();
 

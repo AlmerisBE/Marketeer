@@ -9,4 +9,5 @@ public interface IMarketListingTrackerService {
 
     IReadOnlyList<ListingDisplayData> GetListingsForRetainer(ulong retainerId);
     bool ScanListings(ulong retainerId, bool isFirstScan);
+    void RegisterPriceUpdate(ulong retainerId, uint itemId, uint newPrice);
 }

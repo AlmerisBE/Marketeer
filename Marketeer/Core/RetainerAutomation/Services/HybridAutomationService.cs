@@ -6,6 +6,7 @@ using Marketeer.API.Universalis.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
@@ -28,6 +29,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private IAddonLifecycle addonLifecycle;
     private ILoggerService logger;
     private IMarketListingProvider listingProvider;
+    private IMarketListingTrackerService listingTracker;
+    private IRetainerGuidanceService guidanceService;
 
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
@@ -48,7 +51,9 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         ILocalizationService localization,
         IAddonLifecycle addonLifecycle,
         ILoggerService logger,
-        IMarketListingProvider listingProvider) {
+        IMarketListingProvider listingProvider,
+        IMarketListingTrackerService listingTracker,
+        IRetainerGuidanceService guidanceService) {
 
         this.framework = framework;
         this.uiInteraction = uiInteraction;
@@ -60,6 +65,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.addonLifecycle = addonLifecycle;
         this.logger = logger;
         this.listingProvider = listingProvider;
+        this.listingTracker = listingTracker;
+        this.guidanceService = guidanceService;
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
@@ -214,6 +221,9 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         this.uiInteraction.CloseItemSearchResult();
         this.uiInteraction.SetPriceAndConfirm(newPrice);
+
+        this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, newPrice);
+        this.guidanceService.ClearInstruction();
 
         this.logger.Info($"[HybridAutomation] Price updated to {newPrice}. Sequence finished.");
         this.IsActive = false;

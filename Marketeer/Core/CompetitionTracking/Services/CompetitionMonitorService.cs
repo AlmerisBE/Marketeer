@@ -16,15 +16,17 @@ using System.Threading.Tasks;
 namespace Marketeer.Core.CompetitionTracking.Services;
 
 public class CompetitionMonitorService : ICompetitionMonitorService {
-    private readonly IRetainerStateService retainerState;
-    private readonly IServerPriceProvider priceProvider;
-    private readonly ICompetitionStateService competitionState;
-    private readonly IItemResolverService itemResolver;
-    private readonly IMarketListingTrackerService marketListingTracker;
-    private readonly IChatGui chatGui;
-    private readonly ILocalizationService localization;
-    private readonly ILoggerService logger;
-    private readonly IConfigurationService configService;
+    private IRetainerStateService retainerState;
+    private IServerPriceProvider priceProvider;
+    private ICompetitionStateService competitionState;
+    private IItemResolverService itemResolver;
+    private IMarketListingTrackerService marketListingTracker;
+    private IChatGui chatGui;
+    private ILocalizationService localization;
+    private ILoggerService logger;
+    private IConfigurationService configService;
+    private IClientState clientState;
+    private IFramework framework;
 
     private bool isMonitoring;
     private bool isChecking;
@@ -38,7 +40,9 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         IChatGui chatGui,
         ILocalizationService localization,
         ILoggerService logger,
-        IConfigurationService configService) {
+        IConfigurationService configService,
+        IClientState clientState,
+        IFramework framework) {
 
         this.retainerState = retainerState;
         this.priceProvider = priceProvider;
@@ -49,6 +53,8 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.localization = localization;
         this.logger = logger;
         this.configService = configService;
+        this.clientState = clientState;
+        this.framework = framework;
 
         this.isMonitoring = false;
         this.isChecking = false;
@@ -60,9 +66,16 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.retainerState.ListingsUpdated += this.OnListingsUpdated;
         this.marketListingTracker.LocalListingModified += this.OnLocalListingModified;
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
+        this.clientState.Login += this.OnLogin;
 
         this.isMonitoring = true;
         this.logger.Info("Undercut monitor service started (Event-Driven).");
+
+        this.framework.RunOnFrameworkThread(() => {
+            if (this.clientState.IsLoggedIn) {
+                Task.Run(async () => await this.CheckUndercutsAsync());
+            }
+        });
     }
 
     public void StopMonitoring() {
@@ -71,9 +84,14 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.retainerState.ListingsUpdated -= this.OnListingsUpdated;
         this.marketListingTracker.LocalListingModified -= this.OnLocalListingModified;
         this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
+        this.clientState.Login -= this.OnLogin;
 
         this.isMonitoring = false;
         this.logger.Info("Undercut monitor service stopped.");
+    }
+
+    private void OnLogin() {
+        Task.Run(async () => await this.CheckUndercutsAsync());
     }
 
     private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
@@ -85,6 +103,9 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     private void OnLocalListingModified(uint itemId) {
+        // Instantly purge the undercut state locally to prevent UI overlays from persisting obsolete guidance
+        this.competitionState.UpdateItemUndercuts(itemId, Enumerable.Empty<UndercutItem>());
+
         Task.Run(async () => {
             var allCharacters = this.retainerState.GetAllCharactersListings();
             var worldId = allCharacters.FirstOrDefault(c => c.Listings.Any(l => l.ItemId == itemId))?.HomeWorldId ?? 0;
@@ -100,7 +121,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.isChecking = true;
 
         try {
-            var allCharacters = this.retainerState.GetAllCharactersListings();
+            var initialCharacters = this.retainerState.GetAllCharactersListings();
             var undercuts = new List<UndercutItem>();
 
             var config = this.configService.GetConfig();
@@ -116,13 +137,20 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 }
             }
 
-            foreach (var character in allCharacters) {
+            foreach (var character in initialCharacters) {
                 if (!character.Listings.Any()) continue;
 
                 var itemIds = character.Listings.Select(listing => listing.ItemId).Distinct();
+
+                // AWAIT happens here. Other threads might change the local prices during this network call.
                 var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId, bypassCache: false);
 
-                foreach (var listing in character.Listings) {
+                // Re-fetch the listings AFTER the await to guarantee we use the absolute latest local prices
+                var liveCharacters = this.retainerState.GetAllCharactersListings();
+                var liveCharacter = liveCharacters.FirstOrDefault(c => c.CharacterName == character.CharacterName && c.HomeWorldId == character.HomeWorldId);
+                if (liveCharacter == null) continue;
+
+                foreach (var listing in liveCharacter.Listings) {
                     uint baseItemId = listing.ItemId > 1000000u ? listing.ItemId - 1000000u : listing.ItemId;
                     uint vendorPrice = config.EnforceVendorPriceMinimum ? this.itemResolver.ResolveVendorPrice(baseItemId) : 0;
 
@@ -152,6 +180,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             targetPrice = Math.Max(vendorPrice, targetPrice);
                         }
 
+                        // Use the FRESH current price to securely check if we are still undercut
                         if (listing.CurrentPrice <= targetPrice) continue;
 
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";

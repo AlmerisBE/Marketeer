@@ -9,6 +9,7 @@ using Marketeer.Core.MarketListings.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.Core.SalesHistory.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,6 +27,7 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
     private ILoggerService logger;
 
     private bool isManualFirstScan = true;
+    private ConcurrentDictionary<uint, (uint Price, DateTime Expires)> pendingPriceUpdates = new();
 
     public MarketListingTrackerService(
         IConfigurationService configService,
@@ -44,6 +46,27 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
         this.gameEventService.RetainerBellOpened += this.OnRetainerBellOpened;
         this.gameEventService.RetainerSellListUpdated += this.RecordListings;
+    }
+
+    public void RegisterPriceUpdate(ulong retainerId, uint itemId, uint newPrice) {
+        this.pendingPriceUpdates[itemId] = (newPrice, DateTime.Now.AddSeconds(5));
+
+        var config = this.configService.GetConfig();
+        lock (config) {
+            foreach (var charData in config.FinancialRecords.Values) {
+                if (charData.Retainers.TryGetValue(retainerId, out var rData)) {
+                    var listing = rData.MarketListings.Values.FirstOrDefault(l => l.ItemId == itemId);
+                    if (listing != null) {
+                        if (listing.PricePerUnit != newPrice) {
+                            listing.PricePerUnit = newPrice;
+                            this.configService.Save();
+                            this.LocalListingModified?.Invoke(itemId);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     public IReadOnlyList<ListingDisplayData> GetListingsForRetainer(ulong retainerId) {
@@ -113,7 +136,6 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
             bool isModified = oldListings.Count != fetchedListings.Count;
             var modifiedItems = new HashSet<uint>();
 
-            // Identify items that were removed (sold or manually cancelled)
             var fetchedItemIds = new HashSet<uint>(fetchedListings.Select(f => f.ItemId));
             foreach (var old in oldListings.Values) {
                 if (!fetchedItemIds.Contains(old.ItemId)) {
@@ -124,6 +146,16 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
             foreach (var fetched in fetchedListings) {
                 uint finalPrice = fetched.PricePerUnit;
                 DateTime listingDate = DateTime.UtcNow;
+
+                // Priority to our freshly automated prices over the FFXIV memory lag
+                if (this.pendingPriceUpdates.TryGetValue(fetched.ItemId, out var pending)) {
+                    if (DateTime.Now < pending.Expires) {
+                        finalPrice = pending.Price;
+                    }
+                    else {
+                        this.pendingPriceUpdates.TryRemove(fetched.ItemId, out _);
+                    }
+                }
 
                 if (finalPrice == 0 && oldListings.TryGetValue((int)fetched.SlotIndex, out var oldListing)) {
                     if (oldListing.ItemId == fetched.ItemId && oldListing.PricePerUnit > 0) {
@@ -173,9 +205,7 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
 
     private void RecordListings() {
         var activeRetainerIdOpt = this.listingProvider.GetActiveRetainerId();
-        if (!activeRetainerIdOpt.HasValue) {
-            return;
-        }
+        if (!activeRetainerIdOpt.HasValue) return;
 
         this.ScanListings(activeRetainerIdOpt.Value, this.isManualFirstScan);
         this.isManualFirstScan = false;
