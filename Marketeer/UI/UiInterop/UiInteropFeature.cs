@@ -20,7 +20,7 @@ public class UiInteropFeature : IFeatureModule {
     }
 
     public void Initialize(IServiceProvider provider) {
-        var windowTracker = provider.GetRequiredService<IWindowTrackerService>();
-        windowTracker.EnableTracking();
+        //var windowTracker = provider.GetRequiredService<IWindowTrackerService>();
+        //windowTracker.EnableTracking();
     }
 }

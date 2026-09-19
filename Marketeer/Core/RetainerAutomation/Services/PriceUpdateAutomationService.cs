@@ -157,6 +157,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
 
             case 1:
                 if (this.uiInteraction.IsAddonReady("RetainerSell")) {
+                    this.uiInteraction.CloseItemSearchResult();
                     this.uiInteraction.ConfirmPriceUpdate(targetPrice);
                     this.step = 2;
                     this.SetDelay(0.5);

@@ -1,10 +1,12 @@
 ﻿using Dalamud.Memory;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.UiInterop.Contracts;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -191,82 +193,100 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         System.Runtime.InteropServices.Marshal.FreeHGlobal(eventParamData);
     }
 
-    public unsafe void OpenComparePrices(nint addonAddress = 0) {
-        nint targetAddonAddr = addonAddress;
-        if (targetAddonAddr == IntPtr.Zero) {
-            var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
-            targetAddonAddr = addonPtr.Address;
+    public unsafe bool GetActiveRetainerSellItemData(out List<string> windowTexts, out uint currentPrice) {
+        windowTexts = new List<string>();
+        currentPrice = 0;
+
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
+        if (addonPtr.Address == IntPtr.Zero) return false;
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        if (!addon->IsVisible) return false;
+
+        for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
+            var node = addon->UldManager.NodeList[i];
+            if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
+                var textNode = (AtkTextNode*)node;
+
+                var ptr = (byte*)textNode->NodeText.StringPtr;
+                if (ptr != null) {
+                    var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
+                    if (!string.IsNullOrWhiteSpace(text)) {
+                        windowTexts.Add(text.Replace("\uE03C", "").Replace("", "").Trim());
+                    }
+                }
+            }
         }
 
+        if (addon->UldManager.NodeListCount > 15) {
+            var priceNode = addon->UldManager.NodeList[15];
+            if (priceNode != null && (ushort)priceNode->Type >= 1000) {
+                var compNode = (AtkComponentNode*)priceNode;
+                var numericInput = (AtkComponentNumericInput*)compNode->Component;
+                if (numericInput != null) currentPrice = (uint)numericInput->Value;
+            }
+        }
+
+        return windowTexts.Count > 0;
+    }
+
+    public unsafe void OpenComparePrices(nint addonAddress = 0) {
+        nint targetAddonAddr = addonAddress == IntPtr.Zero ? this.gameGui.GetAddonByName("RetainerSell").Address : addonAddress;
         if (targetAddonAddr == IntPtr.Zero) return;
 
         var addon = (AtkUnitBase*)targetAddonAddr;
         if (!addon->IsVisible) return;
 
-        // FFXIV RetainerSell callback signature for "Compare Prices" button is Event ID 1 (or 4 depending on internal index)
-        // FireCallback directly triggers the native internal handler without manual AtkEvent marshaling
+        // Bypassing unreliable FFXIVClientStructs property mapping for the ComparePrices button.
+        // Firing the direct callback (Action ID: 4) guarantees the window opens.
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 4; // Action ID 4 corresponds to Compare Prices button callback
+        values[0].Int = 4;
         values[1].Type = AtkValueType.Int;
         values[1].Int = 0;
 
-        this.logger.Debug($"[RetainerUiInteractionService] FireCallback(4) dispatched to RetainerSell at {targetAddonAddr:X}");
         addon->FireCallback(2u, values, true);
-
-        // Fallback: If FireCallback(4) is ignored by specific game versions, try FireCallback(1) which handles default sub-actions
-        var fallbackValues = stackalloc AtkValue[1];
-        fallbackValues[0].Type = AtkValueType.Int;
-        fallbackValues[0].Int = 1;
-        addon->FireCallback(1u, fallbackValues, true);
     }
 
     public unsafe void SetPriceAndConfirm(uint newPrice) {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
         if (addonPtr.Address == IntPtr.Zero) return;
 
-        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)addonPtr.Address;
+        var addon = (AddonRetainerSell*)addonPtr.Address;
 
+        // Apply price text visually
         if (addon->AtkUnitBase.UldManager.NodeListCount > 15) {
             var priceNode = addon->AtkUnitBase.UldManager.NodeList[15];
             if (priceNode != null && (ushort)priceNode->Type >= 1000) {
                 var compNode = (AtkComponentNode*)priceNode;
                 var numericInput = (AtkComponentNumericInput*)compNode->Component;
-                if (numericInput != null) {
-                    numericInput->SetValue((int)newPrice);
-                }
+                if (numericInput != null) numericInput->SetValue((int)newPrice);
             }
         }
 
-        var values = stackalloc AtkValue[2];
-        values[0].Type = AtkValueType.Int; values[0].Int = 0;
-        values[1].Type = AtkValueType.UInt; values[1].UInt = newPrice;
-        addon->AtkUnitBase.FireCallback(2u, values, true);
-
-        // Corrected: Passing the Confirm button's OwnerNode instead of the Component
-        if (addon->Confirm != null && addon->Confirm->AtkComponentBase.OwnerNode != null) {
-            this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm->AtkComponentBase.OwnerNode);
-        }
-    }
-
-    public unsafe void ConfirmPriceUpdate(uint newPrice) {
-        var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
-        if (addonPtr.Address == IntPtr.Zero) return;
-
-        var addon = (FFXIVClientStructs.FFXIV.Client.UI.AddonRetainerSell*)addonPtr.Address;
-
+        // Send the value update via callback
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
         values[1].Type = AtkValueType.UInt;
         values[1].UInt = newPrice;
-
         addon->AtkUnitBase.FireCallback(2u, values, true);
 
-        // Corrected: Ensure bulk updates also click the OwnerNode properly
+        // Native confirm click targeting the component owner node
         if (addon->Confirm != null && addon->Confirm->AtkComponentBase.OwnerNode != null) {
             this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm->AtkComponentBase.OwnerNode);
         }
+        else {
+            // Failsafe: Direct callback if Confirm struct is unmapped in future updates
+            var confirmValues = stackalloc AtkValue[1];
+            confirmValues[0].Type = AtkValueType.Int;
+            confirmValues[0].Int = 0;
+            addon->AtkUnitBase.FireCallback(1u, confirmValues, true);
+        }
+    }
+
+    public unsafe void ConfirmPriceUpdate(uint newPrice) {
+        this.SetPriceAndConfirm(newPrice);
     }
 
     public unsafe void CloseItemSearchResult() {
@@ -276,8 +296,22 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addon = (AtkUnitBase*)addonPtr.Address;
         if (!addon->IsVisible) return;
 
+        var windowNode = addon->WindowNode;
+        if (windowNode != null && windowNode->Component != null && windowNode->Component->UldManager.NodeListCount > 7) {
+            var closeNode = windowNode->Component->UldManager.NodeList[7];
+            if (closeNode != null && (ushort)closeNode->Type >= 1000) {
+                var closeComponent = ((AtkComponentNode*)closeNode)->Component;
+                if (closeComponent != null && closeComponent->OwnerNode != null) {
+                    this.SendNativeClick(new IntPtr(windowNode->Component), 2, 2, closeComponent->OwnerNode);
+                    return;
+                }
+            }
+        }
+
+        // Failsafe native callback
         var values = stackalloc AtkValue[1];
-        values[0].Type = AtkValueType.Int; values[0].Int = -1;
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = -1;
         addon->FireCallback(1u, values, true);
     }
 
