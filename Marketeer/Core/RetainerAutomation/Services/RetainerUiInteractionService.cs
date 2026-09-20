@@ -334,7 +334,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
 
-        for (int i = 7; i < addon->AtkValuesCount; i++) {
+        for (int i = 8; i < addon->AtkValuesCount; i++) {
             var type = (int)addon->AtkValues[i].Type;
 
             if (type == 4 || type == 6 || type == 8 || type == 38 || type == 40) {
@@ -343,7 +343,8 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (text != null) {
                         var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
-                        if (normalizedText.Contains(searchString)) return i - 7;
+
+                        if (normalizedText.Contains(searchString)) return i - 8;
                     }
                 }
             }
@@ -357,14 +358,20 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[5];
+
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
+
+        // This index must be 0-based (0 = first item, 1 = second item, etc.)
         values[1].Type = AtkValueType.Int;
         values[1].Int = index;
+
         values[2].Type = AtkValueType.UInt;
         values[2].UInt = 0u;
+
         values[3].Type = AtkValueType.Int;
         values[3].Int = 0;
+
         values[4].Type = AtkValueType.Int;
         values[4].Int = 0;
 

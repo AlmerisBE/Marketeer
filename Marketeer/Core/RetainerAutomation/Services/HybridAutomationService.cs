@@ -76,7 +76,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellSetup);
-        this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ItemSearchResult", this.OnItemSearchResultSetup);
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
@@ -95,14 +94,17 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     }
 
     private void HandleContextMenu() {
+        this.logger.Debug("[HybridAutomation] Handling ContextMenu for RetainerSell adjustment.");
         var adjustText = this.localization.Translate("RetainerMenu_AdjustPrice");
         var index = this.uiInteraction.GetContextMenuItemIndex(adjustText);
+        this.logger.Debug($"[HybridAutomation] ContextMenu item index for '{adjustText}': {index}");
 
         if (index != -1) {
+            this.logger.Debug($"[HybridAutomation] Found target menu option at index {index}.");
             this.uiInteraction.SelectContextMenuItem(index);
         }
         else {
-            this.logger.Warning("[HybridAutomation] 'Adjust Price' option not found in ContextMenu. Aborting to prevent UI lockup.");
+            this.logger.Warning("[HybridAutomation] Target menu option not found. Safely aborting to prevent agent corruption.");
             this.Abort();
         }
     }
@@ -215,16 +217,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.priceFetchTask = null;
     }
 
-    private void OnItemSearchResultSetup(AddonEvent type, AddonArgs args) {
-        this.EvaluateItemSearchResultSetup();
-    }
-
-    public void EvaluateItemSearchResultSetup() {
-        var listing = this.currentListing;
-        if (!this.IsActive || !this.isFetchingPrice || listing == null) return;
-        this.searchResultOpenTime = DateTime.Now;
-    }
-
     private void OnFrameworkUpdate(IFramework fw) {
         if (!this.IsActive) return;
 
@@ -238,19 +230,30 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
             var fetchTask = this.priceFetchTask;
             var listing = this.currentListing;
 
-            if (fetchTask == null && (DateTime.Now - this.lastActionTime).TotalSeconds > 1.0) {
-                if (!this.uiInteraction.IsAddonReady("ItemSearchResult") && this.uiInteraction.IsAddonReady("RetainerSell")) {
-                    this.uiInteraction.OpenComparePrices();
-                    this.lastActionTime = DateTime.Now;
-                }
-            }
+            if (fetchTask == null) {
+                bool isSearchResultReady = this.uiInteraction.IsAddonReady("ItemSearchResult");
 
-            if (fetchTask == null && this.searchResultOpenTime != DateTime.MinValue && (DateTime.Now - this.searchResultOpenTime).TotalSeconds > 2.5) {
-                var localPlayer = this.objectTable.LocalPlayer;
-                if (localPlayer != null && listing != null) {
-                    this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                if (!isSearchResultReady) {
+                    // Retry clicking Compare Prices if it didn't open yet
+                    if ((DateTime.Now - this.lastActionTime).TotalSeconds > 1.0 && this.uiInteraction.IsAddonReady("RetainerSell")) {
+                        this.uiInteraction.OpenComparePrices();
+                        this.lastActionTime = DateTime.Now;
+                    }
                 }
-                this.searchResultOpenTime = DateTime.MinValue;
+                else {
+                    // Initialize the fallback timer exactly when the window becomes visible
+                    if (this.searchResultOpenTime == DateTime.MinValue) {
+                        this.searchResultOpenTime = DateTime.Now;
+                    }
+                    else if ((DateTime.Now - this.searchResultOpenTime).TotalSeconds > 2.5) {
+                        var localPlayer = this.objectTable.LocalPlayer;
+                        if (localPlayer != null && listing != null) {
+                            this.logger.Warning("[HybridAutomation] Live scanner timed out or market is empty. Falling back to API.");
+                            this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                        }
+                        this.searchResultOpenTime = DateTime.MinValue; // Prevent re-triggering
+                    }
+                }
             }
 
             if (fetchTask != null && fetchTask.IsCompleted) this.ApplyPriceAndFinish();
@@ -316,7 +319,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
         this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellSetup);
-        this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "ItemSearchResult", this.OnItemSearchResultSetup);
         this.framework.Update -= this.OnFrameworkUpdate;
     }
 }
