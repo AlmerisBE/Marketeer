@@ -208,11 +208,11 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             if (node != null && node->Type == FFXIVClientStructs.FFXIV.Component.GUI.NodeType.Text && node->IsVisible()) {
                 var textNode = (FFXIVClientStructs.FFXIV.Component.GUI.AtkTextNode*)node;
 
+                // Explictly cast Dawntrail's CStringPointer to byte* for unmanaged string reading
                 var ptr = (byte*)textNode->NodeText.StringPtr;
                 if (ptr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (!string.IsNullOrWhiteSpace(text)) {
-                        // Normalize any combination of newlines, tabs, and non-breaking spaces into a single space
                         var cleanText = System.Text.RegularExpressions.Regex.Replace(text.Replace("\uE03C", "").Replace("", ""), @"\s+", " ").Trim();
                         windowTexts.Add(cleanText);
                     }
@@ -331,17 +331,18 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         if (addonPtr.Address == IntPtr.Zero) return -1;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        if (!addon->IsVisible) return -1;
 
-        var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant();
+        var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
 
         for (int i = 7; i < addon->AtkValuesCount; i++) {
-            if (addon->AtkValues[i].Type == AtkValueType.String) {
+            var type = (int)addon->AtkValues[i].Type;
+
+            if (type == 4 || type == 6 || type == 8 || type == 38 || type == 40) {
                 var ptr = (byte*)addon->AtkValues[i].String;
                 if (ptr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (text != null) {
-                        var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant();
+                        var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
                         if (normalizedText.Contains(searchString)) return i - 7;
                     }
                 }

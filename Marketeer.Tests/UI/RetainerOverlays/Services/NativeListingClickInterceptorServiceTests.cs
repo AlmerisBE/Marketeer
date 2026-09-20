@@ -19,19 +19,16 @@ public class NativeListingClickInterceptorServiceTests {
         var configService = Substitute.For<IConfigurationService>();
         var logger = Substitute.For<ILoggerService>();
 
-        var config = new PluginConfiguration {
-            AutoSellModifierKey = ModifierKey.Ctrl | ModifierKey.Shift
-        };
+        var config = new PluginConfiguration { AutoSellModifierKey = ModifierKey.Ctrl | ModifierKey.Shift };
         configService.GetConfig().Returns(config);
 
         keyState[VirtualKey.CONTROL].Returns(true);
         keyState[VirtualKey.SHIFT].Returns(true);
-        keyState[VirtualKey.MENU].Returns(false); // Alt is not pressed, which matches config
+        keyState[VirtualKey.MENU].Returns(false);
 
         using var service = new NativeListingClickInterceptorService(
             addonLifecycle, hybridService, keyState, configService, logger);
 
-        // 35 = AtkEventType, 0 = Native Left Click
         service.EvaluateClick(35, 0);
 
         hybridService.Received(1).TriggerAdjustment();
@@ -45,9 +42,7 @@ public class NativeListingClickInterceptorServiceTests {
         var configService = Substitute.For<IConfigurationService>();
         var logger = Substitute.For<ILoggerService>();
 
-        var config = new PluginConfiguration {
-            AutoSellModifierKey = ModifierKey.Shift
-        };
+        var config = new PluginConfiguration { AutoSellModifierKey = ModifierKey.Shift };
         configService.GetConfig().Returns(config);
 
         keyState[VirtualKey.CONTROL].Returns(true); // Extra key pressed

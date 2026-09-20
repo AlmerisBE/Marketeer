@@ -1,9 +1,11 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
@@ -31,6 +33,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private IMarketListingProvider listingProvider;
     private IMarketListingTrackerService listingTracker;
     private IRetainerGuidanceService guidanceService;
+    private IKeyState keyState;
 
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
@@ -53,7 +56,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         ILoggerService logger,
         IMarketListingProvider listingProvider,
         IMarketListingTrackerService listingTracker,
-        IRetainerGuidanceService guidanceService) {
+        IRetainerGuidanceService guidanceService,
+        IKeyState keyState) {
 
         this.framework = framework;
         this.uiInteraction = uiInteraction;
@@ -67,6 +71,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.listingProvider = listingProvider;
         this.listingTracker = listingTracker;
         this.guidanceService = guidanceService;
+        this.keyState = keyState;
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
@@ -84,19 +89,39 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.lastActionTime = DateTime.Now;
         this.searchResultOpenTime = DateTime.MinValue;
         this.priceFetchTask = null;
-        this.logger.Info("[HybridAutomation] Event-driven sequence armed by Shift + left-click.");
+        this.logger.Info("[HybridAutomation] Event-driven sequence armed by Click Interceptor.");
 
         if (this.uiInteraction.IsAddonReady("ContextMenu")) this.HandleContextMenu();
     }
 
     private void HandleContextMenu() {
-        this.logger.Debug("[HybridAutomation] ContextMenu active. Auto-selecting Adjust Price.");
         var adjustText = this.localization.Translate("RetainerMenu_AdjustPrice");
         var index = this.uiInteraction.GetContextMenuItemIndex(adjustText);
 
-        if (index == -1) index = 0;
+        if (index != -1) {
+            this.uiInteraction.SelectContextMenuItem(index);
+        }
+        else {
+            this.logger.Warning("[HybridAutomation] 'Adjust Price' option not found in ContextMenu. Aborting to prevent UI lockup.");
+            this.Abort();
+        }
+    }
 
-        this.uiInteraction.SelectContextMenuItem(index);
+    private bool IsModifierPressed() {
+        var modifiers = this.configService.GetConfig().AutoSellModifierKey;
+        if (modifiers == ModifierKey.None) return false;
+
+        bool requiresCtrl = modifiers.HasFlag(ModifierKey.Ctrl);
+        bool requiresShift = modifiers.HasFlag(ModifierKey.Shift);
+        bool requiresAlt = modifiers.HasFlag(ModifierKey.Alt);
+
+        bool isCtrlPressed = this.keyState[VirtualKey.CONTROL];
+        bool isShiftPressed = this.keyState[VirtualKey.SHIFT];
+        bool isAltPressed = this.keyState[VirtualKey.MENU];
+
+        return requiresCtrl == isCtrlPressed &&
+               requiresShift == isShiftPressed &&
+               requiresAlt == isAltPressed;
     }
 
     private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
@@ -104,18 +129,33 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         if (!this.IsActive || !this.isFetchingPrice || listing == null || this.priceFetchTask != null) return;
 
         if (updatedItemIds.Contains(listing.ItemId)) {
-            this.logger.Info("[HybridAutomation] Live market data intercepted from scanner.");
             var localPlayer = this.objectTable.LocalPlayer;
-            if (localPlayer != null && localPlayer.CurrentWorld.RowId == worldId) this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, worldId, false);
+            if (localPlayer != null && localPlayer.CurrentWorld.RowId == worldId) {
+                this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, worldId, false);
+            }
         }
     }
 
     private void OnContextMenuSetup(AddonEvent type, AddonArgs args) {
+        this.EvaluateContextMenuSetup();
+    }
+
+    public void EvaluateContextMenuSetup() {
         if (!this.IsActive || this.currentListing != null) return;
         this.HandleContextMenu();
     }
 
     private void OnRetainerSellSetup(AddonEvent type, AddonArgs args) {
+        this.EvaluateRetainerSellSetup(args.Addon.Address);
+    }
+
+    public void EvaluateRetainerSellSetup(nint addonAddress) {
+        if (!this.IsActive && this.IsModifierPressed()) {
+            this.IsActive = true;
+            this.sequenceStartTime = DateTime.Now;
+            this.logger.Info("[HybridAutomation] Modifier held during native RetainerSell open. Arming new sale sequence.");
+        }
+
         if (!this.IsActive || this.isFetchingPrice) return;
 
         if (!this.uiInteraction.GetActiveRetainerSellItemData(out var texts, out var originalPrice)) {
@@ -125,7 +165,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         }
 
         var activeListings = this.listingProvider.GetActiveRetainerListings();
-
         var matchedListing = activeListings.FirstOrDefault(l => {
             var normalizedName = System.Text.RegularExpressions.Regex.Replace(l.ItemName, @"\s+", " ").Trim();
             return texts.Any(t => string.Equals(t, normalizedName, StringComparison.InvariantCultureIgnoreCase)) && l.PricePerUnit == originalPrice;
@@ -138,15 +177,38 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
             });
         }
 
-        if (matchedListing == null) {
-            this.logger.Error($"[HybridAutomation] Item not found. Scraped texts: {string.Join(", ", texts)}");
-            this.Abort();
-            return;
+        if (matchedListing != null) {
+            this.currentListing = matchedListing;
+        }
+        else {
+            uint resolvedItemId = 0;
+            string resolvedName = string.Empty;
+
+            foreach (var text in texts) {
+                var id = this.itemResolver.ResolveItemId(text);
+                if (id > 0) {
+                    resolvedItemId = id;
+                    resolvedName = text;
+                    break;
+                }
+            }
+
+            if (resolvedItemId == 0) {
+                this.logger.Error("[HybridAutomation] Could not resolve Item ID for new sale.");
+                this.Abort();
+                return;
+            }
+
+            this.currentListing = new TrackedListing {
+                ItemId = resolvedItemId,
+                ItemName = resolvedName,
+                PricePerUnit = originalPrice,
+                AssociatedRetainerId = this.listingProvider.GetActiveRetainerId() ?? 0
+            };
+            this.logger.Info($"[HybridAutomation] Initiating new sale fetch for {resolvedName} (ID: {resolvedItemId}).");
         }
 
-        this.currentListing = matchedListing;
-        this.logger.Info($"[HybridAutomation] RetainerSell PostSetup for {matchedListing.ItemName}. Triggering ComparePrices.");
-        this.uiInteraction.OpenComparePrices(args.Addon.Address);
+        this.uiInteraction.OpenComparePrices(addonAddress);
         this.isFetchingPrice = true;
         this.lastActionTime = DateTime.Now;
         this.searchResultOpenTime = DateTime.MinValue;
@@ -154,10 +216,12 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     }
 
     private void OnItemSearchResultSetup(AddonEvent type, AddonArgs args) {
+        this.EvaluateItemSearchResultSetup();
+    }
+
+    public void EvaluateItemSearchResultSetup() {
         var listing = this.currentListing;
         if (!this.IsActive || !this.isFetchingPrice || listing == null) return;
-
-        this.logger.Info("[HybridAutomation] ItemSearchResult opened natively. Awaiting live scanner data...");
         this.searchResultOpenTime = DateTime.Now;
     }
 
@@ -176,22 +240,20 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
             if (fetchTask == null && (DateTime.Now - this.lastActionTime).TotalSeconds > 1.0) {
                 if (!this.uiInteraction.IsAddonReady("ItemSearchResult") && this.uiInteraction.IsAddonReady("RetainerSell")) {
-                    this.logger.Debug("[HybridAutomation] ItemSearchResult missed setup. Retrying ComparePrices.");
                     this.uiInteraction.OpenComparePrices();
                     this.lastActionTime = DateTime.Now;
                 }
             }
 
             if (fetchTask == null && this.searchResultOpenTime != DateTime.MinValue && (DateTime.Now - this.searchResultOpenTime).TotalSeconds > 2.5) {
-                this.logger.Warning("[HybridAutomation] Live scanner timed out or market is empty. Falling back to API.");
                 var localPlayer = this.objectTable.LocalPlayer;
-                if (localPlayer != null && listing != null) this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                if (localPlayer != null && listing != null) {
+                    this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                }
                 this.searchResultOpenTime = DateTime.MinValue;
             }
 
-            if (fetchTask != null && fetchTask.IsCompleted) {
-                this.ApplyPriceAndFinish();
-            }
+            if (fetchTask != null && fetchTask.IsCompleted) this.ApplyPriceAndFinish();
         }
     }
 
@@ -222,7 +284,10 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.uiInteraction.CloseItemSearchResult();
         this.uiInteraction.SetPriceAndConfirm(newPrice);
 
-        this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, newPrice);
+        if (listing.AssociatedRetainerId != 0) {
+            this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, newPrice);
+        }
+
         this.guidanceService.ClearInstruction();
 
         this.logger.Info($"[HybridAutomation] Price updated to {newPrice}. Sequence finished.");
