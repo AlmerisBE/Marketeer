@@ -14,9 +14,11 @@ public class RetainerInventoryTrackerService : IDisposable {
     private IInventorySnapshotService snapshotService;
     private IInventoryDiffService diffService;
     private ILoggerService logger;
+    private IGameEventService gameEventService;
 
     private DateTime lastScanTime;
     private readonly TimeSpan scanInterval = TimeSpan.FromSeconds(2);
+    private bool isTracking = false;
 
     public RetainerInventoryTrackerService(
         IFramework framework,
@@ -24,7 +26,8 @@ public class RetainerInventoryTrackerService : IDisposable {
         IRetainerProvider retainerProvider,
         IInventorySnapshotService snapshotService,
         IInventoryDiffService diffService,
-        ILoggerService logger) {
+        ILoggerService logger,
+        IGameEventService gameEventService) {
 
         this.framework = framework;
         this.listingProvider = listingProvider;
@@ -32,9 +35,31 @@ public class RetainerInventoryTrackerService : IDisposable {
         this.snapshotService = snapshotService;
         this.diffService = diffService;
         this.logger = logger;
+        this.gameEventService = gameEventService;
 
         this.lastScanTime = DateTime.MinValue;
+
+        this.gameEventService.RetainerSessionStarted += this.StartTracking;
+        this.gameEventService.RetainerSessionEnded += this.StopTracking;
+    }
+
+    private void StartTracking() {
+        if (this.isTracking) return;
+
+        this.isTracking = true;
+        this.lastScanTime = DateTime.MinValue;
         this.framework.Update += this.OnFrameworkUpdate;
+
+        this.logger.Debug("[RetainerInventoryTracker] Session started. Resuming inventory monitoring.");
+    }
+
+    private void StopTracking() {
+        if (!this.isTracking) return;
+
+        this.isTracking = false;
+        this.framework.Update -= this.OnFrameworkUpdate;
+
+        this.logger.Debug("[RetainerInventoryTracker] Session ended. Pausing inventory monitoring.");
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -70,6 +95,8 @@ public class RetainerInventoryTrackerService : IDisposable {
     }
 
     public void Dispose() {
-        this.framework.Update -= this.OnFrameworkUpdate;
+        this.gameEventService.RetainerSessionStarted -= this.StartTracking;
+        this.gameEventService.RetainerSessionEnded -= this.StopTracking;
+        this.StopTracking();
     }
 }

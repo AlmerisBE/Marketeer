@@ -12,6 +12,27 @@ namespace Marketeer.Tests.Core.InventoryTracking.Services;
 
 public class RetainerInventoryTrackerServiceTests {
     [Fact]
+    public void StartTracking_SubscribesToFrameworkUpdate() {
+        var framework = Substitute.For<IFramework>();
+        var listingProvider = Substitute.For<IMarketListingProvider>();
+        var retainerProvider = Substitute.For<IRetainerProvider>();
+        var snapshotService = Substitute.For<IInventorySnapshotService>();
+        var diffService = Substitute.For<IInventoryDiffService>();
+        var logger = Substitute.For<ILoggerService>();
+        var gameEventService = Substitute.For<IGameEventService>();
+
+        using var service = new RetainerInventoryTrackerService(
+            framework, listingProvider, retainerProvider,
+            snapshotService, diffService, logger, gameEventService);
+
+        // Act
+        gameEventService.RetainerSessionStarted += Raise.Event<Action>();
+
+        // Assert
+        framework.Received(1).Update += Arg.Any<IFramework.OnUpdateDelegate>();
+    }
+
+    [Fact]
     public void OnFrameworkUpdate_WhenInventorySnapshotIsEmpty_ShouldNotSaveSnapshot() {
         var framework = Substitute.For<IFramework>();
         var listingProvider = Substitute.For<IMarketListingProvider>();
@@ -19,6 +40,7 @@ public class RetainerInventoryTrackerServiceTests {
         var snapshotService = Substitute.For<IInventorySnapshotService>();
         var diffService = Substitute.For<IInventoryDiffService>();
         var logger = Substitute.For<ILoggerService>();
+        var gameEventService = Substitute.For<IGameEventService>();
 
         listingProvider.GetActiveRetainerId().Returns(12345ul);
 
@@ -33,8 +55,10 @@ public class RetainerInventoryTrackerServiceTests {
 
         using var service = new RetainerInventoryTrackerService(
             framework, listingProvider, retainerProvider,
-            snapshotService, diffService, logger);
+            snapshotService, diffService, logger, gameEventService);
 
+        // Initiate tracking
+        gameEventService.RetainerSessionStarted += Raise.Event<Action>();
         framework.Update += Raise.Event<IFramework.OnUpdateDelegate>(framework);
 
         snapshotService.DidNotReceiveWithAnyArgs().SaveRetainerSnapshot(default, default!);
@@ -48,6 +72,7 @@ public class RetainerInventoryTrackerServiceTests {
         var snapshotService = Substitute.For<IInventorySnapshotService>();
         var diffService = Substitute.For<IInventoryDiffService>();
         var logger = Substitute.For<ILoggerService>();
+        var gameEventService = Substitute.For<IGameEventService>();
 
         listingProvider.GetActiveRetainerId().Returns(12345ul);
 
@@ -67,8 +92,10 @@ public class RetainerInventoryTrackerServiceTests {
 
         using var service = new RetainerInventoryTrackerService(
             framework, listingProvider, retainerProvider,
-            snapshotService, diffService, logger);
+            snapshotService, diffService, logger, gameEventService);
 
+        // Initiate tracking
+        gameEventService.RetainerSessionStarted += Raise.Event<Action>();
         framework.Update += Raise.Event<IFramework.OnUpdateDelegate>(framework);
 
         snapshotService.Received(1).SaveRetainerSnapshot(12345ul, newSnapshot);
