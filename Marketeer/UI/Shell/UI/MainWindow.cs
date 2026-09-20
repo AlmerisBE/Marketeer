@@ -20,20 +20,25 @@ public class MainWindow : Window {
         IEnumerable<INavigationNode> nodes,
         IEnumerable<IToolbarAction> toolbarActions,
         IEnumerable<IStatusBarProvider> statusBarProviders)
-        : base($"Marketeer v{pluginInterface.Manifest?.AssemblyVersion?.ToString() ?? "Dev"}###MarketeerMainWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
+        : base($"Marketeer v{pluginInterface.Manifest?.AssemblyVersion?.ToString() ?? "Dev"}", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
         this.navigationService = navigationService;
         this.nodes = nodes.OrderBy(n => n.Priority).ToList();
         this.toolbarActions = toolbarActions.OrderBy(a => a.Priority).ToList();
         this.statusBarProviders = statusBarProviders.OrderBy(p => p.Priority).ToList();
 
-        this.Size = new Vector2(900, 650);
+        this.Size = new Vector2(900f, 650f);
         this.SizeCondition = ImGuiCond.FirstUseEver;
 
         this.SizeConstraints = new WindowSizeConstraints {
-            MinimumSize = new Vector2(800, 500),
+            MinimumSize = new Vector2(800f, 500f),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
+
+        this.ShowCloseButton = true;
+        this.AllowPinning = true;
+        this.AllowClickthrough = true;
+        this.RespectCloseHotkey = true;
 
         if (this.navigationService.CurrentNode == null && this.nodes.Count > 0) this.navigationService.NavigateTo(this.nodes[0]);
     }
@@ -42,29 +47,34 @@ public class MainWindow : Window {
         this.DrawToolbar();
         ImGui.Separator();
 
-        // Calculate available height while leaving room for the bottom status bar and separator
-        var tableHeight = ImGui.GetContentRegionAvail().Y - 30f;
+        // Calculate the footer height including spacing, similar to the reference layout implementation.
+        float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 2f);
 
-        // Apply height constraint directly to the table
-        if (ImGui.BeginTable("MainLayout", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.Resizable, new Vector2(0, tableHeight))) {
-            ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, 200f);
-            ImGui.TableSetupColumn("Content", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableNextRow();
+        // Wrap the entire main content area in a BeginChild with a negative Y dimension 
+        // to robustly reserve space for the footer without clipping it.
+        if (ImGui.BeginChild("MainContent", new Vector2(0f, -footerHeight), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
+            // The table can now safely consume all available space within this managed child wrapper.
+            if (ImGui.BeginTable("MainLayout", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.Resizable)) {
+                ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, 200f);
+                ImGui.TableSetupColumn("Content", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableNextRow();
 
-            ImGui.TableNextColumn();
-            if (ImGui.BeginChild("SidebarScrollArea", new Vector2(0, 0), false)) {
-                this.DrawSidebar();
-                ImGui.EndChild();
+                ImGui.TableNextColumn();
+                if (ImGui.BeginChild("SidebarScrollArea", new Vector2(0f, 0f), false)) {
+                    this.DrawSidebar();
+                    ImGui.EndChild();
+                }
+
+                ImGui.TableNextColumn();
+                if (ImGui.BeginChild("ContentScrollArea", new Vector2(0f, 0f), false)) {
+                    if (this.navigationService.CurrentNode != null) this.navigationService.CurrentNode.DrawContent();
+                    ImGui.EndChild();
+                }
+
+                ImGui.EndTable();
             }
-
-            ImGui.TableNextColumn();
-            if (ImGui.BeginChild("ContentScrollArea", new Vector2(0, 0), false)) {
-                if (this.navigationService.CurrentNode != null) this.navigationService.CurrentNode.DrawContent();
-                ImGui.EndChild();
-            }
-
-            ImGui.EndTable();
         }
+        ImGui.EndChild();
 
         ImGui.Separator();
         this.DrawStatusBar();
@@ -133,9 +143,8 @@ public class MainWindow : Window {
     }
 
     private void DrawToolbar() {
-        if (ImGui.BeginChild("Toolbar", new Vector2(0, 35f), false)) {
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4f);
-
+        var height = ImGui.GetFrameHeight();
+        if (ImGui.BeginChild("Toolbar", new Vector2(0f, height), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
             bool isFirst = true;
             foreach (var action in this.toolbarActions) {
                 if (!isFirst) ImGui.SameLine();
@@ -148,14 +157,14 @@ public class MainWindow : Window {
 
                 isFirst = false;
             }
-            ImGui.EndChild();
         }
+        ImGui.EndChild();
     }
 
     private void DrawStatusBar() {
-        if (ImGui.BeginChild("StatusBar", new Vector2(0, 25f), false)) {
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4f);
+        var height = ImGui.GetFrameHeight();
 
+        if (ImGui.BeginChild("StatusBar", new Vector2(0f, height), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
             bool isFirst = true;
             foreach (var provider in this.statusBarProviders) {
                 if (!isFirst) {
@@ -166,7 +175,7 @@ public class MainWindow : Window {
                 provider.Draw();
                 isFirst = false;
             }
-            ImGui.EndChild();
         }
+        ImGui.EndChild();
     }
 }
