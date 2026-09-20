@@ -18,9 +18,8 @@ public static class InventoryTablePresenter {
         IItemResolverService itemResolver,
         ITextureProvider textureProvider) {
 
-        if (!ImGui.BeginTable(tableId, 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY, new Vector2(0, -1))) return;
+        if (!ImGui.BeginTable(tableId, 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) return;
 
-        ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 24f);
         ImGui.TableSetupColumn(localization.Translate("InventoryTab_ColName"), ImGuiTableColumnFlags.WidthStretch);
         ImGui.TableSetupColumn(localization.Translate("InventoryTab_ColQuantity"), ImGuiTableColumnFlags.WidthFixed, 60f);

@@ -2,7 +2,6 @@
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.API.InventoryTracking.Contracts;
 using Marketeer.Core.Logging.Contracts;
-using Marketeer.UI.UiInterop.Contracts;
 using System;
 using System.Linq;
 
@@ -13,56 +12,60 @@ public class RetainerInventoryTrackerService : IDisposable {
     private IMarketListingProvider listingProvider;
     private IRetainerProvider retainerProvider;
     private IInventorySnapshotService snapshotService;
-    private INativeWindowService windowService;
+    private IInventoryDiffService diffService;
     private ILoggerService logger;
 
-    private ulong lastScannedRetainerId = 0;
+    private DateTime lastScanTime;
+    private readonly TimeSpan scanInterval = TimeSpan.FromSeconds(2);
 
     public RetainerInventoryTrackerService(
         IFramework framework,
         IMarketListingProvider listingProvider,
         IRetainerProvider retainerProvider,
         IInventorySnapshotService snapshotService,
-        INativeWindowService windowService,
+        IInventoryDiffService diffService,
         ILoggerService logger) {
 
         this.framework = framework;
         this.listingProvider = listingProvider;
         this.retainerProvider = retainerProvider;
         this.snapshotService = snapshotService;
-        this.windowService = windowService;
+        this.diffService = diffService;
         this.logger = logger;
 
+        this.lastScanTime = DateTime.MinValue;
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
+        if (DateTime.Now - this.lastScanTime < this.scanInterval) return;
+
+        this.lastScanTime = DateTime.Now;
+
         var activeId = this.listingProvider.GetActiveRetainerId();
+        if (!activeId.HasValue || activeId.Value == 0) return;
 
-        if (activeId.HasValue && activeId.Value != 0) {
-            if (this.lastScannedRetainerId != activeId.Value) {
-                // Wait for the server to transmit the inventory data.
-                // The "SelectString" menu only appears once the retainer memory is fully loaded.
-                var menuWindow = this.windowService.GetWindow("SelectString");
+        var retainers = this.retainerProvider.GetActiveRetainers();
+        var retainer = retainers.FirstOrDefault(r => r.RetainerId == activeId.Value);
 
-                if (menuWindow != null && menuWindow.IsVisible) {
-                    var retainers = this.retainerProvider.GetActiveRetainers();
-                    var retainer = retainers.FirstOrDefault(r => r.RetainerId == activeId.Value);
+        if (retainer == null) return;
 
-                    if (retainer != null) {
-                        var snapshot = this.snapshotService.CreateRetainerSnapshot(retainer.RetainerId, retainer.Name);
+        var newSnapshot = this.snapshotService.CreateRetainerSnapshot(retainer.RetainerId, retainer.Name);
 
-                        if (snapshot.Items.Count > 0) {
-                            this.snapshotService.SaveRetainerSnapshot(retainer.RetainerId, snapshot);
-                            this.lastScannedRetainerId = activeId.Value;
-                            this.logger.Info($"[RetainerInventoryTracker] Successfully captured inventory snapshot for retainer: {retainer.Name}");
-                        }
-                    }
-                }
-            }
+        if (newSnapshot.Items.Count == 0) return;
+
+        var oldSnapshot = this.snapshotService.GetLatestRetainerSnapshot(retainer.RetainerId);
+
+        if (oldSnapshot == null) {
+            this.snapshotService.SaveRetainerSnapshot(retainer.RetainerId, newSnapshot);
+            this.logger.Info($"[RetainerInventoryTracker] Initial inventory snapshot saved for retainer: {retainer.Name}");
+            return;
         }
-        else {
-            this.lastScannedRetainerId = 0;
+
+        var diff = this.diffService.Compare(oldSnapshot, newSnapshot);
+        if (diff.Added.Any() || diff.Removed.Any() || diff.Moved.Any() || diff.QuantityChanged.Any()) {
+            this.snapshotService.SaveRetainerSnapshot(retainer.RetainerId, newSnapshot);
+            this.logger.Info($"[RetainerInventoryTracker] Inventory changes detected and snapshot updated for retainer: {retainer.Name}");
         }
     }
 

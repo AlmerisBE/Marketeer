@@ -5,7 +5,6 @@ using Marketeer.API.InventoryTracking.Models;
 using Marketeer.API.InventoryTracking.Services;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.Logging.Contracts;
-using Marketeer.UI.UiInterop.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -13,60 +12,65 @@ namespace Marketeer.Tests.Core.InventoryTracking.Services;
 
 public class RetainerInventoryTrackerServiceTests {
     [Fact]
-    public void OnFrameworkUpdate_WhenSelectStringNotVisible_ShouldNotCaptureSnapshot() {
-        var mockFramework = Substitute.For<IFramework>();
-        var mockListingProvider = Substitute.For<IMarketListingProvider>();
-        var mockRetainerProvider = Substitute.For<IRetainerProvider>();
-        var mockSnapshotService = Substitute.For<IInventorySnapshotService>();
-        var mockWindowService = Substitute.For<INativeWindowService>();
-        var mockLogger = Substitute.For<ILoggerService>();
+    public void OnFrameworkUpdate_WhenInventorySnapshotIsEmpty_ShouldNotSaveSnapshot() {
+        var framework = Substitute.For<IFramework>();
+        var listingProvider = Substitute.For<IMarketListingProvider>();
+        var retainerProvider = Substitute.For<IRetainerProvider>();
+        var snapshotService = Substitute.For<IInventorySnapshotService>();
+        var diffService = Substitute.For<IInventoryDiffService>();
+        var logger = Substitute.For<ILoggerService>();
 
-        mockListingProvider.GetActiveRetainerId().Returns(12345ul);
-
-        var mockWindow = Substitute.For<INativeWindow>();
-        mockWindow.IsVisible.Returns(false);
-        mockWindowService.GetWindow("SelectString").Returns(mockWindow);
-
-        using var service = new RetainerInventoryTrackerService(
-            mockFramework, mockListingProvider, mockRetainerProvider,
-            mockSnapshotService, mockWindowService, mockLogger);
-
-        // Correct delegate type for Dalamud's IFramework
-        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
-
-        mockSnapshotService.DidNotReceiveWithAnyArgs().SaveRetainerSnapshot(default, default!);
-    }
-
-    [Fact]
-    public void OnFrameworkUpdate_WhenSelectStringVisible_ShouldCaptureAndSaveSnapshot() {
-        var mockFramework = Substitute.For<IFramework>();
-        var mockListingProvider = Substitute.For<IMarketListingProvider>();
-        var mockRetainerProvider = Substitute.For<IRetainerProvider>();
-        var mockSnapshotService = Substitute.For<IInventorySnapshotService>();
-        var mockWindowService = Substitute.For<INativeWindowService>();
-        var mockLogger = Substitute.For<ILoggerService>();
-
-        mockListingProvider.GetActiveRetainerId().Returns(12345ul);
+        listingProvider.GetActiveRetainerId().Returns(12345ul);
 
         var retainers = new List<TrackedRetainer> {
             new TrackedRetainer { RetainerId = 12345ul, Name = "Adelaide" }
         };
-        mockRetainerProvider.GetActiveRetainers().Returns(retainers);
+        retainerProvider.GetActiveRetainers().Returns(retainers);
 
-        var mockWindow = Substitute.For<INativeWindow>();
-        mockWindow.IsVisible.Returns(true);
-        mockWindowService.GetWindow("SelectString").Returns(mockWindow);
-
-        var snapshot = new InventorySnapshot { Items = new List<TrackedItem> { new TrackedItem() } };
-        mockSnapshotService.CreateRetainerSnapshot(12345ul, "Adelaide").Returns(snapshot);
+        // Simulate a ghost read where items have not yet loaded from the server
+        var emptySnapshot = new InventorySnapshot { Items = new List<TrackedItem>() };
+        snapshotService.CreateRetainerSnapshot(12345ul, "Adelaide").Returns(emptySnapshot);
 
         using var service = new RetainerInventoryTrackerService(
-            mockFramework, mockListingProvider, mockRetainerProvider,
-            mockSnapshotService, mockWindowService, mockLogger);
+            framework, listingProvider, retainerProvider,
+            snapshotService, diffService, logger);
 
-        // Correct delegate type for Dalamud's IFramework
-        mockFramework.Update += Raise.Event<IFramework.OnUpdateDelegate>(mockFramework);
+        framework.Update += Raise.Event<IFramework.OnUpdateDelegate>(framework);
 
-        mockSnapshotService.Received(1).SaveRetainerSnapshot(12345ul, snapshot);
+        snapshotService.DidNotReceiveWithAnyArgs().SaveRetainerSnapshot(default, default!);
+    }
+
+    [Fact]
+    public void OnFrameworkUpdate_WhenInventoryHasItemsAndDiffExists_ShouldSaveSnapshot() {
+        var framework = Substitute.For<IFramework>();
+        var listingProvider = Substitute.For<IMarketListingProvider>();
+        var retainerProvider = Substitute.For<IRetainerProvider>();
+        var snapshotService = Substitute.For<IInventorySnapshotService>();
+        var diffService = Substitute.For<IInventoryDiffService>();
+        var logger = Substitute.For<ILoggerService>();
+
+        listingProvider.GetActiveRetainerId().Returns(12345ul);
+
+        var retainers = new List<TrackedRetainer> {
+            new TrackedRetainer { RetainerId = 12345ul, Name = "Adelaide" }
+        };
+        retainerProvider.GetActiveRetainers().Returns(retainers);
+
+        var oldSnapshot = new InventorySnapshot();
+        var newSnapshot = new InventorySnapshot { Items = new List<TrackedItem> { new TrackedItem() } };
+
+        snapshotService.GetLatestRetainerSnapshot(12345ul).Returns(oldSnapshot);
+        snapshotService.CreateRetainerSnapshot(12345ul, "Adelaide").Returns(newSnapshot);
+
+        var diff = new InventoryDiff { Added = new List<TrackedItem> { new TrackedItem() } };
+        diffService.Compare(oldSnapshot, newSnapshot).Returns(diff);
+
+        using var service = new RetainerInventoryTrackerService(
+            framework, listingProvider, retainerProvider,
+            snapshotService, diffService, logger);
+
+        framework.Update += Raise.Event<IFramework.OnUpdateDelegate>(framework);
+
+        snapshotService.Received(1).SaveRetainerSnapshot(12345ul, newSnapshot);
     }
 }

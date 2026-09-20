@@ -17,18 +17,14 @@ public class InventoryService : IInventoryService {
 
     public unsafe int GetItemCountInInventory(uint itemId) {
         var inventoryManager = InventoryManager.Instance();
-        if (inventoryManager == null) {
-            return 0;
-        }
+        if (inventoryManager == null) return 0;
 
         return inventoryManager->GetInventoryItemCount(itemId);
     }
 
     public unsafe uint GetRetainerMarketItemPrice(int slotIndex) {
         var inventoryManager = InventoryManager.Instance();
-        if (inventoryManager == null) {
-            return 0u;
-        }
+        if (inventoryManager == null) return 0u;
 
         return (uint)inventoryManager->GetRetainerMarketPrice((short)slotIndex);
     }
@@ -36,14 +32,10 @@ public class InventoryService : IInventoryService {
     public unsafe IReadOnlyList<InventorySlotInfo> GetInventorySlots(InventoryType inventoryType) {
         var slots = new List<InventorySlotInfo>();
         var inventoryManager = InventoryManager.Instance();
-        if (inventoryManager == null) {
-            return slots;
-        }
+        if (inventoryManager == null) return slots;
 
         var container = inventoryManager->GetInventoryContainer(inventoryType);
-        if (container == null) {
-            return slots;
-        }
+        if (container == null) return slots;
 
         for (int i = 0; i < container->Size; i++) {
             var item = container->GetInventorySlot(i);
@@ -59,9 +51,7 @@ public class InventoryService : IInventoryService {
             }
             else {
                 uint price = 0u;
-                if (inventoryType == InventoryType.RetainerMarket) {
-                    price = (uint)inventoryManager->GetRetainerMarketPrice((short)i);
-                }
+                if (inventoryType == InventoryType.RetainerMarket) price = (uint)inventoryManager->GetRetainerMarketPrice((short)i);
 
                 slots.Add(new InventorySlotInfo {
                     SlotIndex = (uint)i,
@@ -77,8 +67,6 @@ public class InventoryService : IInventoryService {
     }
 
     public unsafe int GetUiIndexForRetainerMarketItem(int slotIndex) {
-        // Retainer market UI rows natively map 1:1 with inventory slots 0-19.
-        // Returning the exact slot index guarantees we click the correct physical item.
         return slotIndex;
     }
 }
