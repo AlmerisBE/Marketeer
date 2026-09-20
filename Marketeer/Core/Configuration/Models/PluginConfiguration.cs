@@ -49,4 +49,6 @@ public class PluginConfiguration : IPluginConfiguration {
 
     public Dictionary<string, WatchedItem> WatchedItems { get; set; } = [];
     public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];
+
+    public ModifierKey AutoSellModifierKey { get; set; } = ModifierKey.Shift;
 }

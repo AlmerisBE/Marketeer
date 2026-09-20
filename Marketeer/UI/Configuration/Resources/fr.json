@@ -35,5 +35,10 @@
   "Config_Tab_Theme": "Thème",
   "Config_Tab_Hotkeys": "Raccourcis",
   "Config_Tab_Other": "Autres",
-  "Group_Configuration": "Configuration"
+  "Group_Configuration": "Configuration",
+  "Config_AutoSellModifierKeyLabel": "Touche(s) d'ajustement automatique :",
+  "ModifierKey_None": "Aucune",
+  "ModifierKey_Ctrl": "Ctrl",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Majuscule (Shift)"
 }

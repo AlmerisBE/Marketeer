@@ -35,5 +35,10 @@
   "Config_Tab_Theme": "Thema",
   "Config_Tab_Hotkeys": "Tastenkombinationen",
   "Config_Tab_Other": "Andere",
-  "Group_Configuration": "Konfiguration"
+  "Group_Configuration": "Konfiguration",
+  "Config_AutoSellModifierKeyLabel": "Automatische Anpassungstaste(n):",
+  "ModifierKey_None": "Keine",
+  "ModifierKey_Ctrl": "Strg",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Umschalt (Shift)"
 }

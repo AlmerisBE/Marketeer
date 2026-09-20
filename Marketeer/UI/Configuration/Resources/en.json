@@ -35,5 +35,10 @@
   "Config_Tab_Theme": "Theme",
   "Config_Tab_Hotkeys": "Hotkeys",
   "Config_Tab_Other": "Other",
-  "Group_Configuration": "Configuration"
+  "Group_Configuration": "Configuration",
+  "Config_AutoSellModifierKeyLabel": "Auto-adjust modifier key(s):",
+  "ModifierKey_None": "None",
+  "ModifierKey_Ctrl": "Ctrl",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Shift"
 }

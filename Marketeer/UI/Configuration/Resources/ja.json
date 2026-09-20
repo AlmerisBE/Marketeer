@@ -35,5 +35,10 @@
   "Config_Tab_Theme": "テーマ",
   "Config_Tab_Hotkeys": "ショートカット",
   "Config_Tab_Other": "その他",
-  "Group_Configuration": "設定"
+  "Group_Configuration": "設定",
+  "Config_AutoSellModifierKeyLabel": "自動価格調整の修飾キー:",
+  "ModifierKey_None": "なし",
+  "ModifierKey_Ctrl": "Ctrl",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Shift"
 }
