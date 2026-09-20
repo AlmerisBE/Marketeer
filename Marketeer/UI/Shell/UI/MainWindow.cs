@@ -30,7 +30,6 @@ public class MainWindow : Window {
         this.Size = new Vector2(900, 650);
         this.SizeCondition = ImGuiCond.FirstUseEver;
 
-        // Apply minimum size constraints to prevent layout breaking
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(800, 500),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
@@ -43,29 +42,28 @@ public class MainWindow : Window {
         this.DrawToolbar();
         ImGui.Separator();
 
-        var childHeight = ImGui.GetContentRegionAvail().Y - 30f;
+        // Calculate available height while leaving room for the bottom status bar and separator
+        var tableHeight = ImGui.GetContentRegionAvail().Y - 30f;
 
-        if (ImGui.BeginChild("MainContent", new Vector2(0, childHeight), false)) {
-            if (ImGui.BeginTable("MainLayout", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.Resizable)) {
-                ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, 200f);
-                ImGui.TableSetupColumn("Content", ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableNextRow();
+        // Apply height constraint directly to the table
+        if (ImGui.BeginTable("MainLayout", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.Resizable, new Vector2(0, tableHeight))) {
+            ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, 200f);
+            ImGui.TableSetupColumn("Content", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableNextRow();
 
-                ImGui.TableNextColumn();
-                if (ImGui.BeginChild("SidebarScrollArea", new Vector2(0, 0), false)) {
-                    this.DrawSidebar();
-                    ImGui.EndChild();
-                }
-
-                ImGui.TableNextColumn();
-                if (ImGui.BeginChild("ContentScrollArea", new Vector2(0, 0), false)) {
-                    if (this.navigationService.CurrentNode != null) this.navigationService.CurrentNode.DrawContent();
-                    ImGui.EndChild();
-                }
-
-                ImGui.EndTable();
+            ImGui.TableNextColumn();
+            if (ImGui.BeginChild("SidebarScrollArea", new Vector2(0, 0), false)) {
+                this.DrawSidebar();
+                ImGui.EndChild();
             }
-            ImGui.EndChild();
+
+            ImGui.TableNextColumn();
+            if (ImGui.BeginChild("ContentScrollArea", new Vector2(0, 0), false)) {
+                if (this.navigationService.CurrentNode != null) this.navigationService.CurrentNode.DrawContent();
+                ImGui.EndChild();
+            }
+
+            ImGui.EndTable();
         }
 
         ImGui.Separator();
