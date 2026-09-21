@@ -19,13 +19,13 @@
 		<EmbeddedResource Include="UI\**\*.json" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Content Include="api\universalis\resources\de.json" />
-	  <Content Include="api\universalis\resources\en.json" />
-	  <Content Include="api\universalis\resources\fr.json" />
-	  <Content Include="api\universalis\resources\ja.json" />
+	  <Content Include="UI\Universalis\Resources\de.json" />
+	  <Content Include="UI\Universalis\Resources\en.json" />
+	  <Content Include="UI\Universalis\Resources\fr.json" />
+	  <Content Include="UI\Universalis\Resources\ja.json" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Folder Include="API\Universalis\Resources\" />
+	  <Folder Include="UI\Universalis\Resources\" />
 	  <Folder Include="UI\CharacterManagement\Resources\" />
 	  <Folder Include="UI\CraftingProfit\Resources\" />
 	  <Folder Include="UI\Financials\Resources\" />
