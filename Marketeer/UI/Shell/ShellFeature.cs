@@ -23,7 +23,12 @@ public class ShellFeature : IFeatureModule {
         // Fenêtre principale et vue par défaut
         services.AddSingleton<MainWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<MainWindow>());
-        services.AddSingleton<INavigationNode, WelcomeMenu>();
+
+        services.AddSingleton<WelcomeMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<WelcomeMenu>());
+
+        services.AddSingleton<AboutMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<AboutMenu>());
 
         // Configurations Globales (Shell)
         services.AddSingleton<HotkeyConfigMenu>();

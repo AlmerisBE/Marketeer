@@ -26,5 +26,16 @@
   "Config_AutomationDelayMax": "Max Delay (s)",
   "Config_EnableChatNotifications": "Enable global chat notifications",
   "Config_EnableDebugMode": "Enable Debug mode (Verbose logging and developer tools)",
-  "Command_Config_Description": "Opens the configuration menu. Usage: /marketeer config"
+  "Command_Config_Description": "Opens the configuration menu. Usage: /marketeer config",
+  "About_TabName": "About",
+  "About_Header": "About Marketeer",
+  "About_Description": "Marketeer is an all-in-one market board and retainer management tool designed to optimize your trading strategies and maximize your profits.",
+  "About_FeaturesHeader": "Key Features",
+  "About_Feature1": "Market watch & automated competitor undercutting.",
+  "About_Feature2": "Comprehensive sales history and profit tracking.",
+  "About_Feature3": "Inventory management across characters and retainers.",
+  "About_Feature4": "Crafting profit evaluator.",
+  "About_LinksHeader": "Links & Support",
+  "About_Github": "GitHub Repository",
+  "About_Discord": "Join the Discord"
 }

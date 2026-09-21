@@ -26,5 +26,16 @@
   "Config_AutomationDelayMax": "Délai Max (s)",
   "Config_EnableChatNotifications": "Activer les notifications globales dans le chat",
   "Config_EnableDebugMode": "Activer le mode Debug (Journalisation détaillée et outils de développement)",
-  "Command_Config_Description": "Ouvre le menu de configuration. Utilisation : /marketeer config"
+  "Command_Config_Description": "Ouvre le menu de configuration. Utilisation : /marketeer config",
+  "About_TabName": "À propos",
+  "About_Header": "À propos de Marketeer",
+  "About_Description": "Marketeer est un outil complet de gestion du marché et des servants, conçu pour optimiser vos stratégies commerciales et maximiser vos profits.",
+  "About_FeaturesHeader": "Fonctionnalités Principales",
+  "About_Feature1": "Veille du marché et ajustement automatique des prix.",
+  "About_Feature2": "Historique détaillé des ventes et suivi des profits.",
+  "About_Feature3": "Gestion de l'inventaire des personnages et des servants.",
+  "About_Feature4": "Évaluateur de rentabilité pour l'artisanat.",
+  "About_LinksHeader": "Liens & Support",
+  "About_Github": "Dépôt GitHub",
+  "About_Discord": "Rejoindre le serveur Discord"
 }

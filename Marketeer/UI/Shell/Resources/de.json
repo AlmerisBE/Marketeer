@@ -26,5 +26,16 @@
   "Config_AutomationDelayMax": "Max. Verzögerung (s)",
   "Config_EnableChatNotifications": "Globale Chat-Benachrichtigungen aktivieren",
   "Config_EnableDebugMode": "Debug-Modus aktivieren (Detaillierte Protokollierung und Entwicklertools)",
-  "Command_Config_Description": "Öffnet das Konfigurationsmenü. Verwendung: /marketeer config"
+  "Command_Config_Description": "Öffnet das Konfigurationsmenü. Verwendung: /marketeer config",
+  "About_TabName": "Über",
+  "About_Header": "Über Marketeer",
+  "About_Description": "Marketeer ist ein All-in-One-Tool zur Verwaltung von Marktbrett und Gehilfen, das entwickelt wurde, um deine Handelsstrategien zu optimieren und deine Gewinne zu maximieren.",
+  "About_FeaturesHeader": "Hauptfunktionen",
+  "About_Feature1": "Marktbeobachtung & automatisches Unterbieten der Konkurrenz.",
+  "About_Feature2": "Umfassender Verkaufsverlauf und Gewinnverfolgung.",
+  "About_Feature3": "Inventarverwaltung für alle Charaktere und Gehilfen.",
+  "About_Feature4": "Gewinnkalkulator für Handwerker.",
+  "About_LinksHeader": "Links & Support",
+  "About_Github": "GitHub-Repository",
+  "About_Discord": "Dem Discord-Server beitreten"
 }

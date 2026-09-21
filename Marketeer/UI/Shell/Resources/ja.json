@@ -26,5 +26,16 @@
   "Config_AutomationDelayMax": "最大遅延（秒）",
   "Config_EnableChatNotifications": "グローバルチャット通知を有効にする",
   "Config_EnableDebugMode": "デバッグモードを有効にする（詳細なログ記録と開発者ツール）",
-  "Command_Config_Description": "設定メニューを開きます。使用方法: /marketeer config"
+  "Command_Config_Description": "設定メニューを開きます。使用方法: /marketeer config",
+  "About_TabName": "概要",
+  "About_Header": "Marketeer について",
+  "About_Description": "Marketeerは、取引戦略を最適化し利益を最大化するために設計された、オールインワンのマーケットボードおよびリテイナー管理ツールです。",
+  "About_FeaturesHeader": "主な機能",
+  "About_Feature1": "マーケット監視と自動価格調整",
+  "About_Feature2": "包括的な販売履歴と利益の追跡",
+  "About_Feature3": "キャラクターおよびリテイナー全体での所持品管理",
+  "About_Feature4": "製作利益の評価",
+  "About_LinksHeader": "リンクとサポート",
+  "About_Github": "GitHub リポジトリ",
+  "About_Discord": "Discord に参加する"
 }
