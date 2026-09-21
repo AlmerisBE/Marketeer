@@ -2,9 +2,9 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.UiInterop.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;

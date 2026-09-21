@@ -106,7 +106,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     private void OnLocalListingModified(uint itemId) {
-        // Instantly purge the undercut state locally to prevent UI overlays from persisting obsolete guidance
         this.competitionState.UpdateItemUndercuts(itemId, Enumerable.Empty<UndercutItem>());
 
         Task.Run(async () => {
@@ -141,10 +140,12 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 foreach (var listing in liveCharacter.Listings) {
                     var itemPrices = lowestPrices.Where(price => price.ItemId == listing.ItemId).ToList();
 
-                    // Centralized pricing logic execution
                     var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.CurrentPrice, itemPrices);
 
-                    if (calcResult.Action != PricingAction.KeepPrice && calcResult.CalculatedPrice != listing.CurrentPrice) {
+                    bool shouldProcess = calcResult.Action == PricingAction.CancelListing ||
+                                         (calcResult.Action == PricingAction.UpdatePrice && calcResult.CalculatedPrice != listing.CurrentPrice);
+
+                    if (shouldProcess) {
                         var marketLowest = itemPrices.OrderBy(p => p.Price).FirstOrDefault();
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 

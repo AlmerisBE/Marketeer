@@ -61,8 +61,7 @@ public class CompetitionMonitorServiceTests {
 
         await service.CheckUndercutsAsync();
 
-        competitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(items =>
-            items.GetEnumerator().MoveNext() && items.GetEnumerator().Current.TargetPrice == 899));
+        competitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(items => items.Any(i => i.TargetPrice == 899)));
         chatGui.Received(1).Print(Arg.Any<string>());
     }
 
@@ -110,9 +109,7 @@ public class CompetitionMonitorServiceTests {
 
         await service.CheckUndercutsAsync();
 
-        competitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(items => !items.GetEnumerator().MoveNext()));
-
-        // CORRECTION ICI: Utilisation de string.Empty pour éviter CS8625 et CS0121
+        competitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(items => !items.Any()));
         chatGui.DidNotReceiveWithAnyArgs().Print(string.Empty);
     }
 
@@ -160,7 +157,6 @@ public class CompetitionMonitorServiceTests {
 
         await service.CheckUndercutsAsync();
 
-        competitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(items =>
-            items.GetEnumerator().MoveNext() && items.GetEnumerator().Current.SuggestedAction == PricingAction.CancelListing));
+        competitionState.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(items => items.Any(i => i.SuggestedAction == PricingAction.CancelListing)));
     }
 }

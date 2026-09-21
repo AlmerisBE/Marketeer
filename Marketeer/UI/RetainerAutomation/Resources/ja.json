@@ -9,5 +9,15 @@
   "ContextMenu_Compete": "価格を調整する",
   "ContextMenu_CancelAndSell": "出品を取り消す",
   "Toolbar_ScanRetainers": "リテイナーをスキャン",
-  "Toolbar_ScanRetainers_Tooltip": "登録されたリテイナーの自動スキャンを開始します。"
+  "Toolbar_ScanRetainers_Tooltip": "登録されたリテイナーの自動スキャンを開始します。",
+  "Config_AutoSellModifierKeyLabel": "自動価格調整の修飾キー:",
+  "ModifierKey_None": "なし",
+  "ModifierKey_Ctrl": "Ctrl",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Shift",
+  "Config_AutomationDelayToggle": "自動アクション間のランダム遅延を有効にする",
+  "Config_AutomationDelayMin": "最小遅延（秒）",
+  "Config_AutomationDelayMax": "最大遅延（秒）",
+  "Config_AutoCloseMarketList": "価格調整後にリテイナーの出品一覧を自動で閉じる",
+  "Config_AutoCloseMarketListDelay": "自動で閉じるまでの遅延（秒）"
 }

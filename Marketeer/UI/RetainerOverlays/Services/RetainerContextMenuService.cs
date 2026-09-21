@@ -2,10 +2,10 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Localization.Contracts;
-using Marketeer.UI.UiInterop.Contracts;
 using System;
 
 namespace Marketeer.UI.RetainerOverlays.Services;

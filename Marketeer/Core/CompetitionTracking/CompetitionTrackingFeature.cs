@@ -22,6 +22,9 @@ public class CompetitionTrackingFeature : IFeatureModule {
         services.AddSingleton<CompetitionMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionMenu>());
 
+        services.AddSingleton<CompetitionConfigMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionConfigMenu>());
+
         services.AddSingleton<ICommand, PriceCommand>();
     }
 

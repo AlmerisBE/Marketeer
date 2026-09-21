@@ -14,5 +14,17 @@
   "Dashboard_WelcomeTab": "Accueil",
   "Dashboard_WelcomeText1": "Bienvenue sur Marketeer ! Ce plugin vous permet de gérer et de suivre vos ventes au marché pour tous vos personnages et servants.",
   "Dashboard_WelcomeText2": "Utilisez le menu latéral pour naviguer entre vos personnages, surveiller vos statistiques financières, analyser l'historique de vos ventes, et suivre la concurrence en temps réel.",
-  "Dashboard_NoData": "Aucune donnée disponible."
+  "Dashboard_NoData": "Aucune donnée disponible.",
+  "Group_Configuration": "Configuration",
+  "Config_Tab_Hotkeys": "Raccourcis",
+  "Config_HotkeyLabel": "Raccourci du Tableau de bord :",
+  "Config_HotkeyWaiting": "Appuyez sur une touche... (Échap pour annuler)",
+  "Config_HotkeyNone": "Aucun",
+  "Config_Tab_Other": "Autres",
+  "Config_AutomationDelayToggle": "Activer un délai aléatoire entre les actions automatiques",
+  "Config_AutomationDelayMin": "Délai Min (s)",
+  "Config_AutomationDelayMax": "Délai Max (s)",
+  "Config_EnableChatNotifications": "Activer les notifications globales dans le chat",
+  "Config_EnableDebugMode": "Activer le mode Debug (Journalisation détaillée et outils de développement)",
+  "Command_Config_Description": "Ouvre le menu de configuration. Utilisation : /marketeer config"
 }

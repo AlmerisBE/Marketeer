@@ -25,15 +25,20 @@ public class ShellFeature : IFeatureModule {
         services.AddSingleton<Window>(provider => provider.GetRequiredService<MainWindow>());
         services.AddSingleton<INavigationNode, WelcomeMenu>();
 
+        // Configurations Globales (Shell)
+        services.AddSingleton<HotkeyConfigMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<HotkeyConfigMenu>());
+
+        services.AddSingleton<OtherConfigMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<OtherConfigMenu>());
+
         // Commandes Shell
         services.AddSingleton<ICommand, MainCommand>();
+        services.AddSingleton<ICommand, ConfigCommand>();
     }
 
     public void Initialize(IServiceProvider provider) {
-        // Démarre l'écoute des commandes chat
         provider.GetRequiredService<CommandDispatcher>();
-
-        // Démarre l'écoute du raccourci clavier global
         provider.GetRequiredService<HotkeyTrackerService>();
     }
 }

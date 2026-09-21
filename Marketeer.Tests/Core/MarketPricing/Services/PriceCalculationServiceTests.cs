@@ -1,6 +1,7 @@
 ﻿using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.Financials.Models;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.MarketPricing.Services;
 using Marketeer.Core.SalesHistory.Contracts;
@@ -92,7 +93,15 @@ public class PriceCalculationServiceTests {
         var itemResolver = Substitute.For<IItemResolverService>();
 
         var config = new PluginConfiguration {
-            EmptyMarketFallbackMode = FallbackPricingMode.AverageListingPrice
+            EmptyMarketFallbackMode = FallbackPricingMode.AverageListingPrice,
+            FinancialRecords = new Dictionary<string, CharacterFinancialData> {
+                { "TestPlayer_99", new CharacterFinancialData {
+                    Retainers = new Dictionary<ulong, RetainerFinancialData> {
+                        { 1, new RetainerFinancialData { Name = "MyRetainer" } },
+                        { 2, new RetainerFinancialData { Name = "MyRetainer2" } }
+                    }
+                }}
+            }
         };
         configService.GetConfig().Returns(config);
         itemResolver.ResolveVendorPrice(1).Returns(100u);
@@ -100,13 +109,13 @@ public class PriceCalculationServiceTests {
         var service = new PriceCalculationService(configService, itemResolver);
 
         var marketListings = new List<LowestPriceResult> {
-            new LowestPriceResult { Price = 1000, RetainerName = "MyRetainer" }, // Ignored as competitor, but used for average
+            new LowestPriceResult { Price = 1000, RetainerName = "MyRetainer" },
             new LowestPriceResult { Price = 2000, RetainerName = "MyRetainer2" }
         };
 
         var result = service.CalculateTargetPrice(1, 0, marketListings);
 
         Assert.Equal(PricingAction.UpdatePrice, result.Action);
-        Assert.Equal(1500u, result.CalculatedPrice); // Average of 1000 and 2000
+        Assert.Equal(1500u, result.CalculatedPrice);
     }
 }
