@@ -10,11 +10,6 @@ using System.Collections.Generic;
 
 namespace Marketeer.Core.Configuration.Models;
 
-public enum WhitelistBehavior {
-    Ignore,
-    MatchPrice
-}
-
 [Serializable]
 public class PluginConfiguration : IPluginConfiguration {
     public int Version { get; set; } = 0;
@@ -25,19 +20,31 @@ public class PluginConfiguration : IPluginConfiguration {
     public Dictionary<ulong, InventorySnapshot> RetainerInventorySnapshots { get; set; } = [];
 
     public int UniversalisCacheMinutes { get; set; } = 30;
+
+    // Whitelist Settings
     public List<string> CompetitorWhitelist { get; set; } = [];
     public bool AutoWhitelistOwnRetainers { get; set; } = true;
     public WhitelistBehavior CompetitorWhitelistBehavior { get; set; } = WhitelistBehavior.Ignore;
+
+    // Undercut Settings
+    public UndercutMode UndercutMode { get; set; } = UndercutMode.Absolute;
+    public uint UndercutAmount { get; set; } = 1;
+    public double UndercutRelativePercentage { get; set; } = 1.0;
+
+    // Minimum Price (Loss) Settings
+    public bool EnforceVendorPriceMinimum { get; set; } = true;
+    public MinimumPriceBehavior LossBehavior { get; set; } = MinimumPriceBehavior.KeepCurrentPrice;
+    public InventoryPriority CancelInventoryPriority { get; set; } = InventoryPriority.RetainerFirst;
+
+    // Fallback Settings (Empty Market)
+    public FallbackPricingMode EmptyMarketFallbackMode { get; set; } = FallbackPricingMode.VendorSellMultiple;
+    public double EmptyMarketFallbackMultiplier { get; set; } = 2.0;
 
     public bool EnableAutomationDelay { get; set; } = false;
     public int AutomationDelayMin { get; set; } = 1;
     public int AutomationDelayMax { get; set; } = 3;
 
     public bool EnableChatNotifications { get; set; } = true;
-
-    public uint UndercutAmount { get; set; } = 1;
-    public bool EnforceVendorPriceMinimum { get; set; } = true;
-
     public bool EnableDebugMode { get; set; } = false;
 
     public VirtualKey DashboardHotkey { get; set; } = VirtualKey.NO_KEY;

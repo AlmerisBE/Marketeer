@@ -2,8 +2,6 @@
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Framework;
-using Marketeer.UI.Configuration.UI;
-using Marketeer.UI.Shell.Contracts;
 using Marketeer.UI.Shell.UI;
 using Marketeer.UI.Themes.Contracts;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,14 +77,8 @@ public sealed class Plugin : IDalamudPlugin {
     }
 
     private void OnOpenConfigUi() {
-        var navService = this.serviceProvider.GetService<INavigationService>();
-        var configMenu = this.serviceProvider.GetService<ConfigMenu>();
         var mainWindow = this.serviceProvider.GetService<MainWindow>();
-
-        if (navService != null && configMenu != null && mainWindow != null) {
-            navService.NavigateTo(configMenu);
-            mainWindow.IsOpen = true;
-        }
+        if (mainWindow != null) mainWindow.IsOpen = true;
     }
 
     public void Dispose() {

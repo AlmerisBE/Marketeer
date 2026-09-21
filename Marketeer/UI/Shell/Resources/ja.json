@@ -14,5 +14,17 @@
   "Dashboard_WelcomeTab": "ホーム",
   "Dashboard_WelcomeText1": "Marketeerへようこそ！このプラグインを使用すると、すべてのキャラクターとリテイナーのマーケットボードの売上を管理および追跡できます。",
   "Dashboard_WelcomeText2": "サイドバーメニューを使用して、キャラクター間の移動、財務統計の監視、販売履歴の分析、市場競争のリアルタイムな追跡を行ってください。",
-  "Dashboard_NoData": "利用可能なデータがありません。"
+  "Dashboard_NoData": "利用可能なデータがありません。",
+  "Group_Configuration": "設定",
+  "Config_Tab_Hotkeys": "ショートカット",
+  "Config_HotkeyLabel": "ダッシュボードのホットキー:",
+  "Config_HotkeyWaiting": "キーを押してください...（Escでキャンセル）",
+  "Config_HotkeyNone": "なし",
+  "Config_Tab_Other": "その他",
+  "Config_AutomationDelayToggle": "自動アクション間のランダム遅延を有効にする",
+  "Config_AutomationDelayMin": "最小遅延（秒）",
+  "Config_AutomationDelayMax": "最大遅延（秒）",
+  "Config_EnableChatNotifications": "グローバルチャット通知を有効にする",
+  "Config_EnableDebugMode": "デバッグモードを有効にする（詳細なログ記録と開発者ツール）",
+  "Command_Config_Description": "設定メニューを開きます。使用方法: /marketeer config"
 }

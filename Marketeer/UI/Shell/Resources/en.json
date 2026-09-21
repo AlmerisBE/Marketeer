@@ -14,5 +14,17 @@
   "Dashboard_WelcomeTab": "Home",
   "Dashboard_WelcomeText1": "Welcome to Marketeer! This plugin allows you to manage and track your market board sales across all your characters and retainers.",
   "Dashboard_WelcomeText2": "Use the sidebar menu to navigate between your characters, monitor your financial statistics, analyze your sales history, and track market competition in real-time.",
-  "Dashboard_NoData": "No data available."
+  "Dashboard_NoData": "No data available.",
+  "Group_Configuration": "Configuration",
+  "Config_Tab_Hotkeys": "Hotkeys",
+  "Config_HotkeyLabel": "Dashboard Hotkey:",
+  "Config_HotkeyWaiting": "Press any key... (Esc to cancel)",
+  "Config_HotkeyNone": "None",
+  "Config_Tab_Other": "Other",
+  "Config_AutomationDelayToggle": "Enable randomized delay between automated actions",
+  "Config_AutomationDelayMin": "Min Delay (s)",
+  "Config_AutomationDelayMax": "Max Delay (s)",
+  "Config_EnableChatNotifications": "Enable global chat notifications",
+  "Config_EnableDebugMode": "Enable Debug mode (Verbose logging and developer tools)",
+  "Command_Config_Description": "Opens the configuration menu. Usage: /marketeer config"
 }

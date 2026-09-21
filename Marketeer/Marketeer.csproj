@@ -19,8 +19,14 @@
 		<EmbeddedResource Include="UI\**\*.json" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Content Include="UI\Universalis\Resources\de.json" />
+	  <Content Include="UI\Universalis\Resources\en.json" />
+	  <Content Include="UI\Universalis\Resources\fr.json" />
+	  <Content Include="UI\Universalis\Resources\ja.json" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="UI\Universalis\Resources\" />
 	  <Folder Include="UI\CharacterManagement\Resources\" />
-	  <Folder Include="UI\Configuration\Resources\" />
 	  <Folder Include="UI\CraftingProfit\Resources\" />
 	  <Folder Include="UI\Financials\Resources\" />
 	  <Folder Include="UI\RetainerOverlays\Resources\" />
@@ -28,5 +34,6 @@
 	  <Folder Include="UI\MarketListings\Resources\" />
 	  <Folder Include="UI\RetainerAutomation\Resources\" />
 	  <Folder Include="UI\SalesHistory\Resources\" />
+	  <Folder Include="UI\Themes\Resources\" />
 	</ItemGroup>
 </Project>

@@ -8,5 +8,6 @@ namespace Marketeer.Core.MarketPricing;
 public class MarketPricingFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<IMarketPriceCacheService, MarketPriceCacheService>();
+        services.AddSingleton<IPriceCalculationService, PriceCalculationService>();
     }
 }

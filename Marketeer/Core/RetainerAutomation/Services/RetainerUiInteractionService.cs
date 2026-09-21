@@ -2,9 +2,9 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.UI.UiInterop.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -208,11 +208,11 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             if (node != null && node->Type == FFXIVClientStructs.FFXIV.Component.GUI.NodeType.Text && node->IsVisible()) {
                 var textNode = (FFXIVClientStructs.FFXIV.Component.GUI.AtkTextNode*)node;
 
+                // Explictly cast Dawntrail's CStringPointer to byte* for unmanaged string reading
                 var ptr = (byte*)textNode->NodeText.StringPtr;
                 if (ptr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (!string.IsNullOrWhiteSpace(text)) {
-                        // Normalize any combination of newlines, tabs, and non-breaking spaces into a single space
                         var cleanText = System.Text.RegularExpressions.Regex.Replace(text.Replace("\uE03C", "").Replace("", ""), @"\s+", " ").Trim();
                         windowTexts.Add(cleanText);
                     }
@@ -331,18 +331,20 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         if (addonPtr.Address == IntPtr.Zero) return -1;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        if (!addon->IsVisible) return -1;
 
-        var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant();
+        var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
 
-        for (int i = 7; i < addon->AtkValuesCount; i++) {
-            if (addon->AtkValues[i].Type == AtkValueType.String) {
+        for (int i = 8; i < addon->AtkValuesCount; i++) {
+            var type = (int)addon->AtkValues[i].Type;
+
+            if (type == 4 || type == 6 || type == 8 || type == 38 || type == 40) {
                 var ptr = (byte*)addon->AtkValues[i].String;
                 if (ptr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (text != null) {
-                        var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant();
-                        if (normalizedText.Contains(searchString)) return i - 7;
+                        var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
+
+                        if (normalizedText.Contains(searchString)) return i - 8;
                     }
                 }
             }
@@ -356,14 +358,20 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         var addon = (AtkUnitBase*)addonPtr.Address;
         var values = stackalloc AtkValue[5];
+
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
+
+        // This index must be 0-based (0 = first item, 1 = second item, etc.)
         values[1].Type = AtkValueType.Int;
         values[1].Int = index;
+
         values[2].Type = AtkValueType.UInt;
         values[2].UInt = 0u;
+
         values[3].Type = AtkValueType.Int;
         values[3].Int = 0;
+
         values[4].Type = AtkValueType.Int;
         values[4].Int = 0;
 

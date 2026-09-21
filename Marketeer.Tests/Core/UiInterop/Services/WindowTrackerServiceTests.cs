@@ -1,7 +1,7 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Plugin.Services;
+using Marketeer.API.UiInterop.Services;
 using Marketeer.Core.Logging.Contracts;
-using Marketeer.UI.UiInterop.Services;
 using NSubstitute;
 using Xunit;
 using static Dalamud.Plugin.Services.IAddonLifecycle;

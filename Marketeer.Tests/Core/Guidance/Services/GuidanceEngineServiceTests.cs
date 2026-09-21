@@ -3,6 +3,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
@@ -10,7 +11,6 @@ using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
 using Marketeer.UI.RetainerOverlays.Models;
 using Marketeer.UI.RetainerOverlays.Services;
-using Marketeer.UI.UiInterop.Contracts;
 using NSubstitute;
 using Xunit;
 

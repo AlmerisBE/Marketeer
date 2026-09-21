@@ -81,4 +81,11 @@ public class ItemResolverService : IItemResolverService {
 
         return item?.PriceLow ?? 0;
     }
+
+    public uint ResolveVendorBuyPrice(uint itemId) {
+        var sheet = this.dataManager.GetExcelSheet<Lumina.Excel.Sheets.Item>();
+        var item = sheet?.GetRowOrDefault(itemId);
+
+        return item?.PriceMid ?? 0;
+    }
 }

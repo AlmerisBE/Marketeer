@@ -9,5 +9,15 @@
   "ContextMenu_Compete": "Preis anpassen",
   "ContextMenu_CancelAndSell": "Angebot stornieren",
   "Toolbar_ScanRetainers": "Gehilfen scannen",
-  "Toolbar_ScanRetainers_Tooltip": "Startet den automatischen Scan der registrierten Gehilfen."
+  "Toolbar_ScanRetainers_Tooltip": "Startet den automatischen Scan der registrierten Gehilfen.",
+  "Config_AutoSellModifierKeyLabel": "Automatische Anpassungstaste(n):",
+  "ModifierKey_None": "Keine",
+  "ModifierKey_Ctrl": "Strg",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Umschalt (Shift)",
+  "Config_AutomationDelayToggle": "Zufällige Verzögerung zwischen automatisierten Aktionen aktivieren",
+  "Config_AutomationDelayMin": "Min. Verzögerung (s)",
+  "Config_AutomationDelayMax": "Max. Verzögerung (s)",
+  "Config_AutoCloseMarketList": "Gehilfen-Marktliste nach Preisaktualisierung automatisch schließen",
+  "Config_AutoCloseMarketListDelay": "Schließverzögerung (s)"
 }

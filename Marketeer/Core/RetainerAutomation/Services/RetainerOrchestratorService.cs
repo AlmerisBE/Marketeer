@@ -1,11 +1,11 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.RetainerAutomation.Models;
 using Marketeer.UI.Localization.Contracts;
-using Marketeer.UI.UiInterop.Contracts;
 using System;
 using System.Collections.Generic;
 

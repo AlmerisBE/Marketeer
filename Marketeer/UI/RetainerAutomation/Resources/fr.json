@@ -9,5 +9,15 @@
   "ContextMenu_Compete": "Ajuster le prix",
   "ContextMenu_CancelAndSell": "Annuler la vente",
   "Toolbar_ScanRetainers": "Scanner les servants",
-  "Toolbar_ScanRetainers_Tooltip": "Lance le scan automatique des servants enregistrés."
+  "Toolbar_ScanRetainers_Tooltip": "Lance le scan automatique des servants enregistrés.",
+  "Config_AutoSellModifierKeyLabel": "Touche(s) d'ajustement automatique :",
+  "ModifierKey_None": "Aucune",
+  "ModifierKey_Ctrl": "Ctrl",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Majuscule (Shift)",
+  "Config_AutomationDelayToggle": "Activer un délai aléatoire entre les actions automatiques",
+  "Config_AutomationDelayMin": "Délai Min (s)",
+  "Config_AutomationDelayMax": "Délai Max (s)",
+  "Config_AutoCloseMarketList": "Fermer automatiquement la liste des ventes après l'ajustement",
+  "Config_AutoCloseMarketListDelay": "Délai avant fermeture (s)"
 }

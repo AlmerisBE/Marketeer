@@ -9,5 +9,15 @@
   "ContextMenu_Compete": "Adjust Price",
   "ContextMenu_CancelAndSell": "Auto-Cancel Listing",
   "Toolbar_ScanRetainers": "Scan Retainers",
-  "Toolbar_ScanRetainers_Tooltip": "Starts the automated scan of registered retainers."
+  "Toolbar_ScanRetainers_Tooltip": "Starts the automated scan of registered retainers.",
+  "Config_AutoSellModifierKeyLabel": "Auto-adjust modifier key(s):",
+  "ModifierKey_None": "None",
+  "ModifierKey_Ctrl": "Ctrl",
+  "ModifierKey_Alt": "Alt",
+  "ModifierKey_Shift": "Shift",
+  "Config_AutomationDelayToggle": "Enable randomized delay between automated actions",
+  "Config_AutomationDelayMin": "Min Delay (s)",
+  "Config_AutomationDelayMax": "Max Delay (s)",
+  "Config_AutoCloseMarketList": "Auto-close retainer market list after price update",
+  "Config_AutoCloseMarketListDelay": "Auto-close delay (s)"
 }
