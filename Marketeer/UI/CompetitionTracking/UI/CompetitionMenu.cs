@@ -1,6 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.Core.CompetitionTracking.Contracts;
-using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
@@ -12,7 +11,6 @@ namespace Marketeer.UI.CompetitionTracking.UI;
 public class CompetitionMenu : INavigationNode {
     private ICompetitionStateService competitionState;
     private ILocalizationService localizationService;
-    private IPriceUpdateAutomationService priceUpdateService;
 
     public string GroupName => this.localizationService.Translate("Group_Market");
     public string Name => this.localizationService.Translate("Undercuts_TabName");
@@ -24,12 +22,10 @@ public class CompetitionMenu : INavigationNode {
 
     public CompetitionMenu(
         ICompetitionStateService competitionState,
-        ILocalizationService localizationService,
-        IPriceUpdateAutomationService priceUpdateService) {
+        ILocalizationService localizationService) {
 
         this.competitionState = competitionState;
         this.localizationService = localizationService;
-        this.priceUpdateService = priceUpdateService;
     }
 
     public void DrawContent() {
@@ -40,29 +36,7 @@ public class CompetitionMenu : INavigationNode {
             return;
         }
 
-        ImGui.TextWrapped(this.localizationService.Translate("Undercuts_UpdatePricesDescription"));
-        ImGui.Spacing();
-
-        var updateBtnText = this.localizationService.Translate("Undercuts_UpdatePricesButton");
-        var buttonWidth = ImGui.CalcTextSize(updateBtnText).X + (ImGui.GetStyle().FramePadding.X * 2);
-
-        ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - buttonWidth);
-
-        if (this.priceUpdateService.IsUpdating) {
-            ImGui.BeginDisabled();
-            ImGui.Button(this.localizationService.Translate("Undercuts_UpdatePricesActive"), new Vector2(buttonWidth, 24f));
-            ImGui.EndDisabled();
-        }
-        else {
-            if (ImGui.Button(updateBtnText, new Vector2(buttonWidth, 24f))) {
-                this.priceUpdateService.TriggerPriceUpdate();
-            }
-        }
-
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-
+        // We rely on the MarketeerGuideWindow and native UI highlights to assist the user.
         var groupedByCharacter = items.GroupBy(u => u.CharacterName);
 
         foreach (var group in groupedByCharacter) {

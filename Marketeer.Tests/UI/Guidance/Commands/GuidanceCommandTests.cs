@@ -25,14 +25,12 @@ public class GuidanceCommandTests {
         var listingProvider = Substitute.For<IMarketListingProvider>();
         var retainerProvider = Substitute.For<IRetainerProvider>();
         var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
-        var priceUpdateService = Substitute.For<IPriceUpdateAutomationService>();
-        var cancelListingsService = Substitute.For<ICancelListingsAutomationService>();
 
         // Create the actual window instance with mocked dependencies
         var window = new MarketeerGuideWindow(
             geometryProvider, instructionProviders, localization, switcherService,
             competitionState, optimizationService, objectTable, listingProvider,
-            retainerProvider, uiInteraction, priceUpdateService, cancelListingsService);
+            retainerProvider, uiInteraction);
 
         var command = new GuidanceCommand(window, localization);
 

@@ -2,18 +2,16 @@
 using Dalamud.Plugin.Services;
 using Marketeer.API.UiInterop.Contracts;
 using Marketeer.Core.Logging.Contracts;
-using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.RetainerOverlays.Services;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
-namespace Marketeer.Tests.Core.RetainerAutomation.Services;
+namespace Marketeer.Tests.UI.RetainerOverlays.Services;
 
 public class RetainerContextMenuServiceTests {
     private IContextMenu contextMenu;
-    private IPriceUpdateAutomationService priceUpdateService;
-    private IItemCancelAndSellService itemCancelAndSellService;
     private ILocalizationService localization;
     private INativeWindowService windowService;
     private ILoggerService logger;
@@ -23,14 +21,9 @@ public class RetainerContextMenuServiceTests {
 
     public RetainerContextMenuServiceTests() {
         this.contextMenu = Substitute.For<IContextMenu>();
-        this.priceUpdateService = Substitute.For<IPriceUpdateAutomationService>();
-        this.itemCancelAndSellService = Substitute.For<IItemCancelAndSellService>();
         this.localization = Substitute.For<ILocalizationService>();
         this.windowService = Substitute.For<INativeWindowService>();
         this.logger = Substitute.For<ILoggerService>();
-
-        this.localization.Translate("ContextMenu_Compete").Returns("Compete");
-        this.localization.Translate("ContextMenu_CancelAndSell").Returns("Cancel and Sell");
 
         this.menuArgs = Substitute.For<IMenuOpenedArgs>();
 
@@ -43,13 +36,10 @@ public class RetainerContextMenuServiceTests {
 
         public TestableRetainerContextMenuService(
             IContextMenu contextMenu,
-            IPriceUpdateAutomationService priceUpdateService,
-            IItemCancelAndSellService itemCancelAndSellService,
             ILocalizationService localization,
             INativeWindowService windowService,
             ILoggerService logger) : base(
-                contextMenu, priceUpdateService, itemCancelAndSellService,
-                localization, windowService, logger) { }
+                contextMenu, localization, windowService, logger) { }
 
         protected override uint GetTargetItemIdIfInMarket() {
             return this.MockTargetItemId;
@@ -57,10 +47,9 @@ public class RetainerContextMenuServiceTests {
     }
 
     [Fact]
-    public void OnMenuOpened_AddsMenuItems_WhenAddonIsRetainerSellList_AndItemIdIsValid() {
+    public void OnMenuOpened_DoesNotThrow_WhenAddonIsRetainerSellList_AndItemIdIsValid() {
         var service = new TestableRetainerContextMenuService(
-            this.contextMenu, this.priceUpdateService, this.itemCancelAndSellService,
-            this.localization, this.windowService, this.logger);
+            this.contextMenu, this.localization, this.windowService, this.logger);
 
         service.MockTargetItemId = 12345;
 
@@ -68,39 +57,19 @@ public class RetainerContextMenuServiceTests {
         mockWindow.IsVisible.Returns(true);
         this.windowService.GetWindow("RetainerSellList").Returns(mockWindow);
 
-        var addedItems = new List<MenuItem>();
-        this.menuArgs.When(x => x.AddMenuItem(Arg.Any<MenuItem>()))
-            .Do(x => addedItems.Add(x.Arg<MenuItem>()));
+        var exception = Record.Exception(() => this.capturedEventHandler?.Invoke(this.menuArgs));
 
-        this.capturedEventHandler?.Invoke(this.menuArgs);
+        Assert.Null(exception);
+        this.windowService.Received(1).GetWindow("RetainerSellList");
 
-        Assert.Equal(2, addedItems.Count);
-        Assert.Contains(addedItems, i => i.Name.TextValue == "Compete");
-        Assert.Contains(addedItems, i => i.Name.TextValue == "Cancel and Sell");
-    }
-
-    [Fact]
-    public void OnMenuOpened_DoesNotAddMenuItems_WhenItemIdIsZero() {
-        var service = new TestableRetainerContextMenuService(
-            this.contextMenu, this.priceUpdateService, this.itemCancelAndSellService,
-            this.localization, this.windowService, this.logger);
-
-        service.MockTargetItemId = 0;
-
-        var mockWindow = Substitute.For<INativeWindow>();
-        mockWindow.IsVisible.Returns(true);
-        this.windowService.GetWindow("RetainerSellList").Returns(mockWindow);
-
-        this.capturedEventHandler?.Invoke(this.menuArgs);
-
+        // Assert that the native menu is not altered since automated items were removed
         this.menuArgs.DidNotReceive().AddMenuItem(Arg.Any<MenuItem>());
     }
 
     [Fact]
-    public void OnMenuOpened_DoesNotAddMenuItems_WhenAddonIsNotRetainerSellList() {
+    public void OnMenuOpened_ReturnsEarly_WhenAddonIsNotRetainerSellList() {
         var service = new TestableRetainerContextMenuService(
-            this.contextMenu, this.priceUpdateService, this.itemCancelAndSellService,
-            this.localization, this.windowService, this.logger);
+            this.contextMenu, this.localization, this.windowService, this.logger);
 
         service.MockTargetItemId = 12345;
 
@@ -114,30 +83,24 @@ public class RetainerContextMenuServiceTests {
     }
 
     [Fact]
-    public void MenuItems_TriggerCorrectServices_WhenClicked() {
+    public void OnMenuOpened_LogsError_WhenExceptionIsThrown() {
         var service = new TestableRetainerContextMenuService(
-            this.contextMenu, this.priceUpdateService, this.itemCancelAndSellService,
-            this.localization, this.windowService, this.logger);
+            this.contextMenu, this.localization, this.windowService, this.logger);
 
-        service.MockTargetItemId = 999;
-
-        var mockWindow = Substitute.For<INativeWindow>();
-        mockWindow.IsVisible.Returns(true);
-        this.windowService.GetWindow("RetainerSellList").Returns(mockWindow);
-
-        var addedItems = new List<MenuItem>();
-        this.menuArgs.When(x => x.AddMenuItem(Arg.Any<MenuItem>()))
-            .Do(x => addedItems.Add(x.Arg<MenuItem>()));
+        this.windowService.GetWindow(Arg.Any<string>()).Throws(new Exception("Test exception"));
 
         this.capturedEventHandler?.Invoke(this.menuArgs);
 
-        var competeItem = addedItems.First(i => i.Name.TextValue == "Compete");
-        var cancelItem = addedItems.First(i => i.Name.TextValue == "Cancel and Sell");
+        this.logger.Received(1).Error(Arg.Any<Exception>(), "[ContextMenu] Failed to evaluate context menu.");
+    }
 
-        competeItem.OnClicked?.Invoke(Substitute.For<IMenuItemClickedArgs>());
-        this.priceUpdateService.Received(1).TriggerSingleItemUpdate(999);
+    [Fact]
+    public void Dispose_UnsubscribesFromEvent() {
+        var service = new TestableRetainerContextMenuService(
+            this.contextMenu, this.localization, this.windowService, this.logger);
 
-        cancelItem.OnClicked?.Invoke(Substitute.For<IMenuItemClickedArgs>());
-        this.itemCancelAndSellService.Received(1).TriggerCancelAndSell(999);
+        service.Dispose();
+
+        this.contextMenu.Received(1).OnMenuOpened -= Arg.Any<IContextMenu.OnMenuOpenedDelegate>();
     }
 }

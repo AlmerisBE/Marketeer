@@ -1,6 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.Core.MarketListings.Contracts;
-using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
@@ -11,7 +10,6 @@ namespace Marketeer.UI.MarketListings.UI;
 public class VendorAlertsMenu : INavigationNode {
     private IListingOptimizationService optimizationService;
     private ILocalizationService localization;
-    private ICancelListingsAutomationService cancelService;
 
     public string GroupName => this.localization.Translate("Group_Market");
     public string Name => this.localization.Translate("VendorAlerts_TabName");
@@ -21,10 +19,9 @@ public class VendorAlertsMenu : INavigationNode {
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public VendorAlertsMenu(IListingOptimizationService optimizationService, ILocalizationService localization, ICancelListingsAutomationService cancelService) {
+    public VendorAlertsMenu(IListingOptimizationService optimizationService, ILocalizationService localization) {
         this.optimizationService = optimizationService;
         this.localization = localization;
-        this.cancelService = cancelService;
     }
 
     public void DrawContent() {
@@ -35,21 +32,9 @@ public class VendorAlertsMenu : INavigationNode {
             return;
         }
 
-        // Apply color and text wrapping for the warning message
         ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1.0f, 0.4f, 0.4f, 1.0f));
         ImGui.TextWrapped(this.localization.Translate("VendorAlerts_WarningMessage", listings.Count));
         ImGui.PopStyleColor();
-
-        ImGui.Spacing();
-
-        if (this.cancelService.IsCancelling) {
-            ImGui.BeginDisabled();
-            ImGui.Button(this.localization.Translate("VendorAlerts_CancelActive"), new Vector2(200f, 24f));
-            ImGui.EndDisabled();
-        }
-        else if (ImGui.Button(this.localization.Translate("VendorAlerts_CancelButton"), new Vector2(200f, 24f))) {
-            this.cancelService.TriggerCancellation();
-        }
 
         ImGui.Spacing();
         ImGui.Separator();
