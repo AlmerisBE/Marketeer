@@ -1,4 +1,6 @@
-﻿namespace Marketeer.Core.CompetitionTracking.Models;
+﻿using Marketeer.Core.MarketPricing.Models;
+
+namespace Marketeer.Core.CompetitionTracking.Models;
 
 public class UndercutItem {
     public int SlotIndex { get; set; }
@@ -12,4 +14,5 @@ public class UndercutItem {
     public uint TargetPrice { get; set; }
     public string CompetitorName { get; set; } = string.Empty;
     public string CharacterName { get; set; } = string.Empty;
+    public PricingAction SuggestedAction { get; set; } = PricingAction.UpdatePrice;
 }

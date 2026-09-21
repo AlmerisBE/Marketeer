@@ -5,4 +5,5 @@ public interface IItemResolverService {
     string ResolveItemName(uint itemId);
     uint ResolveIconId(uint itemId);
     uint ResolveVendorPrice(uint itemId);
+    uint ResolveVendorBuyPrice(uint itemId);
 }

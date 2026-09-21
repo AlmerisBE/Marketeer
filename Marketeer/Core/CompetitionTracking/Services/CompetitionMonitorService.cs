@@ -2,10 +2,10 @@
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketPricing.Contracts;
+using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using System;
@@ -21,6 +21,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     private ICompetitionStateService competitionState;
     private IItemResolverService itemResolver;
     private IMarketListingTrackerService marketListingTracker;
+    private IPriceCalculationService priceCalculationService;
     private IChatGui chatGui;
     private ILocalizationService localization;
     private ILoggerService logger;
@@ -37,6 +38,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         ICompetitionStateService competitionState,
         IItemResolverService itemResolver,
         IMarketListingTrackerService marketListingTracker,
+        IPriceCalculationService priceCalculationService,
         IChatGui chatGui,
         ILocalizationService localization,
         ILoggerService logger,
@@ -49,6 +51,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.competitionState = competitionState;
         this.itemResolver = itemResolver;
         this.marketListingTracker = marketListingTracker;
+        this.priceCalculationService = priceCalculationService;
         this.chatGui = chatGui;
         this.localization = localization;
         this.logger = logger;
@@ -123,66 +126,26 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         try {
             var initialCharacters = this.retainerState.GetAllCharactersListings();
             var undercuts = new List<UndercutItem>();
-
             var config = this.configService.GetConfig();
-            var whitelist = config.CompetitorWhitelist ?? new List<string>();
-            var autoWhitelistOwn = config.AutoWhitelistOwnRetainers;
-            var ownRetainers = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-
-            if (autoWhitelistOwn && config.FinancialRecords != null) {
-                foreach (var cData in config.FinancialRecords.Values) {
-                    foreach (var rData in cData.Retainers.Values) {
-                        ownRetainers.Add(rData.Name);
-                    }
-                }
-            }
 
             foreach (var character in initialCharacters) {
                 if (!character.Listings.Any()) continue;
 
                 var itemIds = character.Listings.Select(listing => listing.ItemId).Distinct();
-
-                // AWAIT happens here. Other threads might change the local prices during this network call.
                 var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId, bypassCache: false);
 
-                // Re-fetch the listings AFTER the await to guarantee we use the absolute latest local prices
                 var liveCharacters = this.retainerState.GetAllCharactersListings();
                 var liveCharacter = liveCharacters.FirstOrDefault(c => c.CharacterName == character.CharacterName && c.HomeWorldId == character.HomeWorldId);
                 if (liveCharacter == null) continue;
 
                 foreach (var listing in liveCharacter.Listings) {
-                    uint baseItemId = listing.ItemId > 1000000u ? listing.ItemId - 1000000u : listing.ItemId;
-                    uint vendorPrice = config.EnforceVendorPriceMinimum ? this.itemResolver.ResolveVendorPrice(baseItemId) : 0;
+                    var itemPrices = lowestPrices.Where(price => price.ItemId == listing.ItemId).ToList();
 
-                    var itemPrices = lowestPrices.Where(price => price.ItemId == listing.ItemId);
+                    // Centralized pricing logic execution
+                    var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.CurrentPrice, itemPrices);
 
-                    if (config.EnforceVendorPriceMinimum && vendorPrice > 0) {
-                        itemPrices = itemPrices.Where(p => p.Price >= vendorPrice);
-                    }
-
-                    var marketLowest = itemPrices.OrderBy(p => p.Price).FirstOrDefault();
-
-                    if (marketLowest != null && marketLowest.RetainerName != listing.RetainerName) {
-                        bool isWhitelisted = whitelist.Contains(marketLowest.RetainerName, StringComparer.InvariantCultureIgnoreCase) ||
-                                             (autoWhitelistOwn && ownRetainers.Contains(marketLowest.RetainerName));
-
-                        uint targetPrice;
-
-                        if (isWhitelisted) {
-                            if (config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore) continue;
-                            targetPrice = marketLowest.Price;
-                        }
-                        else {
-                            targetPrice = Math.Max(1u, marketLowest.Price - 1);
-                        }
-
-                        if (config.EnforceVendorPriceMinimum && vendorPrice > 0) {
-                            targetPrice = Math.Max(vendorPrice, targetPrice);
-                        }
-
-                        // Use the FRESH current price to securely check if we are still undercut
-                        if (listing.CurrentPrice <= targetPrice) continue;
-
+                    if (calcResult.Action != PricingAction.KeepPrice && calcResult.CalculatedPrice != listing.CurrentPrice) {
+                        var marketLowest = itemPrices.OrderBy(p => p.Price).FirstOrDefault();
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
                         undercuts.Add(new UndercutItem {
@@ -193,10 +156,11 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                             RetainerName = listing.RetainerName,
                             Price = listing.CurrentPrice,
                             OurPrice = listing.CurrentPrice,
-                            ServerCheapestPrice = marketLowest.Price,
-                            TargetPrice = targetPrice,
-                            CompetitorName = marketLowest.RetainerName,
-                            CharacterName = character.CharacterName
+                            ServerCheapestPrice = marketLowest?.Price ?? 0,
+                            TargetPrice = calcResult.CalculatedPrice,
+                            CompetitorName = marketLowest?.RetainerName ?? "None",
+                            CharacterName = character.CharacterName,
+                            SuggestedAction = calcResult.Action
                         });
                     }
                 }

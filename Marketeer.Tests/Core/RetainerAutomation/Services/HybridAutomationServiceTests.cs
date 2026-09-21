@@ -29,17 +29,20 @@ public class HybridAutomationServiceTests {
         var listingTracker = Substitute.For<IMarketListingTrackerService>();
         var guidanceService = Substitute.For<IRetainerGuidanceService>();
         var keyState = Substitute.For<IKeyState>();
+        var priceCalculationService = Substitute.For<IPriceCalculationService>();
+        var itemCancelAndSellService = Substitute.For<IItemCancelAndSellService>();
 
         uiInteraction.GetContextMenuItemIndex(Arg.Any<string>()).Returns(-1); // Simulate not found
 
         using var service = new HybridAutomationService(
             framework, uiInteraction, priceProvider, itemResolver, configService, objectTable,
-            localization, addonLifecycle, logger, listingProvider, listingTracker, guidanceService, keyState);
+            localization, addonLifecycle, logger, listingProvider, listingTracker, guidanceService,
+            keyState, priceCalculationService, itemCancelAndSellService);
 
         // Manually arm the service
         service.TriggerAdjustment();
 
-        // Directly invoke the internal evaluation method, bypassing brittle Dalamud event mocking
+        // Directly invoke the public evaluation method, bypassing brittle Dalamud event mocking
         service.EvaluateContextMenuSetup();
 
         // The service MUST abort and deactivate instead of blindly clicking index 0

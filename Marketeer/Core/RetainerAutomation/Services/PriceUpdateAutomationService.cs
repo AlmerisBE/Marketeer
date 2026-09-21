@@ -4,6 +4,7 @@ using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.RetainerAutomation.Models;
 using Marketeer.UI.Localization.Contracts;
@@ -128,7 +129,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         if (this.currentItemTask == null) return this.ProcessNextItem();
 
         if (DateTime.Now - this.currentItemStartTime > TimeSpan.FromSeconds(5)) {
-            this.logger.Error($"Timeout while updating price for {this.currentItemTask.ItemName}. Attempting recovery.");
+            this.logger.Error($"Timeout while processing {this.currentItemTask.ItemName}. Attempting recovery.");
             this.uiInteraction.CloseUnexpectedWindows();
             return this.ProcessNextItem();
         }
@@ -136,7 +137,7 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
         uint targetPrice = this.currentItemTask.TargetPrice;
         uint currentPrice = this.inventoryService.GetRetainerMarketItemPrice(this.currentItemTask.SlotIndex);
 
-        if (currentPrice == targetPrice) {
+        if (currentPrice == targetPrice && this.currentItemTask.SuggestedAction != PricingAction.CancelListing) {
             this.logger.Info($"Price for '{this.currentItemTask.ItemName}' successfully updated. Moving to next.");
             return this.ProcessNextItem();
         }
@@ -156,25 +157,41 @@ public class PriceUpdateAutomationService : IPriceUpdateAutomationService, IReta
                 break;
 
             case 1:
-                if (this.uiInteraction.IsAddonReady("RetainerSell")) {
-                    this.uiInteraction.CloseItemSearchResult();
-                    this.uiInteraction.ConfirmPriceUpdate(targetPrice);
-                    this.step = 2;
-                    this.SetDelay(0.5);
+                if (this.currentItemTask.SuggestedAction == PricingAction.CancelListing) {
+                    if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+                        var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
+                        var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
+
+                        if (menuIndex == -1) menuIndex = 1;
+
+                        this.logger.Info($"Loss prevention triggered. Cancelling listing for '{this.currentItemTask.ItemName}'.");
+                        this.uiInteraction.SelectContextMenuItem(menuIndex);
+                        this.step = 2;
+                        this.SetDelay(0.5); // Wait for the item to disappear from the native UI
+                    }
                 }
-                else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-                    var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
-                    var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
+                else {
+                    if (this.uiInteraction.IsAddonReady("RetainerSell")) {
+                        this.uiInteraction.CloseItemSearchResult();
+                        this.uiInteraction.ConfirmPriceUpdate(targetPrice);
+                        this.step = 2;
+                        this.SetDelay(0.5);
+                    }
+                    else if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+                        var adjustPriceText = this.localization.Translate("RetainerMenu_AdjustPrice");
+                        var menuIndex = this.uiInteraction.GetContextMenuItemIndex(adjustPriceText);
 
-                    if (menuIndex == -1) menuIndex = 0;
+                        if (menuIndex == -1) menuIndex = 0;
 
-                    this.uiInteraction.SelectContextMenuItem(menuIndex);
-                    this.SetDelay(0.2);
+                        this.uiInteraction.SelectContextMenuItem(menuIndex);
+                        this.SetDelay(0.2);
+                    }
                 }
                 break;
 
             case 2:
-                // Implicit wait for server sync
+                // Implicit wait for server sync and inventory update
+                // If the item was cancelled, the slot checking at the start of OnTick handles progression
                 break;
         }
 
