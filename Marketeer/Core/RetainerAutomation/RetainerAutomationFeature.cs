@@ -6,7 +6,6 @@ using Marketeer.UI.RetainerAutomation.Commands;
 using Marketeer.UI.RetainerAutomation.Components;
 using Marketeer.UI.RetainerAutomation.Providers;
 using Marketeer.UI.RetainerOverlays.Contracts;
-using Marketeer.UI.RetainerOverlays.Services;
 using Marketeer.UI.Shell.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -27,16 +26,11 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<IRetainerGuidanceService>(provider => provider.GetRequiredService<RetainerGuidanceService>());
         services.AddSingleton<IGuidanceInstructionProvider>(provider => provider.GetRequiredService<RetainerGuidanceService>());
 
-        services.AddSingleton<RetainerContextMenuService>();
+        services.AddSingleton<ListingCancellationService>();
+        services.AddSingleton<IListingCancellationService>(provider => provider.GetRequiredService<ListingCancellationService>());
 
         services.AddSingleton<RetainerAutomationService>();
         services.AddSingleton<IRetainerAutomationService>(provider => provider.GetRequiredService<RetainerAutomationService>());
-
-        services.AddSingleton<ItemCancelAndSellService>();
-        services.AddSingleton<IItemCancelAndSellService>(provider => provider.GetRequiredService<ItemCancelAndSellService>());
-
-        services.AddSingleton<CancelAndSellAutomationService>();
-        services.AddSingleton<ICancelAndSellAutomationService>(provider => provider.GetRequiredService<CancelAndSellAutomationService>());
 
         services.AddSingleton<HybridAutomationService>();
         services.AddSingleton<IHybridAutomationService>(provider => provider.GetRequiredService<HybridAutomationService>());
@@ -48,7 +42,6 @@ public class RetainerAutomationFeature : IFeatureModule {
     }
 
     public void Initialize(IServiceProvider provider) {
-        provider.GetRequiredService<RetainerContextMenuService>();
         provider.GetRequiredService<IRetainerSwitcherService>();
     }
 }

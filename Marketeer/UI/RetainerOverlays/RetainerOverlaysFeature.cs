@@ -30,9 +30,6 @@ public class RetainerOverlaysFeature : IFeatureModule {
         services.AddSingleton<NativeRetainerListHighlighterService>();
         services.AddSingleton<NativeListingClickInterceptorService>();
 
-        // Menus contextuels
-        services.AddSingleton<RetainerContextMenuService>();
-
         // Injection de l'action dans la Sidebar du Shell
         services.AddSingleton<ISidebarAction, RetainerScanSidebarAction>();
     }
@@ -42,6 +39,5 @@ public class RetainerOverlaysFeature : IFeatureModule {
         provider.GetRequiredService<NativeListingHighlighterService>();
         provider.GetRequiredService<NativeRetainerListHighlighterService>();
         provider.GetRequiredService<NativeListingClickInterceptorService>();
-        provider.GetRequiredService<RetainerContextMenuService>();
     }
 }

@@ -36,7 +36,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private IRetainerGuidanceService guidanceService;
     private IKeyState keyState;
     private IPriceCalculationService priceCalculationService;
-    private IItemCancelAndSellService itemCancelAndSellService;
+    private IListingCancellationService cancellationService;
 
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
@@ -62,7 +62,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         IRetainerGuidanceService guidanceService,
         IKeyState keyState,
         IPriceCalculationService priceCalculationService,
-        IItemCancelAndSellService itemCancelAndSellService) {
+        IListingCancellationService cancellationService) {
 
         this.framework = framework;
         this.uiInteraction = uiInteraction;
@@ -78,7 +78,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.guidanceService = guidanceService;
         this.keyState = keyState;
         this.priceCalculationService = priceCalculationService;
-        this.itemCancelAndSellService = itemCancelAndSellService;
+        this.cancellationService = cancellationService;
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
@@ -271,8 +271,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.isFetchingPrice = false;
 
         var prices = fetchTask.Result.Where(p => p.ItemId == listing.ItemId).ToList();
-
-        // Delegate to the new pricing engine
         var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.PricePerUnit, prices);
 
         this.uiInteraction.CloseItemSearchResult();
@@ -280,7 +278,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         if (calcResult.Action == PricingAction.CancelListing) {
             this.logger.Info($"[HybridAutomation] Loss prevention triggered. Routing to cancellation for {listing.ItemName}.");
             this.uiInteraction.CloseUnexpectedWindows();
-            this.itemCancelAndSellService.TriggerCancelAndSell(listing.ItemId);
+            this.cancellationService.TriggerCancellation(listing.ItemId);
         }
         else if (calcResult.Action == PricingAction.KeepPrice) {
             this.logger.Info($"[HybridAutomation] Target price is identical or restricted. Keeping current price.");
@@ -296,7 +294,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         this.guidanceService.ClearInstruction();
 
-        // Properly resetting using the stable event-driven boolean flag
         this.IsActive = false;
         this.currentListing = null;
     }
