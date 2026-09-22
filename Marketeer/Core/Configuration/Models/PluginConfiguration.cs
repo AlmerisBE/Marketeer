@@ -34,7 +34,7 @@ public class PluginConfiguration : IPluginConfiguration {
     // Minimum Price (Loss) Settings
     public bool EnforceVendorPriceMinimum { get; set; } = true;
     public MinimumPriceBehavior LossBehavior { get; set; } = MinimumPriceBehavior.KeepCurrentPrice;
-    public InventoryPriority CancelInventoryPriority { get; set; } = InventoryPriority.RetainerFirst;
+    public InventoryPriority CancelInventoryPriority { get; set; } = InventoryPriority.PlayerFirst;
 
     // Fallback Settings (Empty Market)
     public FallbackPricingMode EmptyMarketFallbackMode { get; set; } = FallbackPricingMode.VendorSellMultiple;
