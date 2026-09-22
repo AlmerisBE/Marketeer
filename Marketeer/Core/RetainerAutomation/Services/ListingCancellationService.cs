@@ -1,8 +1,11 @@
 ﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using System;
 using System.Linq;
@@ -12,29 +15,39 @@ namespace Marketeer.Core.RetainerAutomation.Services;
 public class ListingCancellationService : IListingCancellationService, IDisposable {
     private IRetainerUiInteractionService uiInteraction;
     private IInventoryService inventoryService;
+    private IConfigurationService configService;
+    private IItemResolverService itemResolver;
     private ILocalizationService localization;
     private IFramework framework;
     private ILoggerService logger;
+    private INotificationService notificationService;
 
     private bool isActive;
     private int stateMachineIndex;
     private DateTime nextActionAt;
     private int targetUiIndex;
+    private uint currentItemId;
 
     public bool IsActive => this.isActive;
 
     public ListingCancellationService(
         IRetainerUiInteractionService uiInteraction,
         IInventoryService inventoryService,
+        IConfigurationService configService,
+        IItemResolverService itemResolver,
         ILocalizationService localization,
         IFramework framework,
-        ILoggerService logger) {
+        ILoggerService logger,
+        INotificationService notificationService) {
 
         this.uiInteraction = uiInteraction;
         this.inventoryService = inventoryService;
+        this.configService = configService;
+        this.itemResolver = itemResolver;
         this.localization = localization;
         this.framework = framework;
         this.logger = logger;
+        this.notificationService = notificationService;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
@@ -44,7 +57,7 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
 
         var normalizedItemId = itemId > 1000000u ? itemId - 1000000u : itemId;
         var marketSlots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
-        var targetSlot = marketSlots.FirstOrDefault(s => s.IsOccupied && (s.ItemId == itemId || s.ItemId == normalizedItemId || s.ItemId == normalizedItemId + 1000000u));
+        var targetSlot = marketSlots.FirstOrDefault(s => s.IsOccupied && (s.ItemId == itemId || s.ItemId == normalizedItemId));
 
         if (targetSlot == null) {
             this.logger.Warning($"[ListingCancellation] Could not find item ID {itemId} in retainer market inventory.");
@@ -58,6 +71,7 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
             return;
         }
 
+        this.currentItemId = itemId;
         this.isActive = true;
         this.stateMachineIndex = 0;
         this.nextActionAt = DateTime.Now.AddSeconds(0.2);
@@ -68,21 +82,35 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
 
         switch (this.stateMachineIndex) {
             case 0:
-                if (this.uiInteraction.IsAddonReady("RetainerSellList")) {
+                if (!this.uiInteraction.IsAddonReady("RetainerSell") && this.uiInteraction.IsAddonReady("RetainerSellList")) {
                     this.uiInteraction.SelectItemInSellList(this.targetUiIndex);
                     this.stateMachineIndex++;
-                    this.nextActionAt = DateTime.Now.AddSeconds(0.2);
+                    this.nextActionAt = DateTime.Now.AddSeconds(0.3);
                 }
                 break;
             case 1:
                 if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-                    var returnText = this.localization.Translate("RetainerMenu_ReturnToInventory");
+                    var config = this.configService.GetConfig();
+
+                    string translationKey = config.CancelInventoryPriority == InventoryPriority.RetainerFirst
+                        ? "RetainerMenu_ReturnToRetainer"
+                        : "RetainerMenu_ReturnToInventory";
+
+                    var returnText = this.localization.Translate(translationKey);
                     var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
 
-                    if (menuIndex == -1) menuIndex = 1;
+                    if (menuIndex == -1) {
+                        menuIndex = config.CancelInventoryPriority == InventoryPriority.RetainerFirst ? 1 : 2;
+                        this.logger.Warning($"[ListingCancellation] Context menu option not found. Using native fallback index {menuIndex}.");
+                    }
 
                     this.uiInteraction.SelectContextMenuItem(menuIndex);
-                    this.logger.Info("[ListingCancellation] Successfully executed cancellation.");
+
+                    string itemName = this.itemResolver.ResolveItemName(this.currentItemId) ?? $"Item #{this.currentItemId}";
+                    var format = this.localization.Translate("Notification_Cancellation_Success") ?? "{0} cancelled to prevent loss.";
+                    this.notificationService.ShowWarning("Marketeer", string.Format(format, itemName));
+
+                    this.logger.Info("[ListingCancellation] Cancellation executed successfully.");
                     this.isActive = false;
                 }
                 break;

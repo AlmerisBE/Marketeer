@@ -19,5 +19,10 @@
   "Config_AutomationDelayMin": "Min Delay (s)",
   "Config_AutomationDelayMax": "Max Delay (s)",
   "Config_AutoCloseMarketList": "Auto-close retainer market list after price update",
-  "Config_AutoCloseMarketListDelay": "Auto-close delay (s)"
+  "Config_AutoCloseMarketListDelay": "Auto-close delay (s)",
+  "Notification_Price_Updated": "{0} updated to {1:N0}g.",
+  "Notification_Price_Kept": "{0} price kept at {1:N0}g.",
+  "Notification_Price_TooLow": "Price too low for {0}. Click again to cancel.",
+  "Notification_Cancellation_Success": "{0} cancelled to prevent loss.",
+  "RetainerMenu_ReturnToRetainer": "Entrust to Retainer"
 }

@@ -23,6 +23,7 @@ public class PluginTests {
         var mockTextureProvider = Substitute.For<ITextureProvider>();
         var mockContextMenu = Substitute.For<IContextMenu>();
         var mockKeyState = Substitute.For<IKeyState>();
+        var mockNotificationManager = Substitute.For<INotificationManager>();
 
         // Mocking file paths to prevent NullReferenceException in ThemeRepository or configuration services
         var currentAssemblyLocation = Assembly.GetExecutingAssembly().Location;
@@ -43,7 +44,8 @@ public class PluginTests {
             mockAddonLifecycle,
             mockTextureProvider,
             mockContextMenu,
-            mockKeyState
+            mockKeyState,
+            mockNotificationManager
         ));
 
         Assert.Null(exception);

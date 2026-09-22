@@ -19,5 +19,10 @@
   "Config_AutomationDelayMin": "Min. Verzögerung (s)",
   "Config_AutomationDelayMax": "Max. Verzögerung (s)",
   "Config_AutoCloseMarketList": "Gehilfen-Marktliste nach Preisaktualisierung automatisch schließen",
-  "Config_AutoCloseMarketListDelay": "Schließverzögerung (s)"
+  "Config_AutoCloseMarketListDelay": "Schließverzögerung (s)",
+  "Notification_Price_Updated": "{0} auf {1:N0} Gil aktualisiert.",
+  "Notification_Price_Kept": "Preis von {0} bei {1:N0} Gil beibehalten.",
+  "Notification_Price_TooLow": "Preis zu niedrig für {0}. Erneut klicken zum Abbrechen.",
+  "Notification_Cancellation_Success": "Verkauf von {0} abgebrochen.",
+  "RetainerMenu_ReturnToRetainer": "Gehilfen geben"
 }

@@ -8,5 +8,6 @@ namespace Marketeer.Core.Logging;
 public class LoggingFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILoggerService, LoggerService>();
+        services.AddSingleton<INotificationService, NotificationService>();
     }
 }

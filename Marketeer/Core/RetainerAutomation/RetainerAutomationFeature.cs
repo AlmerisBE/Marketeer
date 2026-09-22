@@ -26,6 +26,8 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<IRetainerGuidanceService>(provider => provider.GetRequiredService<RetainerGuidanceService>());
         services.AddSingleton<IGuidanceInstructionProvider>(provider => provider.GetRequiredService<RetainerGuidanceService>());
 
+        services.AddSingleton<IListingActionResolverService, ListingActionResolverService>();
+
         services.AddSingleton<ListingCancellationService>();
         services.AddSingleton<IListingCancellationService>(provider => provider.GetRequiredService<ListingCancellationService>());
 

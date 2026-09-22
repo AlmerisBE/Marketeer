@@ -1,18 +1,11 @@
-﻿using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Game.ClientState.Keys;
-using Dalamud.Plugin.Services;
-using Marketeer.API.GameInterop.Contracts;
+﻿using Dalamud.Plugin.Services;
 using Marketeer.API.Universalis.Models;
-using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.RetainerAutomation.Contracts;
-using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using System;
 using System.Collections.Generic;
@@ -25,18 +18,13 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private IFramework framework;
     private IRetainerUiInteractionService uiInteraction;
     private IMarketPriceCacheService priceProvider;
-    private IItemResolverService itemResolver;
-    private IConfigurationService configService;
     private IObjectTable objectTable;
     private ILocalizationService localization;
-    private IAddonLifecycle addonLifecycle;
     private ILoggerService logger;
-    private IMarketListingProvider listingProvider;
     private IMarketListingTrackerService listingTracker;
     private IRetainerGuidanceService guidanceService;
-    private IKeyState keyState;
     private IPriceCalculationService priceCalculationService;
-    private IListingCancellationService cancellationService;
+    private INotificationService notificationService;
 
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
@@ -51,83 +39,42 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         IFramework framework,
         IRetainerUiInteractionService uiInteraction,
         IMarketPriceCacheService priceProvider,
-        IItemResolverService itemResolver,
-        IConfigurationService configService,
         IObjectTable objectTable,
         ILocalizationService localization,
-        IAddonLifecycle addonLifecycle,
         ILoggerService logger,
-        IMarketListingProvider listingProvider,
         IMarketListingTrackerService listingTracker,
         IRetainerGuidanceService guidanceService,
-        IKeyState keyState,
         IPriceCalculationService priceCalculationService,
-        IListingCancellationService cancellationService) {
+        INotificationService notificationService) {
 
         this.framework = framework;
         this.uiInteraction = uiInteraction;
         this.priceProvider = priceProvider;
-        this.itemResolver = itemResolver;
-        this.configService = configService;
         this.objectTable = objectTable;
         this.localization = localization;
-        this.addonLifecycle = addonLifecycle;
         this.logger = logger;
-        this.listingProvider = listingProvider;
         this.listingTracker = listingTracker;
         this.guidanceService = guidanceService;
-        this.keyState = keyState;
         this.priceCalculationService = priceCalculationService;
-        this.cancellationService = cancellationService;
+        this.notificationService = notificationService;
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
-        this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
-        this.addonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellSetup);
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
-    public void TriggerAdjustment() {
+    public void StartPriceUpdate(TrackedListing listing, nint addonAddress) {
         if (this.IsActive) return;
 
         this.IsActive = true;
-        this.isFetchingPrice = false;
+        this.currentListing = listing;
+        this.isFetchingPrice = true;
         this.sequenceStartTime = DateTime.Now;
         this.lastActionTime = DateTime.Now;
         this.searchResultOpenTime = DateTime.MinValue;
         this.priceFetchTask = null;
-        this.logger.Info("[HybridAutomation] Event-driven sequence armed by Click Interceptor.");
 
-        if (this.uiInteraction.IsAddonReady("ContextMenu")) this.HandleContextMenu();
-    }
-
-    private void HandleContextMenu() {
-        var adjustText = this.localization.Translate("RetainerMenu_AdjustPrice");
-        var index = this.uiInteraction.GetContextMenuItemIndex(adjustText);
-
-        if (index != -1) {
-            this.uiInteraction.SelectContextMenuItem(index);
-        }
-        else {
-            this.logger.Warning("[HybridAutomation] Target menu option not found. Safely aborting to prevent agent corruption.");
-            this.Abort();
-        }
-    }
-
-    private bool IsModifierPressed() {
-        var modifiers = this.configService.GetConfig().AutoSellModifierKey;
-        if (modifiers == ModifierKey.None) return false;
-
-        bool requiresCtrl = modifiers.HasFlag(ModifierKey.Ctrl);
-        bool requiresShift = modifiers.HasFlag(ModifierKey.Shift);
-        bool requiresAlt = modifiers.HasFlag(ModifierKey.Alt);
-
-        bool isCtrlPressed = this.keyState[VirtualKey.CONTROL];
-        bool isShiftPressed = this.keyState[VirtualKey.SHIFT];
-        bool isAltPressed = this.keyState[VirtualKey.MENU];
-
-        return requiresCtrl == isCtrlPressed &&
-               requiresShift == isShiftPressed &&
-               requiresAlt == isAltPressed;
+        this.logger.Info($"[HybridAutomation] Initiating new sale fetch for {listing.ItemName} (ID: {listing.ItemId}).");
+        this.uiInteraction.OpenComparePrices(addonAddress);
     }
 
     private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
@@ -140,85 +87,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                 this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, worldId, false);
             }
         }
-    }
-
-    private void OnContextMenuSetup(AddonEvent type, AddonArgs args) {
-        this.EvaluateContextMenuSetup();
-    }
-
-    public void EvaluateContextMenuSetup() {
-        if (!this.IsActive || this.currentListing != null) return;
-        this.HandleContextMenu();
-    }
-
-    private void OnRetainerSellSetup(AddonEvent type, AddonArgs args) {
-        this.EvaluateRetainerSellSetup(args.Addon.Address);
-    }
-
-    public void EvaluateRetainerSellSetup(nint addonAddress) {
-        if (!this.IsActive && this.IsModifierPressed()) {
-            this.IsActive = true;
-            this.sequenceStartTime = DateTime.Now;
-            this.logger.Info("[HybridAutomation] Modifier held during native RetainerSell open. Arming new sale sequence.");
-        }
-
-        if (!this.IsActive || this.isFetchingPrice) return;
-
-        if (!this.uiInteraction.GetActiveRetainerSellItemData(out var texts, out var originalPrice)) {
-            this.logger.Error("[HybridAutomation] Could not read item data from RetainerSell nodes.");
-            this.Abort();
-            return;
-        }
-
-        var activeListings = this.listingProvider.GetActiveRetainerListings();
-        var matchedListing = activeListings.FirstOrDefault(l => {
-            var normalizedName = System.Text.RegularExpressions.Regex.Replace(l.ItemName, @"\s+", " ").Trim();
-            return texts.Any(t => string.Equals(t, normalizedName, StringComparison.InvariantCultureIgnoreCase)) && l.PricePerUnit == originalPrice;
-        });
-
-        if (matchedListing == null) {
-            matchedListing = activeListings.FirstOrDefault(l => {
-                var normalizedName = System.Text.RegularExpressions.Regex.Replace(l.ItemName, @"\s+", " ").Trim();
-                return texts.Any(t => t.Contains(normalizedName, StringComparison.InvariantCultureIgnoreCase));
-            });
-        }
-
-        if (matchedListing != null) {
-            this.currentListing = matchedListing;
-        }
-        else {
-            uint resolvedItemId = 0;
-            string resolvedName = string.Empty;
-
-            foreach (var text in texts) {
-                var id = this.itemResolver.ResolveItemId(text);
-                if (id > 0) {
-                    resolvedItemId = id;
-                    resolvedName = text;
-                    break;
-                }
-            }
-
-            if (resolvedItemId == 0) {
-                this.logger.Error("[HybridAutomation] Could not resolve Item ID for new sale.");
-                this.Abort();
-                return;
-            }
-
-            this.currentListing = new TrackedListing {
-                ItemId = resolvedItemId,
-                ItemName = resolvedName,
-                PricePerUnit = originalPrice,
-                AssociatedRetainerId = this.listingProvider.GetActiveRetainerId() ?? 0
-            };
-            this.logger.Info($"[HybridAutomation] Initiating new sale fetch for {resolvedName} (ID: {resolvedItemId}).");
-        }
-
-        this.uiInteraction.OpenComparePrices(addonAddress);
-        this.isFetchingPrice = true;
-        this.lastActionTime = DateTime.Now;
-        this.searchResultOpenTime = DateTime.MinValue;
-        this.priceFetchTask = null;
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -276,13 +144,18 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.uiInteraction.CloseItemSearchResult();
 
         if (calcResult.Action == PricingAction.CancelListing) {
-            this.logger.Info($"[HybridAutomation] Loss prevention triggered. Routing to cancellation for {listing.ItemName}.");
+            this.logger.Info($"[HybridAutomation] Live fetch indicates loss. Keeping price to allow manual cancellation on next click.");
             this.uiInteraction.CloseUnexpectedWindows();
-            this.cancellationService.TriggerCancellation(listing.ItemId);
+
+            var format = this.localization.Translate("Notification_Price_TooLow") ?? "Price too low for {0}. Click again to cancel.";
+            this.notificationService.ShowWarning("Marketeer", string.Format(format, listing.ItemName));
         }
         else if (calcResult.Action == PricingAction.KeepPrice) {
             this.logger.Info($"[HybridAutomation] Target price is identical or restricted. Keeping current price.");
             this.uiInteraction.CloseUnexpectedWindows();
+
+            var format = this.localization.Translate("Notification_Price_Kept") ?? "{0} price kept at {1:N0}g.";
+            this.notificationService.ShowWarning("Marketeer", string.Format(format, listing.ItemName, calcResult.CalculatedPrice));
         }
         else {
             this.uiInteraction.SetPriceAndConfirm(calcResult.CalculatedPrice);
@@ -290,10 +163,12 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                 this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, calcResult.CalculatedPrice);
             }
             this.logger.Info($"[HybridAutomation] Price natively updated to {calcResult.CalculatedPrice}.");
+
+            var format = this.localization.Translate("Notification_Price_Updated") ?? "{0} updated to {1:N0}g.";
+            this.notificationService.ShowSuccess("Marketeer", string.Format(format, listing.ItemName, calcResult.CalculatedPrice));
         }
 
         this.guidanceService.ClearInstruction();
-
         this.IsActive = false;
         this.currentListing = null;
     }
@@ -307,8 +182,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
     public void Dispose() {
         this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
-        this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "ContextMenu", this.OnContextMenuSetup);
-        this.addonLifecycle.UnregisterListener(AddonEvent.PostSetup, "RetainerSell", this.OnRetainerSellSetup);
         this.framework.Update -= this.OnFrameworkUpdate;
     }
 }

@@ -19,5 +19,10 @@
   "Config_AutomationDelayMin": "最小遅延（秒）",
   "Config_AutomationDelayMax": "最大遅延（秒）",
   "Config_AutoCloseMarketList": "価格調整後にリテイナーの出品一覧を自動で閉じる",
-  "Config_AutoCloseMarketListDelay": "自動で閉じるまでの遅延（秒）"
+  "Config_AutoCloseMarketListDelay": "自動で閉じるまでの遅延（秒）",
+  "Notification_Price_Updated": "{0}の価格を{1:N0}ギルに更新しました。",
+  "Notification_Price_Kept": "{0}の価格（{1:N0}ギル）を維持しました。",
+  "Notification_Price_TooLow": "{0}の価格が低すぎます。もう一度クリックして出品を取り下げてください。",
+  "Notification_Cancellation_Success": "{0}の出品を取り下げました。",
+  "RetainerMenu_ReturnToRetainer": "リテイナーに預ける"
 }
