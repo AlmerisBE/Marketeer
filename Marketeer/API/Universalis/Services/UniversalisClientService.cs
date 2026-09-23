@@ -50,9 +50,7 @@ public class UniversalisClientService : IUniversalisClient {
                     var multiData = JsonSerializer.Deserialize<UniversalisMultiResponse>(content);
                     if (multiData?.Items != null) {
                         foreach (var id in batch) {
-                            if (multiData.Items.TryGetValue(id, out var data)) {
-                                this.ExtractLowestPrices(data, id, results);
-                            }
+                            if (multiData.Items.TryGetValue(id, out var data)) this.ExtractLowestPrices(data, id, results);
                         }
                     }
                 }
@@ -65,13 +63,18 @@ public class UniversalisClientService : IUniversalisClient {
         return results;
     }
 
-    private void ExtractLowestPrices(UniversalisResponse? data, uint itemId, List<LowestPriceResult> results) {
-        if (data != null && data.Listings != null && data.Listings.Count > 0) {
-            var lowestNq = data.Listings.Where(l => !l.IsHq).OrderBy(l => l.PricePerUnit).FirstOrDefault();
-            var lowestHq = data.Listings.Where(l => l.IsHq).OrderBy(l => l.PricePerUnit).FirstOrDefault();
-
-            if (lowestNq != null) results.Add(new LowestPriceResult { ItemId = itemId, Price = lowestNq.PricePerUnit, RetainerName = lowestNq.RetainerName, IsHq = false });
-            if (lowestHq != null) results.Add(new LowestPriceResult { ItemId = itemId, Price = lowestHq.PricePerUnit, RetainerName = lowestHq.RetainerName, IsHq = true });
+    private void ExtractLowestPrices(UniversalisResponse? data, uint baseItemId, List<LowestPriceResult> results) {
+        if (data != null && data.Listings != null) {
+            foreach (var listing in data.Listings) {
+                // Reconstruct the in-game ItemID by adding the HQ offset if necessary
+                uint actualItemId = listing.IsHq ? baseItemId + 1000000u : baseItemId;
+                results.Add(new LowestPriceResult {
+                    ItemId = actualItemId,
+                    Price = listing.PricePerUnit,
+                    RetainerName = listing.RetainerName ?? string.Empty,
+                    IsHq = listing.IsHq
+                });
+            }
         }
     }
 }

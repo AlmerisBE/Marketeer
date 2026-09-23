@@ -30,10 +30,22 @@ public class PriceCalculationService : IPriceCalculationService {
         var competitors = activeListings.Where(l => !ownRetainers.Contains(l.RetainerName)).OrderBy(l => l.Price).ToList();
 
         if (competitors.Count == 0) {
-            result.CalculatedPrice = this.CalculateFallbackPrice(activeListings, vendorSellPrice, vendorBuyPrice, config);
-            if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
-                result.Action = lossAction;
-                if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
+            if (currentPrice > 0) {
+                // We have a monopoly and the item is already listed. Keep the current price instead of forcing fallback.
+                result.CalculatedPrice = currentPrice;
+                result.Action = PricingAction.KeepPrice;
+            }
+            else if (activeListings.Count > 0) {
+                // New sale, but we already have a monopoly with other retainers. Match our own lowest price.
+                result.CalculatedPrice = activeListings.Min(l => l.Price);
+            }
+            else {
+                // Brand new sale, market is entirely empty.
+                result.CalculatedPrice = this.CalculateFallbackPrice(activeListings, vendorSellPrice, vendorBuyPrice, config);
+                if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
+                    result.Action = lossAction;
+                    if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
+                }
             }
             return result;
         }

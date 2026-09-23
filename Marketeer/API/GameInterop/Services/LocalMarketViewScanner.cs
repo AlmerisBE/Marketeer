@@ -113,7 +113,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
         }
     }
 
-    private unsafe void ExtractListingsFromComponent(AtkUldManager* uldManager, uint itemId, List<LowestPriceResult> results) {
+    private unsafe void ExtractListingsFromComponent(AtkUldManager* uldManager, uint baseItemId, List<LowestPriceResult> results) {
         if (uldManager == null) return;
 
         for (int i = 0; i < uldManager->NodeListCount; i++) {
@@ -134,9 +134,8 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
                         if (childNode->Type == NodeType.Text) {
                             var textNode = (AtkTextNode*)childNode;
-
-                            // CORRECTION: Cast to byte* then nint
-                            var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr);
+                            var ptr = (byte*)textNode->NodeText.StringPtr;
+                            var text = this.ExtractString((nint)ptr);
 
                             if (!string.IsNullOrWhiteSpace(text)) textNodes.Add((this.GetAbsoluteX((nint)childNode), text));
                         }
@@ -152,8 +151,10 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                         var retainerName = textNodes.Last().Text.Trim();
 
                         if (uint.TryParse(priceStr, out var price) && !string.IsNullOrWhiteSpace(retainerName)) {
+                            // Ensure local scraped prices also match the universal +1M offset for HQ items
+                            uint actualItemId = isHq ? baseItemId + 1000000u : baseItemId;
                             results.Add(new LowestPriceResult {
-                                ItemId = itemId,
+                                ItemId = actualItemId,
                                 Price = price,
                                 RetainerName = retainerName,
                                 IsHq = isHq
@@ -161,7 +162,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                         }
                     }
 
-                    this.ExtractListingsFromComponent(&rowComponent->UldManager, itemId, results);
+                    this.ExtractListingsFromComponent(&rowComponent->UldManager, baseItemId, results);
                 }
             }
         }

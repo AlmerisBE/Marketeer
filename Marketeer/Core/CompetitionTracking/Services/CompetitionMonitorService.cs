@@ -111,7 +111,11 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         Task.Run(async () => {
             var allCharacters = this.retainerState.GetAllCharactersListings();
             var worldId = allCharacters.FirstOrDefault(c => c.Listings.Any(l => l.ItemId == itemId))?.HomeWorldId ?? 0;
-            if (worldId > 0) await this.priceProvider.ForceRefreshAsync(new[] { itemId }, worldId);
+            if (worldId > 0) {
+                // Ensure we query the provider using the base item ID
+                uint baseItemId = itemId > 1000000u ? itemId - 1000000u : itemId;
+                await this.priceProvider.ForceRefreshAsync(new[] { baseItemId }, worldId);
+            }
         });
     }
 
@@ -119,7 +123,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
     public async Task CheckUndercutsAsync() {
         if (this.isChecking) return;
-
         this.isChecking = true;
 
         try {
@@ -130,14 +133,16 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
             foreach (var character in initialCharacters) {
                 if (!character.Listings.Any()) continue;
 
-                var itemIds = character.Listings.Select(listing => listing.ItemId).Distinct();
-                var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, character.HomeWorldId, bypassCache: false);
+                // Strip HQ offset to query Universalis properly
+                var baseItemIds = character.Listings.Select(listing => listing.ItemId > 1000000u ? listing.ItemId - 1000000u : listing.ItemId).Distinct();
+                var lowestPrices = await this.priceProvider.GetLowestPricesAsync(baseItemIds, character.HomeWorldId, bypassCache: false);
 
                 var liveCharacters = this.retainerState.GetAllCharactersListings();
                 var liveCharacter = liveCharacters.FirstOrDefault(c => c.CharacterName == character.CharacterName && c.HomeWorldId == character.HomeWorldId);
                 if (liveCharacter == null) continue;
 
                 foreach (var listing in liveCharacter.Listings) {
+                    // Match the exact ItemID (HQ matches HQ perfectly because UniversalisClientService added the offset back)
                     var itemPrices = lowestPrices.Where(price => price.ItemId == listing.ItemId).ToList();
 
                     var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.CurrentPrice, itemPrices);
