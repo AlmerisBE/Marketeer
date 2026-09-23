@@ -43,5 +43,8 @@
   "Config_FallbackMode_MaxListingPrice": "Maximum Listing Price",
   "Config_FallbackMode_VendorSellMultiple": "Multiple of Vendor Sell Price",
   "Config_FallbackMode_VendorBuyMultiple": "Multiple of Vendor Buy Price",
-  "Config_FallbackMultiplier": "Fallback Price Multiplier"
+  "Config_FallbackMultiplier": "Fallback Price Multiplier",
+  "Config_CancelPriority_Label": "Cancelled Items Target",
+  "Config_CancelPriority_PlayerFirst": "Player Inventory",
+  "Config_CancelPriority_RetainerFirst": "Retainer Inventory"
 }

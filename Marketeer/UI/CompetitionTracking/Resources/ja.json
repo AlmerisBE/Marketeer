@@ -43,5 +43,8 @@
   "Config_FallbackMode_MaxListingPrice": "最高出品価格",
   "Config_FallbackMode_VendorSellMultiple": "店売り価格の倍数",
   "Config_FallbackMode_VendorBuyMultiple": "店買い価格の倍数",
-  "Config_FallbackMultiplier": "フォールバック倍率"
+  "Config_FallbackMultiplier": "フォールバック倍率",
+  "Config_CancelPriority_Label": "出品取り消し後の戻し先",
+  "Config_CancelPriority_PlayerFirst": "プレイヤーの所持品",
+  "Config_CancelPriority_RetainerFirst": "リテイナーの所持品"
 }

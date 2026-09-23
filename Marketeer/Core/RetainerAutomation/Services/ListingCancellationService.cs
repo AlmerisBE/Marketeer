@@ -74,7 +74,7 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
         this.currentItemId = itemId;
         this.isActive = true;
         this.stateMachineIndex = 0;
-        this.nextActionAt = DateTime.Now.AddSeconds(0.2);
+        this.nextActionAt = DateTime.Now.AddSeconds(0.1);
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -82,37 +82,39 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
 
         switch (this.stateMachineIndex) {
             case 0:
-                if (!this.uiInteraction.IsAddonReady("RetainerSell") && this.uiInteraction.IsAddonReady("RetainerSellList")) {
-                    this.uiInteraction.SelectItemInSellList(this.targetUiIndex);
-                    this.stateMachineIndex++;
-                    this.nextActionAt = DateTime.Now.AddSeconds(0.3);
+                if (this.uiInteraction.IsAddonReady("ContextMenu")) {
+                    this.stateMachineIndex = 1;
+                    this.nextActionAt = DateTime.Now.AddSeconds(0.1);
+                }
+                else {
+                    this.uiInteraction.CloseUnexpectedWindows(); // Ensure RetainerSell is closed
+                    this.uiInteraction.OpenContextMenuForSellList(this.targetUiIndex);
+                    this.stateMachineIndex = 1;
+                    this.nextActionAt = DateTime.Now.AddSeconds(0.3); // Wait for menu to open
                 }
                 break;
             case 1:
-                if (this.uiInteraction.IsAddonReady("ContextMenu")) {
-                    var config = this.configService.GetConfig();
+                var config = this.configService.GetConfig();
+                string translationKey = config.CancelInventoryPriority == InventoryPriority.PlayerFirst
+                    ? "RetainerMenu_ReturnToInventory"
+                    : "RetainerMenu_ReturnToRetainer";
 
-                    string translationKey = config.CancelInventoryPriority == InventoryPriority.RetainerFirst
-                        ? "RetainerMenu_ReturnToRetainer"
-                        : "RetainerMenu_ReturnToInventory";
+                var returnText = this.localization.Translate(translationKey);
+                var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
 
-                    var returnText = this.localization.Translate(translationKey);
-                    var menuIndex = this.uiInteraction.GetContextMenuItemIndex(returnText);
-
-                    if (menuIndex == -1) {
-                        menuIndex = config.CancelInventoryPriority == InventoryPriority.RetainerFirst ? 1 : 2;
-                        this.logger.Warning($"[ListingCancellation] Context menu option not found. Using native fallback index {menuIndex}.");
-                    }
-
-                    this.uiInteraction.SelectContextMenuItem(menuIndex);
-
-                    string itemName = this.itemResolver.ResolveItemName(this.currentItemId) ?? $"Item #{this.currentItemId}";
-                    var format = this.localization.Translate("Notification_Cancellation_Success") ?? "{0} cancelled to prevent loss.";
-                    this.notificationService.ShowWarning("Marketeer", string.Format(format, itemName));
-
-                    this.logger.Info("[ListingCancellation] Cancellation executed successfully.");
-                    this.isActive = false;
+                if (menuIndex == -1) {
+                    menuIndex = config.CancelInventoryPriority == InventoryPriority.PlayerFirst ? 1 : 2;
+                    this.logger.Warning($"[ListingCancellation] Context menu option not found. Using native fallback index {menuIndex}.");
                 }
+
+                this.uiInteraction.SelectContextMenuItem(menuIndex);
+
+                string itemName = this.itemResolver.ResolveItemName(this.currentItemId) ?? $"Item #{this.currentItemId}";
+                var format = this.localization.Translate("Notification_Cancellation_Success") ?? "{0} cancelled to prevent loss.";
+                this.notificationService.ShowWarning("Marketeer", string.Format(format, itemName));
+
+                this.logger.Info("[ListingCancellation] Cancellation executed successfully.");
+                this.isActive = false;
                 break;
         }
     }

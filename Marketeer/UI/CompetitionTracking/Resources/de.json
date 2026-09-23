@@ -43,5 +43,8 @@
   "Config_FallbackMode_MaxListingPrice": "Maximaler Angebotspreis",
   "Config_FallbackMode_VendorSellMultiple": "Vielfaches des Händler-Verkaufspreises",
   "Config_FallbackMode_VendorBuyMultiple": "Vielfaches des Händler-Einkaufspreises",
-  "Config_FallbackMultiplier": "Fallback-Multiplikator"
+  "Config_FallbackMultiplier": "Fallback-Multiplikator",
+  "Config_CancelPriority_Label": "Ziel für abgebrochene Verkäufe",
+  "Config_CancelPriority_PlayerFirst": "Spieler-Inventar",
+  "Config_CancelPriority_RetainerFirst": "Gehilfen-Inventar"
 }

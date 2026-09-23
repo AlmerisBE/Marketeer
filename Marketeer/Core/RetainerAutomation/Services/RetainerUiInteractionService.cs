@@ -8,6 +8,8 @@ using Marketeer.Core.RetainerAutomation.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Marketeer.Core.RetainerAutomation.Services;
@@ -28,40 +30,55 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         if (addonPtr.Address == IntPtr.Zero) return false;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-        return addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded;
+
+        return addon->IsVisible && addon->UldManager.NodeListCount > 0;
     }
 
     public bool IsRetainerAvailable(string retainerName) {
         if (!this.IsAddonReady("RetainerList")) return false;
 
-        var window = this.windowService.GetWindow("RetainerList");
-        if (window == null || !window.IsVisible) return false;
+        var manager = FFXIVClientStructs.FFXIV.Client.Game.RetainerManager.Instance();
+        if (manager == null) return false;
 
-        var pattern = $@"(?:^|\|\s*){Regex.Escape(retainerName)}$";
-        return window.GetElements()
-            .Where(e => e.Type == NativeUiElementType.Button && e.Text.Contains(" | "))
-            .Any(e => Regex.IsMatch(e.Text, pattern, RegexOptions.IgnoreCase));
+        for (uint i = 0; i < 10; i++) {
+            var retainer = manager->GetRetainerBySortedIndex(i);
+
+            if (retainer != null && retainer->RetainerId != 0) {
+                var nameSpan = retainer->Name;
+                var nullIndex = nameSpan.IndexOf((byte)0);
+                var actualSpan = nullIndex >= 0 ? nameSpan[..nullIndex] : nameSpan;
+                var name = Encoding.UTF8.GetString(actualSpan);
+
+                if (name.Equals(retainerName, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+        }
+
+        return false;
     }
 
     public bool SelectRetainer(string retainerName) {
         if (!this.IsAddonReady("RetainerList")) return false;
 
-        var window = this.windowService.GetWindow("RetainerList");
-        if (window == null || !window.IsVisible) return false;
+        var manager = FFXIVClientStructs.FFXIV.Client.Game.RetainerManager.Instance();
+        if (manager == null) return false;
 
-        var elements = window.GetElements().ToList();
-        var retainerRows = elements
-            .Where(e => e.Type == NativeUiElementType.Button && e.Text.Contains(" | "))
-            .ToList();
+        for (uint i = 0; i < 10; i++) {
+            var retainer = manager->GetRetainerBySortedIndex(i);
 
-        var pattern = $@"(?:^|\|\s*){Regex.Escape(retainerName)}$";
-        var targetRetainer = retainerRows.FirstOrDefault(e => Regex.IsMatch(e.Text, pattern, RegexOptions.IgnoreCase));
+            if (retainer != null && retainer->RetainerId != 0) {
+                var nameSpan = retainer->Name;
+                var nullIndex = nameSpan.IndexOf((byte)0);
+                var actualSpan = nullIndex >= 0 ? nameSpan[..nullIndex] : nameSpan;
+                var name = Encoding.UTF8.GetString(actualSpan);
 
-        if (targetRetainer == null) return false;
+                if (name.Equals(retainerName, StringComparison.OrdinalIgnoreCase)) {
+                    this.SelectRetainer((int)i);
+                    return true;
+                }
+            }
+        }
 
-        var retainerIndex = retainerRows.IndexOf(targetRetainer);
-        this.SelectRetainer(retainerIndex);
-        return true;
+        return false;
     }
 
     public void SelectRetainer(int index) {
@@ -175,22 +192,19 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         var listener = (AtkEventListener*)listenerAddr;
 
-        // Allocation native conforme à la structure AtkEvent de FFXIV
-        var eventData = System.Runtime.InteropServices.Marshal.AllocHGlobal(0x40);
-        for (var i = 0; i < 0x40; i++) System.Runtime.InteropServices.Marshal.WriteByte(eventData, i, 0);
+        var eventData = Marshal.AllocHGlobal(0x40);
+        for (var i = 0; i < 0x40; i++) Marshal.WriteByte(eventData, i, 0);
 
-        // Offset 0x08: Target AtkResNode/AtkComponentNode
-        System.Runtime.InteropServices.Marshal.WriteIntPtr(eventData, 0x8, new IntPtr(targetNode));
-        // Offset 0x10: Listener/Owner Addon Pointer (AtkUnitBase)
-        System.Runtime.InteropServices.Marshal.WriteIntPtr(eventData, 0x10, listenerAddr);
+        Marshal.WriteIntPtr(eventData, 0x8, new IntPtr(targetNode));
+        Marshal.WriteIntPtr(eventData, 0x10, listenerAddr);
 
-        var eventParamData = System.Runtime.InteropServices.Marshal.AllocHGlobal(0x40);
-        for (var i = 0; i < 0x40; i++) System.Runtime.InteropServices.Marshal.WriteByte(eventParamData, i, 0);
+        var eventParamData = Marshal.AllocHGlobal(0x40);
+        for (var i = 0; i < 0x40; i++) Marshal.WriteByte(eventParamData, i, 0);
 
         listener->ReceiveEvent((AtkEventType)eventType, (int)eventParam, (AtkEvent*)eventData, (AtkEventData*)eventParamData);
 
-        System.Runtime.InteropServices.Marshal.FreeHGlobal(eventData);
-        System.Runtime.InteropServices.Marshal.FreeHGlobal(eventParamData);
+        Marshal.FreeHGlobal(eventData);
+        Marshal.FreeHGlobal(eventParamData);
     }
 
     public unsafe bool GetActiveRetainerSellItemData(out List<string> windowTexts, out uint currentPrice) {
@@ -200,20 +214,19 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addonPtr = this.gameGui.GetAddonByName("RetainerSell");
         if (addonPtr.Address == IntPtr.Zero) return false;
 
-        var addon = (FFXIVClientStructs.FFXIV.Component.GUI.AtkUnitBase*)addonPtr.Address;
+        var addon = (AtkUnitBase*)addonPtr.Address;
         if (!addon->IsVisible) return false;
 
         for (int i = 0; i < addon->UldManager.NodeListCount; i++) {
             var node = addon->UldManager.NodeList[i];
-            if (node != null && node->Type == FFXIVClientStructs.FFXIV.Component.GUI.NodeType.Text && node->IsVisible()) {
-                var textNode = (FFXIVClientStructs.FFXIV.Component.GUI.AtkTextNode*)node;
-
-                // Explictly cast Dawntrail's CStringPointer to byte* for unmanaged string reading
+            if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
+                var textNode = (AtkTextNode*)node;
                 var ptr = (byte*)textNode->NodeText.StringPtr;
+
                 if (ptr != null) {
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (!string.IsNullOrWhiteSpace(text)) {
-                        var cleanText = System.Text.RegularExpressions.Regex.Replace(text.Replace("\uE03C", "").Replace("", ""), @"\s+", " ").Trim();
+                        var cleanText = Regex.Replace(text.Replace("\uE03C", "").Replace("", ""), @"\s+", " ").Trim();
                         windowTexts.Add(cleanText);
                     }
                 }
@@ -223,8 +236,8 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         if (addon->UldManager.NodeListCount > 15) {
             var priceNode = addon->UldManager.NodeList[15];
             if (priceNode != null && (ushort)priceNode->Type >= 1000) {
-                var compNode = (FFXIVClientStructs.FFXIV.Component.GUI.AtkComponentNode*)priceNode;
-                var numericInput = (FFXIVClientStructs.FFXIV.Component.GUI.AtkComponentNumericInput*)compNode->Component;
+                var compNode = (AtkComponentNode*)priceNode;
+                var numericInput = (AtkComponentNumericInput*)compNode->Component;
                 if (numericInput != null) currentPrice = (uint)numericInput->Value;
             }
         }
@@ -239,8 +252,6 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addon = (AtkUnitBase*)targetAddonAddr;
         if (!addon->IsVisible) return;
 
-        // Bypassing unreliable FFXIVClientStructs property mapping for the ComparePrices button.
-        // Firing the direct callback (Action ID: 4) guarantees the window opens.
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
         values[0].Int = 4;
@@ -256,7 +267,6 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         var addon = (AddonRetainerSell*)addonPtr.Address;
 
-        // Apply price text visually
         if (addon->AtkUnitBase.UldManager.NodeListCount > 15) {
             var priceNode = addon->AtkUnitBase.UldManager.NodeList[15];
             if (priceNode != null && (ushort)priceNode->Type >= 1000) {
@@ -266,7 +276,6 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             }
         }
 
-        // Send the value update via callback
         var values = stackalloc AtkValue[2];
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
@@ -274,12 +283,10 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         values[1].UInt = newPrice;
         addon->AtkUnitBase.FireCallback(2u, values, true);
 
-        // Native confirm click targeting the component owner node
         if (addon->Confirm != null && addon->Confirm->AtkComponentBase.OwnerNode != null) {
             this.SendNativeClick(addonPtr.Address, 2, 21, addon->Confirm->AtkComponentBase.OwnerNode);
         }
         else {
-            // Failsafe: Direct callback if Confirm struct is unmapped in future updates
             var confirmValues = stackalloc AtkValue[1];
             confirmValues[0].Type = AtkValueType.Int;
             confirmValues[0].Int = 0;
@@ -295,20 +302,18 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var addonPtr = this.gameGui.GetAddonByName("ItemSearchResult");
         if (addonPtr.Address == IntPtr.Zero) return;
 
-        var addon = (FFXIVClientStructs.FFXIV.Component.GUI.AtkUnitBase*)addonPtr.Address;
+        var addon = (AtkUnitBase*)addonPtr.Address;
         if (!addon->IsVisible) return;
 
-        // Failsafe callback to cleanly interrupt any pending operations on the window
-        var values = stackalloc FFXIVClientStructs.FFXIV.Component.GUI.AtkValue[1];
-        values[0].Type = FFXIVClientStructs.FFXIV.Component.GUI.AtkValueType.Int;
+        var values = stackalloc AtkValue[1];
+        values[0].Type = AtkValueType.Int;
         values[0].Int = -1;
         addon->FireCallback(1u, values, true);
 
-        // Forcibly instruct the UI Manager to unload and close the addon
         addon->Close(true);
     }
 
-    public void SelectItemInSellList(int uiIndex) {
+    public unsafe void OpenContextMenuForSellList(int uiIndex) {
         var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
         if (addonPtr.Address == IntPtr.Zero) return;
 
@@ -316,23 +321,26 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
         var values = stackalloc AtkValue[3];
 
         values[0].Type = AtkValueType.Int;
-        values[0].Int = 0;
+        values[0].Int = 1;
         values[1].Type = AtkValueType.Int;
         values[1].Int = uiIndex;
         values[2].Type = AtkValueType.Int;
         values[2].Int = 0;
 
-        this.logger.Debug($"[RetainerUiInteractionService] Firing Event ID 0 on RetainerSellList at UI index {uiIndex}.");
+        this.logger.Debug($"[RetainerUiInteractionService] Firing Event ID 1 (ContextMenu) on RetainerSellList at UI index {uiIndex}.");
         addon->FireCallback(3u, values, true);
     }
 
     public int GetContextMenuItemIndex(string localizedText) {
+        return this.GetContextMenuItemIndex(new[] { localizedText });
+    }
+
+    public int GetContextMenuItemIndex(IEnumerable<string> localizedTexts) {
         var addonPtr = this.gameGui.GetAddonByName("ContextMenu");
         if (addonPtr.Address == IntPtr.Zero) return -1;
 
         var addon = (AtkUnitBase*)addonPtr.Address;
-
-        var searchString = localizedText.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
+        var normalizedSearches = localizedTexts.Select(t => t.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim()).ToList();
 
         for (int i = 8; i < addon->AtkValuesCount; i++) {
             var type = (int)addon->AtkValues[i].Type;
@@ -343,8 +351,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
                     var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
                     if (text != null) {
                         var normalizedText = text.Replace("'", "").Replace("’", "").ToLowerInvariant().Trim();
-
-                        if (normalizedText.Contains(searchString)) return i - 8;
+                        if (normalizedSearches.Any(s => normalizedText.Contains(s))) return i - 8;
                     }
                 }
             }
@@ -361,17 +368,12 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         values[0].Type = AtkValueType.Int;
         values[0].Int = 0;
-
-        // This index must be 0-based (0 = first item, 1 = second item, etc.)
         values[1].Type = AtkValueType.Int;
         values[1].Int = index;
-
         values[2].Type = AtkValueType.UInt;
         values[2].UInt = 0u;
-
         values[3].Type = AtkValueType.Int;
         values[3].Int = 0;
-
         values[4].Type = AtkValueType.Int;
         values[4].Int = 0;
 
@@ -423,5 +425,35 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
             values[0].Int = 0;
             addon->FireCallback(1u, values, true);
         }
+    }
+
+    public unsafe string? GetRetainerSellListItemName(int index) {
+        var addonPtr = this.gameGui.GetAddonByName("RetainerSellList");
+        if (addonPtr.Address == IntPtr.Zero) return null;
+
+        var addon = (AtkUnitBase*)addonPtr.Address;
+        if (!addon->IsVisible) return null;
+
+        var listNode = addon->UldManager.SearchNodeById(11);
+        if (listNode == null || listNode->Type != NodeType.Component) return null;
+
+        var listComponent = (AtkComponentList*)((AtkComponentNode*)listNode)->Component;
+        if (listComponent == null) return null;
+
+        if (index < 0 || index >= listComponent->ListLength) return null;
+
+        var renderer = listComponent->ItemRendererList[index].AtkComponentListItemRenderer;
+        if (renderer == null) return null;
+
+        var textNode = (AtkTextNode*)renderer->AtkComponentButton.AtkComponentBase.UldManager.SearchNodeById(3);
+        if (textNode == null) return null;
+
+        var ptr = (byte*)textNode->NodeText.StringPtr;
+        if (ptr == null) return null;
+
+        var text = MemoryHelper.ReadSeStringNullTerminated((nint)ptr).TextValue;
+        if (string.IsNullOrWhiteSpace(text)) return null;
+
+        return Regex.Replace(text.Replace("\uE03C", "").Replace("", ""), @"\s+", " ").Trim();
     }
 }

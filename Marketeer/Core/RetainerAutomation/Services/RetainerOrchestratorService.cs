@@ -12,6 +12,8 @@ using System.Collections.Generic;
 namespace Marketeer.Core.RetainerAutomation.Services;
 
 public class RetainerOrchestratorService : IRetainerOrchestratorService, IDisposable {
+    private const double RetainerAvailabilityDelay = 5.0;
+
     private IFramework framework;
     private IRetainerUiInteractionService uiInteractionService;
     private INativeWindowService windowService;
@@ -29,6 +31,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
     private DateTime actionAvailableAt;
     private DateTime timeoutAt;
+    private DateTime stepEnteredAt;
 
     public bool IsActive { get; private set; }
 
@@ -63,21 +66,15 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         }
 
         this.retainerQueue = new Queue<string>(retainerNames);
-        if (this.retainerQueue.Count == 0) {
-            return;
-        }
+        if (this.retainerQueue.Count == 0) return;
 
         this.currentTargetMenu = targetMenu;
         this.currentTask = task;
         this.IsActive = true;
         this.logger.Info($"Starting Retainer Orchestration for {this.retainerQueue.Count} retainers. Target Menu: {targetMenu}.");
 
-        if (!this.uiInteractionService.IsAddonReady("RetainerList")) {
-            this.SetState(OrchestrationStep.OpenBell, 0);
-        }
-        else {
-            this.AdvanceToNextRetainerOrFinish();
-        }
+        if (!this.uiInteractionService.IsAddonReady("RetainerList")) this.SetState(OrchestrationStep.OpenBell, 0);
+        else this.AdvanceToNextRetainerOrFinish();
     }
 
     public void Abort() {
@@ -89,15 +86,12 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void OnFrameworkUpdate(IFramework frameworkInstance) {
-        if (!this.IsActive) {
-            return;
-        }
+        if (!this.IsActive) return;
 
+        // Dialogue skipping runs continuously before any delays to clear 'Talk' addons instantly
         this.uiInteractionService.SkipDialogue();
 
-        if (DateTime.Now < this.actionAvailableAt) {
-            return;
-        }
+        if (DateTime.Now < this.actionAvailableAt) return;
 
         if (DateTime.Now > this.timeoutAt) {
             this.logger.Error($"Orchestration step {this.currentStep} timed out. Aborting.");
@@ -134,19 +128,15 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessWaitBell() {
-        if (this.uiInteractionService.IsAddonReady("RetainerList")) {
-            this.AdvanceToNextRetainerOrFinish();
-        }
+        if (this.uiInteractionService.IsAddonReady("RetainerList")) this.AdvanceToNextRetainerOrFinish();
     }
 
     private void AdvanceToNextRetainerOrFinish() {
         if (this.retainerQueue.Count > 0) {
             this.currentRetainerName = this.retainerQueue.Dequeue();
-            this.SetState(OrchestrationStep.SelectRetainer, this.GetRandomDelay());
+            this.SetState(OrchestrationStep.SelectRetainer, 1.0 + this.GetRandomDelay());
         }
-        else {
-            this.SetState(OrchestrationStep.CloseRetainerList, this.GetRandomDelay());
-        }
+        else this.SetState(OrchestrationStep.CloseRetainerList, 0.5 + this.GetRandomDelay());
     }
 
     private void ProcessSelectRetainer() {
@@ -157,15 +147,15 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             }
         }
 
-        // Skip to next if not found or interaction failed
-        this.logger.Warning($"Skipping retainer {this.currentRetainerName} as it is not available.");
-        this.AdvanceToNextRetainerOrFinish();
+        // Extended grace period to accommodate network lag or heavy server load
+        if ((DateTime.Now - this.stepEnteredAt).TotalSeconds > RetainerAvailabilityDelay) {
+            this.logger.Warning($"Skipping retainer {this.currentRetainerName} as it is not available.");
+            this.AdvanceToNextRetainerOrFinish();
+        }
     }
 
     private void ProcessWaitSelectStringOpen() {
-        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
-            this.SetState(OrchestrationStep.OpenMenu, this.GetRandomDelay());
-        }
+        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) this.SetState(OrchestrationStep.OpenMenu, 0.5 + this.GetRandomDelay());
     }
 
     private void ProcessOpenMenu() {
@@ -180,8 +170,10 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             }
         }
 
-        this.logger.Warning($"Skipping interaction, menu option '{optionText}' not available.");
-        this.AdvanceToNextRetainerOrFinish();
+        if ((DateTime.Now - this.stepEnteredAt).TotalSeconds > RetainerAvailabilityDelay) {
+            this.logger.Warning($"Skipping interaction, menu option '{optionText}' not available.");
+            this.AdvanceToNextRetainerOrFinish();
+        }
     }
 
     private void ProcessWaitMenu() {
@@ -189,20 +181,16 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (this.uiInteractionService.IsAddonReady(targetWindowName)) {
             this.currentTask?.OnMenuOpened(this.currentRetainerName);
-            this.SetState(OrchestrationStep.ExecutingTask, this.GetRandomDelay());
-            this.timeoutAt = DateTime.MaxValue; // Task manages its own timeout bounds
+            this.SetState(OrchestrationStep.ExecutingTask, 0.5 + this.GetRandomDelay());
+            this.timeoutAt = DateTime.MaxValue;
         }
     }
 
     private void ProcessExecutingTask() {
         if (this.currentTask != null) {
-            if (this.currentTask.OnTick()) {
-                this.SetState(OrchestrationStep.CloseMenu, this.GetRandomDelay());
-            }
+            if (this.currentTask.OnTick()) this.SetState(OrchestrationStep.CloseMenu, 0.5 + this.GetRandomDelay());
         }
-        else {
-            this.SetState(OrchestrationStep.CloseMenu, 0);
-        }
+        else this.SetState(OrchestrationStep.CloseMenu, 0);
     }
 
     private void ProcessCloseMenu() {
@@ -214,67 +202,50 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             this.currentTask?.OnMenuClosed(this.currentRetainerName);
             this.SetState(OrchestrationStep.WaitMenuClosed, 0);
         }
-        else {
-            this.AdvanceToNextRetainerOrFinish();
-        }
+        else this.AdvanceToNextRetainerOrFinish();
     }
 
     private void ProcessWaitMenuClosed() {
         var targetWindowName = this.currentTargetMenu == RetainerTargetMenu.MarketListings ? "RetainerSellList" : "RetainerHistory";
         var window = this.windowService.GetWindow(targetWindowName);
 
-        if (window == null || !window.IsVisible) {
-            this.SetState(OrchestrationStep.WaitSelectStringReturn, 0);
-        }
+        if (window == null || !window.IsVisible) this.SetState(OrchestrationStep.WaitSelectStringReturn, 0);
     }
 
     private void ProcessWaitSelectStringReturn() {
-        if (this.uiInteractionService.IsAddonReady("SelectString")) {
-            this.SetState(OrchestrationStep.CloseSelectString, this.GetRandomDelay());
-        }
+        if (this.uiInteractionService.IsAddonReady("SelectString")) this.SetState(OrchestrationStep.CloseSelectString, 0.5 + this.GetRandomDelay());
     }
 
     private void ProcessCloseSelectString() {
-        if (this.uiInteractionService.CloseSelectString()) {
-            this.SetState(OrchestrationStep.WaitRetainerListReturn, 0);
-        }
-        else {
-            this.AdvanceToNextRetainerOrFinish();
-        }
+        if (this.uiInteractionService.CloseSelectString()) this.SetState(OrchestrationStep.WaitRetainerListReturn, 0);
+        else this.AdvanceToNextRetainerOrFinish();
     }
 
     private void ProcessWaitRetainerListReturn() {
-        if (this.uiInteractionService.IsAddonReady("RetainerList")) {
-            this.AdvanceToNextRetainerOrFinish();
-        }
+        if (this.uiInteractionService.IsAddonReady("RetainerList")) this.AdvanceToNextRetainerOrFinish();
     }
 
     private void ProcessCloseRetainerList() {
         var window = this.windowService.GetWindow("RetainerList");
-        if (window != null && window.IsVisible) {
-            window.SendCallback(-1);
-        }
+        if (window != null && window.IsVisible) window.SendCallback(-1);
 
         this.Abort();
     }
 
     private void SetState(OrchestrationStep nextStep, double delaySeconds) {
         this.currentStep = nextStep;
+        this.stepEnteredAt = DateTime.Now;
         this.actionAvailableAt = DateTime.Now.AddSeconds(delaySeconds);
         this.timeoutAt = DateTime.Now.AddSeconds(20);
     }
 
     private double GetRandomDelay() {
         var config = this.configService.GetConfig();
-        if (!config.EnableAutomationDelay) {
-            return 0;
-        }
+        if (!config.EnableAutomationDelay) return 0;
 
         var min = config.AutomationDelayMin;
         var max = config.AutomationDelayMax;
-        if (min > max) {
-            min = max;
-        }
+        if (min > max) min = max;
 
         return min + (new Random().NextDouble() * (max - min));
     }

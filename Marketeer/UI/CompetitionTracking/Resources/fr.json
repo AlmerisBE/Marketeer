@@ -43,5 +43,8 @@
   "Config_FallbackMode_MaxListingPrice": "Prix de vente maximum",
   "Config_FallbackMode_VendorSellMultiple": "Multiple du prix de vente marchand",
   "Config_FallbackMode_VendorBuyMultiple": "Multiple du prix d'achat marchand",
-  "Config_FallbackMultiplier": "Multiplicateur de Repli"
+  "Config_FallbackMultiplier": "Multiplicateur de Repli",
+  "Config_CancelPriority_Label": "Destination de l'annulation",
+  "Config_CancelPriority_PlayerFirst": "Inventaire du joueur",
+  "Config_CancelPriority_RetainerFirst": "Inventaire du servant"
 }

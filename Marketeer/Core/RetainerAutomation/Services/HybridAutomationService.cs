@@ -28,11 +28,12 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
-    private DateTime lastActionTime;
+    private DateTime nextActionAt;
     private DateTime searchResultOpenTime;
     private Task<IReadOnlyList<LowestPriceResult>>? priceFetchTask;
-    private bool isFetchingPrice;
+    private int stateMachineIndex;
 
+    public event Action<uint>? CancellationRequested;
     public bool IsActive { get; private set; }
 
     public HybridAutomationService(
@@ -62,24 +63,45 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
-    public void StartPriceUpdate(TrackedListing listing, nint addonAddress) {
+    public void StartPriceUpdate(TrackedListing listing) {
         if (this.IsActive) return;
 
         this.IsActive = true;
         this.currentListing = listing;
-        this.isFetchingPrice = true;
+        this.stateMachineIndex = 0;
         this.sequenceStartTime = DateTime.Now;
-        this.lastActionTime = DateTime.Now;
+        this.nextActionAt = DateTime.Now.AddSeconds(0.1);
         this.searchResultOpenTime = DateTime.MinValue;
         this.priceFetchTask = null;
 
         this.logger.Info($"[HybridAutomation] Initiating new sale fetch for {listing.ItemName} (ID: {listing.ItemId}).");
-        this.uiInteraction.OpenComparePrices(addonAddress);
+    }
+
+    public void StartNewSale(uint itemId, string itemName) {
+        if (this.IsActive) return;
+
+        this.IsActive = true;
+        this.currentListing = new TrackedListing {
+            ItemId = itemId,
+            ItemName = itemName,
+            PricePerUnit = 0,
+            Quantity = 1,
+            AssociatedRetainerId = 0
+        };
+
+        // Skip ContextMenu interaction (State 0), go directly to waiting for RetainerSell UI (State 1)
+        this.stateMachineIndex = 1;
+        this.sequenceStartTime = DateTime.Now;
+        this.nextActionAt = DateTime.Now.AddSeconds(0.2);
+        this.searchResultOpenTime = DateTime.MinValue;
+        this.priceFetchTask = null;
+
+        this.logger.Info($"[HybridAutomation] Initiating new sale fetch for {itemName} (ID: {itemId}).");
     }
 
     private void OnPricesUpdated(uint worldId, IEnumerable<uint> updatedItemIds) {
         var listing = this.currentListing;
-        if (!this.IsActive || !this.isFetchingPrice || listing == null || this.priceFetchTask != null) return;
+        if (!this.IsActive || listing == null || this.priceFetchTask != null) return;
 
         if (updatedItemIds.Contains(listing.ItemId)) {
             var localPlayer = this.objectTable.LocalPlayer;
@@ -90,6 +112,10 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
+        this.EvaluateTick();
+    }
+
+    public void EvaluateTick() {
         if (!this.IsActive) return;
 
         if ((DateTime.Now - this.sequenceStartTime).TotalSeconds > 15) {
@@ -98,35 +124,52 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
             return;
         }
 
-        if (this.isFetchingPrice) {
-            var fetchTask = this.priceFetchTask;
-            var listing = this.currentListing;
+        if (DateTime.Now < this.nextActionAt) return;
 
-            if (fetchTask == null) {
-                bool isSearchResultReady = this.uiInteraction.IsAddonReady("ItemSearchResult");
+        switch (this.stateMachineIndex) {
+            case 0:
+                var text = this.localization.Translate("RetainerMenu_AdjustPrice");
+                var index = this.uiInteraction.GetContextMenuItemIndex(text ?? "Adjust Price");
+                this.uiInteraction.SelectContextMenuItem(index != -1 ? index : 0);
+                this.stateMachineIndex = 1;
+                this.nextActionAt = DateTime.Now.AddSeconds(0.2); // Give RetainerSell time to open natively
+                break;
 
-                if (!isSearchResultReady) {
-                    if ((DateTime.Now - this.lastActionTime).TotalSeconds > 1.0 && this.uiInteraction.IsAddonReady("RetainerSell")) {
-                        this.uiInteraction.OpenComparePrices();
-                        this.lastActionTime = DateTime.Now;
-                    }
+            case 1:
+                if (this.uiInteraction.IsAddonReady("RetainerSell")) {
+                    this.uiInteraction.OpenComparePrices();
+                    this.stateMachineIndex = 2;
+                    this.searchResultOpenTime = DateTime.MinValue;
+                    this.nextActionAt = DateTime.Now.AddSeconds(1.0);
                 }
-                else {
-                    if (this.searchResultOpenTime == DateTime.MinValue) {
-                        this.searchResultOpenTime = DateTime.Now;
-                    }
-                    else if ((DateTime.Now - this.searchResultOpenTime).TotalSeconds > 2.5) {
-                        var localPlayer = this.objectTable.LocalPlayer;
-                        if (localPlayer != null && listing != null) {
-                            this.logger.Warning("[HybridAutomation] Live scanner timed out or market is empty. Falling back to API.");
-                            this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                break;
+
+            case 2:
+                if (this.priceFetchTask == null) {
+                    if (this.uiInteraction.IsAddonReady("ItemSearchResult")) {
+                        if (this.searchResultOpenTime == DateTime.MinValue) {
+                            this.searchResultOpenTime = DateTime.Now;
                         }
-                        this.searchResultOpenTime = DateTime.MinValue;
+                        else if ((DateTime.Now - this.searchResultOpenTime).TotalSeconds > 2.5) {
+                            var localPlayer = this.objectTable.LocalPlayer;
+                            if (localPlayer != null && this.currentListing != null) {
+                                this.logger.Warning("[HybridAutomation] Live scanner timed out or market is empty. Falling back to API.");
+                                this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { this.currentListing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                            }
+                            this.searchResultOpenTime = DateTime.MinValue;
+                        }
+                    }
+                    else if ((DateTime.Now - this.nextActionAt).TotalSeconds > 1.0) {
+                        if (this.uiInteraction.IsAddonReady("RetainerSell")) {
+                            this.uiInteraction.OpenComparePrices();
+                            this.nextActionAt = DateTime.Now;
+                        }
                     }
                 }
-            }
-
-            if (fetchTask != null && fetchTask.IsCompleted) this.ApplyPriceAndFinish();
+                else if (this.priceFetchTask.IsCompleted) {
+                    this.ApplyPriceAndFinish();
+                }
+                break;
         }
     }
 
@@ -136,19 +179,14 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         if (listing == null || fetchTask == null) return;
 
-        this.isFetchingPrice = false;
-
         var prices = fetchTask.Result.Where(p => p.ItemId == listing.ItemId).ToList();
         var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.PricePerUnit, prices);
 
         this.uiInteraction.CloseItemSearchResult();
 
         if (calcResult.Action == PricingAction.CancelListing) {
-            this.logger.Info($"[HybridAutomation] Live fetch indicates loss. Keeping price to allow manual cancellation on next click.");
-            this.uiInteraction.CloseUnexpectedWindows();
-
-            var format = this.localization.Translate("Notification_Price_TooLow") ?? "Price too low for {0}. Click again to cancel.";
-            this.notificationService.ShowWarning("Marketeer", string.Format(format, listing.ItemName));
+            this.logger.Info($"[HybridAutomation] Loss prevention triggered. Emitting cancellation request for {listing.ItemName}.");
+            this.CancellationRequested?.Invoke(listing.ItemId);
         }
         else if (calcResult.Action == PricingAction.KeepPrice) {
             this.logger.Info($"[HybridAutomation] Target price is identical or restricted. Keeping current price.");
@@ -175,7 +213,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
     private void Abort() {
         this.IsActive = false;
-        this.isFetchingPrice = false;
         this.currentListing = null;
         this.uiInteraction.CloseUnexpectedWindows();
     }

@@ -99,7 +99,7 @@ public class CompetitionConfigMenu : INavigationNode {
         bool changed = false;
 
         bool enforceVendor = config.EnforceVendorPriceMinimum;
-        if (ImGui.Checkbox("Enforce Vendor Price Minimum", ref enforceVendor)) {
+        if (ImGui.Checkbox(this.localization.Translate("Config_EnforceVendorPriceMinimum"), ref enforceVendor)) {
             config.EnforceVendorPriceMinimum = enforceVendor;
             changed = true;
         }
@@ -110,6 +110,17 @@ public class CompetitionConfigMenu : INavigationNode {
             foreach (MinimumPriceBehavior behavior in Enum.GetValues(typeof(MinimumPriceBehavior))) {
                 if (ImGui.Selectable(this.localization.Translate($"Config_LossBehavior_{behavior}"), config.LossBehavior == behavior)) {
                     config.LossBehavior = behavior;
+                    changed = true;
+                }
+            }
+            ImGui.EndCombo();
+        }
+
+        // Return inventory target setting (shown when cancellation behavior is active or applicable)
+        if (ImGui.BeginCombo(this.localization.Translate("Config_CancelPriority_Label"), this.localization.Translate($"Config_CancelPriority_{config.CancelInventoryPriority}"))) {
+            foreach (InventoryPriority priority in Enum.GetValues(typeof(InventoryPriority))) {
+                if (ImGui.Selectable(this.localization.Translate($"Config_CancelPriority_{priority}"), config.CancelInventoryPriority == priority)) {
+                    config.CancelInventoryPriority = priority;
                     changed = true;
                 }
             }
