@@ -20,9 +20,10 @@
   "Config_AutomationDelayMax": "Délai Max (s)",
   "Config_AutoCloseMarketList": "Fermer automatiquement la liste des ventes après l'ajustement",
   "Config_AutoCloseMarketListDelay": "Délai avant fermeture (s)",
-  "Notification_Price_Updated": "{0} mis à jour à {1:N0}g.",
-  "Notification_Price_Kept": "Prix de {0} maintenu à {1:N0}g.",
   "Notification_Price_TooLow": "Prix trop bas pour {0}. Cliquez à nouveau pour annuler.",
-  "Notification_Cancellation_Success": "Vente de {0} annulée.",
-  "RetainerMenu_ReturnToRetainer": "Redonner au servant"
+  "RetainerMenu_ReturnToRetainer": "Redonner au servant",
+  "Notification_Sale_Aborted": "Annulée (Perte) : {0}",
+  "Notification_Cancellation_Success": "Retirée (Perte) : {0}",
+  "Notification_Price_Kept": "Maintenu à {1:N0}g : {0}",
+  "Notification_Price_Updated": "Mis à jour à {1:N0}g : {0}"
 }

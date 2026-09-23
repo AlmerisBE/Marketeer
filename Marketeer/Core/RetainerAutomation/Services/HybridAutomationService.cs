@@ -89,7 +89,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
             AssociatedRetainerId = 0
         };
 
-        // Skip ContextMenu interaction (State 0), go directly to waiting for RetainerSell UI (State 1)
         this.stateMachineIndex = 1;
         this.sequenceStartTime = DateTime.Now;
         this.nextActionAt = DateTime.Now.AddSeconds(0.2);
@@ -132,7 +131,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                 var index = this.uiInteraction.GetContextMenuItemIndex(text ?? "Adjust Price");
                 this.uiInteraction.SelectContextMenuItem(index != -1 ? index : 0);
                 this.stateMachineIndex = 1;
-                this.nextActionAt = DateTime.Now.AddSeconds(0.2); // Give RetainerSell time to open natively
+                this.nextActionAt = DateTime.Now.AddSeconds(0.2);
                 break;
 
             case 1:
@@ -184,7 +183,16 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         this.uiInteraction.CloseItemSearchResult();
 
-        if (calcResult.Action == PricingAction.CancelListing) {
+        bool isNewSale = listing.AssociatedRetainerId == 0;
+
+        if (isNewSale && (calcResult.Action == PricingAction.CancelListing || (calcResult.Action == PricingAction.KeepPrice && listing.PricePerUnit == 0))) {
+            this.logger.Info($"[HybridAutomation] Loss prevention triggered for new sale. Aborting {listing.ItemName}.");
+            this.uiInteraction.CloseUnexpectedWindows();
+
+            var format = this.localization.Translate("Notification_Sale_Aborted") ?? "{0} sale aborted to prevent loss.";
+            this.notificationService.ShowError("Marketeer", string.Format(format, listing.ItemName));
+        }
+        else if (calcResult.Action == PricingAction.CancelListing) {
             this.logger.Info($"[HybridAutomation] Loss prevention triggered. Emitting cancellation request for {listing.ItemName}.");
             this.CancellationRequested?.Invoke(listing.ItemId);
         }
@@ -197,9 +205,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         }
         else {
             this.uiInteraction.SetPriceAndConfirm(calcResult.CalculatedPrice);
-            if (listing.AssociatedRetainerId != 0) {
-                this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, calcResult.CalculatedPrice);
-            }
+            if (!isNewSale) this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, calcResult.CalculatedPrice);
             this.logger.Info($"[HybridAutomation] Price natively updated to {calcResult.CalculatedPrice}.");
 
             var format = this.localization.Translate("Notification_Price_Updated") ?? "{0} updated to {1:N0}g.";

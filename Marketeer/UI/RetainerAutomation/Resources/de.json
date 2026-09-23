@@ -20,9 +20,10 @@
   "Config_AutomationDelayMax": "Max. Verzögerung (s)",
   "Config_AutoCloseMarketList": "Gehilfen-Marktliste nach Preisaktualisierung automatisch schließen",
   "Config_AutoCloseMarketListDelay": "Schließverzögerung (s)",
-  "Notification_Price_Updated": "{0} auf {1:N0} Gil aktualisiert.",
-  "Notification_Price_Kept": "Preis von {0} bei {1:N0} Gil beibehalten.",
   "Notification_Price_TooLow": "Preis zu niedrig für {0}. Erneut klicken zum Abbrechen.",
-  "Notification_Cancellation_Success": "Verkauf von {0} abgebrochen.",
-  "RetainerMenu_ReturnToRetainer": "Gehilfen geben"
+  "RetainerMenu_ReturnToRetainer": "Gehilfen geben",
+  "Notification_Sale_Aborted": "Abgebrochen (Verlust): {0}",
+  "Notification_Cancellation_Success": "Storniert (Verlust): {0}",
+  "Notification_Price_Kept": "Belassen bei {1:N0}g: {0}",
+  "Notification_Price_Updated": "Aktualisiert auf {1:N0}g: {0}"
 }
