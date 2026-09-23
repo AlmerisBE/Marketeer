@@ -12,9 +12,10 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
 
     private string targetRetainer = string.Empty;
     private bool isSwitching;
-    private bool targetRetainerSelected;
     private bool shouldOpenMarketList;
     private DateTime nextActionAt;
+    private DateTime timeoutAt;
+    private int stateIndex;
 
     public RetainerSwitcherService(IFramework framework, IRetainerUiInteractionService uiInteraction, ILoggerService logger) {
         this.framework = framework;
@@ -24,63 +25,97 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
     }
 
     public void SwitchTo(string retainerName, bool openMarketList = false) {
-        if (this.isSwitching) {
-            return;
-        }
-
-        this.targetRetainer = retainerName;
+        this.targetRetainer = retainerName.Trim();
         this.shouldOpenMarketList = openMarketList;
         this.isSwitching = true;
-        this.targetRetainerSelected = false;
+        this.stateIndex = 0;
         this.nextActionAt = this.GetNow();
-        this.logger.Info($"Automated switch initiated for retainer: {retainerName}. Open market requested: {openMarketList}");
+        this.timeoutAt = this.GetNow().AddSeconds(15);
+        this.logger.Info($"Automated switch initiated for retainer: {this.targetRetainer}. Open market requested: {openMarketList}");
     }
 
     protected virtual DateTime GetNow() => DateTime.Now;
 
     private void OnFrameworkUpdate(IFramework fw) {
-        if (!this.isSwitching || this.GetNow() < this.nextActionAt) {
+        if (!this.isSwitching) return;
+
+        if (this.GetNow() > this.timeoutAt) {
+            this.logger.Warning($"[RetainerSwitcherService] Sequence timed out for {this.targetRetainer}. Aborting.");
+            this.isSwitching = false;
+            this.uiInteraction.CloseUnexpectedWindows();
             return;
         }
 
+        if (this.GetNow() < this.nextActionAt) return;
+
         this.uiInteraction.SkipDialogue();
 
-        // Intercept and auto-confirm the buyback warning dialog if it appears during the switch process
         if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
             this.uiInteraction.ConfirmYesNo();
             this.nextActionAt = this.GetNow().AddSeconds(0.5);
             return;
         }
 
-        if (this.uiInteraction.IsAddonReady("RetainerSellList") || this.uiInteraction.IsAddonReady("RetainerHistory")) {
-            this.uiInteraction.CloseUnexpectedWindows();
+        switch (this.stateIndex) {
+            case 0:
+                if (this.uiInteraction.IsAddonReady("RetainerSellList") || this.uiInteraction.IsAddonReady("RetainerHistory")) {
+                    this.uiInteraction.CloseUnexpectedWindows();
 
-            bool closedMarket = this.uiInteraction.IsAddonReady("RetainerSellList") ? this.uiInteraction.CloseRetainerMarket() : true;
-            bool closedHistory = this.uiInteraction.IsAddonReady("RetainerHistory") ? this.uiInteraction.CloseSalesHistory() : true;
+                    bool closedMarket = this.uiInteraction.IsAddonReady("RetainerSellList") ? this.uiInteraction.CloseRetainerMarket() : true;
+                    bool closedHistory = this.uiInteraction.IsAddonReady("RetainerHistory") ? this.uiInteraction.CloseSalesHistory() : true;
 
-            if (closedMarket && closedHistory) {
-                this.nextActionAt = this.GetNow().AddSeconds(0.5);
-            }
-        }
-        else if (!this.targetRetainerSelected && this.uiInteraction.IsAddonReady("SelectString")) {
-            if (this.uiInteraction.CloseSelectString()) {
-                this.nextActionAt = this.GetNow().AddSeconds(0.5);
-            }
-        }
-        else if (!this.targetRetainerSelected && this.uiInteraction.IsAddonReady("RetainerList")) {
-            if (this.uiInteraction.SelectRetainer(this.targetRetainer)) {
-                this.targetRetainerSelected = true;
-                this.nextActionAt = this.GetNow().AddSeconds(0.5);
-            }
+                    if (closedMarket && closedHistory) {
+                        this.nextActionAt = this.GetNow().AddSeconds(0.5);
+                        this.stateIndex = 1;
+                    }
+                }
+                else this.stateIndex = 1;
+                break;
 
-        }
-        else if (this.targetRetainerSelected && this.uiInteraction.IsAddonReady("SelectString")) {
-            if (this.shouldOpenMarketList) {
-                this.uiInteraction.OpenRetainerMarket();
-            }
+            case 1:
+                if (this.uiInteraction.IsAddonReady("SelectString")) {
+                    if (this.uiInteraction.IsMenuReadyForRetainer(this.targetRetainer)) {
+                        this.stateIndex = 4;
+                        return;
+                    }
 
-            this.isSwitching = false;
-            this.targetRetainer = string.Empty;
+                    if (this.uiInteraction.CloseSelectString()) {
+                        this.nextActionAt = this.GetNow().AddSeconds(0.5);
+                        this.stateIndex = 2;
+                    }
+                }
+                else this.stateIndex = 2;
+                break;
+
+            case 2:
+                if (this.uiInteraction.IsAddonReady("RetainerList")) {
+                    this.nextActionAt = this.GetNow().AddSeconds(1.0);
+                    this.stateIndex = 3;
+                }
+                break;
+
+            case 3:
+                if (this.uiInteraction.IsAddonReady("RetainerList")) {
+                    if (this.uiInteraction.SelectRetainer(this.targetRetainer)) {
+                        this.nextActionAt = this.GetNow().AddSeconds(1.5);
+                        this.stateIndex = 4;
+                    }
+                }
+                break;
+
+            case 4:
+                if (this.uiInteraction.IsAddonReady("SelectString")) {
+                    if (this.shouldOpenMarketList) this.uiInteraction.OpenRetainerMarket();
+
+                    this.logger.Info($"[RetainerSwitcherService] Successfully switched to {this.targetRetainer}. Sequence complete.");
+                    this.isSwitching = false;
+                    this.targetRetainer = string.Empty;
+                }
+                else if (this.uiInteraction.IsAddonReady("RetainerList")) {
+                    this.logger.Warning($"[RetainerSwitcherService] Retainer click ignored by server. Retrying...");
+                    this.stateIndex = 3;
+                }
+                break;
         }
     }
 
