@@ -36,7 +36,6 @@ public class RetainerSwitcherServiceTests {
 
         service.SwitchTo("MyRetainer", openMarketList: false);
 
-        // Simulate the appearance of the buyback confirmation dialog
         uiInteraction.IsAddonReady("SelectYesNo").Returns(true);
         updateCallback?.Invoke(framework);
 
@@ -44,9 +43,13 @@ public class RetainerSwitcherServiceTests {
 
         service.MockNow = service.MockNow.AddSeconds(1);
 
-        // The dialog is now closed, process should resume normally to SelectString
         uiInteraction.IsAddonReady("SelectYesNo").Returns(false);
         uiInteraction.IsAddonReady("SelectString").Returns(true);
+
+        // Frame to transition out of State 0 (Submenus closed validation)
+        updateCallback?.Invoke(framework);
+
+        // Frame to execute State 1 (Close SelectString logic)
         updateCallback?.Invoke(framework);
 
         uiInteraction.Received(1).CloseSelectString();
