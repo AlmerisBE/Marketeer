@@ -14,7 +14,7 @@ public class CompetitionConfigMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_Configuration");
     public string Name => this.localization.Translate("Config_Competition_TabName");
-    public int Priority => 20;
+    public int Priority => 100;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];

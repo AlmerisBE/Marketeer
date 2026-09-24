@@ -17,9 +17,9 @@ public class InventoryMenu : INavigationNode {
     private IItemResolverService itemResolver;
     private ITextureProvider textureProvider;
 
-    public string GroupName => this.localization.Translate("Group_Inventory");
+    public string GroupName => this.localization.Translate("CharacterList_TabName");
     public string Name => this.localization.Translate("InventoryTab_Title");
-    public int Priority => 15;
+    public int Priority => 50;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
