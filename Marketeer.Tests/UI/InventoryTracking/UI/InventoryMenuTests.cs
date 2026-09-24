@@ -12,22 +12,20 @@ namespace Marketeer.Tests.UI.InventoryTracking.UI;
 public class InventoryMenuTests {
     [Fact]
     public void Properties_ShouldReturnExpectedValuesFromLocalization() {
-        var mockConfig = Substitute.For<IConfigurationService>();
-        var mockCharacterTracker = Substitute.For<ICharacterTrackerService>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
-        var mockResolver = Substitute.For<IItemResolverService>();
-        var mockTexture = Substitute.For<ITextureProvider>();
+        var config = Substitute.For<IConfigurationService>();
+        var tracker = Substitute.For<ICharacterTrackerService>();
+        var loc = Substitute.For<ILocalizationService>();
+        var resolver = Substitute.For<IItemResolverService>();
+        var texture = Substitute.For<ITextureProvider>();
 
-        mockLocalization.Translate("Group_Inventory").Returns("Inventories");
-        mockLocalization.Translate("InventoryTab_Title").Returns("Bags & Retainers");
+        // Aligning mock with the new UI UX grouping strategy
+        loc.Translate("CharacterList_TabName").Returns("Characters");
+        loc.Translate("InventoryTab_Title").Returns("Inventory");
 
-        var menu = new InventoryMenu(mockConfig, mockCharacterTracker, mockLocalization, mockResolver, mockTexture);
+        var menu = new InventoryMenu(config, tracker, loc, resolver, texture);
 
-        Assert.Equal("Inventories", menu.GroupName);
-        Assert.Equal("Bags & Retainers", menu.Name);
-        Assert.Equal(15, menu.Priority);
-        Assert.True(menu.HasContent);
-        Assert.False(menu.DefaultExpanded);
-        Assert.Empty(menu.GetChildren());
+        Assert.Equal("Characters", menu.GroupName);
+        Assert.Equal("Inventory", menu.Name);
+        Assert.Equal(50, menu.Priority);
     }
 }

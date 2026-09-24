@@ -1,65 +1,50 @@
-﻿using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Plugin.Services;
-using Lumina.Excel;
-using Lumina.Excel.Sheets;
+﻿using Dalamud.Plugin.Services;
 using Marketeer.API.Universalis.Models;
+using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketPricing.Contracts;
+using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.CompetitionTracking.Commands;
-using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
 
 namespace Marketeer.Tests.UI.CompetitionTracking.Commands;
 
 public class PriceCommandTests {
-
     [Fact]
-    public async Task Execute_WithPlainItemName_ResolvesItemIdAndFetchesPrice() {
-        // Arrange
-        var mockProvider = Substitute.For<IMarketPriceCacheService>();
-        var mockObjectTable = Substitute.For<IObjectTable>();
-        var mockResolver = Substitute.For<IItemResolverService>();
-        var mockChatGui = Substitute.For<IChatGui>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
-        var mockLogger = Substitute.For<ILoggerService>();
+    public async Task ExecuteAsync_WhenItemFound_QueriesPriceAndPrintsToChat() {
+        var priceCache = Substitute.For<IMarketPriceCacheService>();
+        var itemResolver = Substitute.For<IItemResolverService>();
+        var playerContext = Substitute.For<ICompetitionPlayerContext>();
+        var chatGui = Substitute.For<IChatGui>();
+        var logger = Substitute.For<ILoggerService>();
+        var framework = Substitute.For<IFramework>();
 
-        var mockPlayer = Substitute.For<IPlayerCharacter>();
-        mockPlayer.CurrentWorld.Returns(new RowRef<World>(null, 33u));
-        mockObjectTable.LocalPlayer.Returns(mockPlayer);
+        playerContext.IsPlayerAvailable().Returns(true);
+        playerContext.GetCurrentWorldId().Returns(73u);
 
-        uint expectedItemId = 100u;
-        uint priceValue = 1500u;
-        string formattedPrice = priceValue.ToString("N0");
-        string itemName = "Potion";
-        string retainerName = "Crafter";
+        itemResolver.ResolveItemId("TestItem").Returns(123u);
 
-        mockResolver.ResolveItemId(itemName).Returns(expectedItemId);
-        mockResolver.ResolveItemName(expectedItemId).Returns(itemName);
+        var pricing = new MarketItemPricing {
+            ItemId = 123u,
+            Listings = new List<LowestPriceResult> {
+                new LowestPriceResult { Price = 500, RetainerName = "TestRetainer" }
+            },
+            AverageSalePrice = 450
+        };
 
-        mockLocalization.Translate("Command_Price_Fetching", itemName)
-            .Returns("Fetching lowest price for Potion...");
+        priceCache.GetPricingAsync(123u, 73u, false).Returns(pricing);
 
-        mockLocalization.Translate("Command_Price_Result", itemName, formattedPrice, retainerName)
-            .Returns($"Lowest price for Potion: {formattedPrice} Gil (Retainer: Crafter)");
+        framework.When(f => f.RunOnFrameworkThread(Arg.Any<System.Action>()))
+                 .Do(x => x.Arg<System.Action>().Invoke());
 
-        var expectedResult = new LowestPriceResult { ItemId = expectedItemId, Price = priceValue, RetainerName = retainerName };
-        mockProvider.GetLowestPriceAsync(expectedItemId, 33u).Returns(Task.FromResult<LowestPriceResult?>(expectedResult));
+        var command = new PriceCommand(priceCache, itemResolver, playerContext, chatGui, logger, framework);
 
-        var command = new PriceCommand(mockProvider, mockObjectTable, mockResolver, mockChatGui, mockLocalization, mockLogger);
+        // Await the newly exposed async variant to prevent race conditions during testing
+        await command.ExecuteAsync("TestItem");
 
-        // Act
-        command.Execute("lowest Potion");
-
-        await Task.Delay(100);
-
-        // Assert
-        mockResolver.Received(1).ResolveItemId("Potion");
-        mockResolver.Received(1).ResolveItemName(expectedItemId);
-
-        mockChatGui.Received(2).Print(Arg.Any<string>());
-        mockChatGui.Received(1).Print("Fetching lowest price for Potion...");
-        mockChatGui.Received(1).Print($"Lowest price for Potion: {formattedPrice} Gil (Retainer: Crafter)");
+        chatGui.Received().Print("[Marketeer] Lowest price for TestItem is 500g by TestRetainer.");
+        chatGui.Received().Print("[Marketeer] Average Universalis historical sale price: 450g.");
     }
 }

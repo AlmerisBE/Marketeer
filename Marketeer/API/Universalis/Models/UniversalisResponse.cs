@@ -9,4 +9,10 @@ public class UniversalisResponse {
 
     [JsonPropertyName("listings")]
     public List<UniversalisListing> Listings { get; set; } = new();
+
+    [JsonPropertyName("averagePriceNQ")]
+    public float AveragePriceNq { get; set; }
+
+    [JsonPropertyName("averagePriceHQ")]
+    public float AveragePriceHq { get; set; }
 }

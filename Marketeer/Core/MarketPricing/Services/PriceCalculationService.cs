@@ -1,5 +1,4 @@
-﻿using Marketeer.API.Universalis.Models;
-using Marketeer.Core.Configuration.Contracts;
+﻿using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
@@ -19,7 +18,7 @@ public class PriceCalculationService : IPriceCalculationService {
         this.itemResolver = itemResolver;
     }
 
-    public PriceCalculationResult CalculateTargetPrice(uint itemId, uint currentPrice, IReadOnlyList<LowestPriceResult> activeListings) {
+    public PriceCalculationResult CalculateTargetPrice(uint itemId, uint currentPrice, MarketItemPricing pricing) {
         var config = this.configService.GetConfig();
         var result = new PriceCalculationResult { Action = PricingAction.UpdatePrice, CalculatedPrice = currentPrice };
 
@@ -27,21 +26,18 @@ public class PriceCalculationService : IPriceCalculationService {
         var vendorBuyPrice = this.itemResolver.ResolveVendorBuyPrice(itemId);
 
         var ownRetainers = this.GetOwnRetainers(config);
-        var competitors = activeListings.Where(l => !ownRetainers.Contains(l.RetainerName)).OrderBy(l => l.Price).ToList();
+        var competitors = pricing.Listings.Where(l => !ownRetainers.Contains(l.RetainerName)).OrderBy(l => l.Price).ToList();
 
         if (competitors.Count == 0) {
             if (currentPrice > 0) {
-                // We have a monopoly and the item is already listed. Keep the current price instead of forcing fallback.
                 result.CalculatedPrice = currentPrice;
                 result.Action = PricingAction.KeepPrice;
             }
-            else if (activeListings.Count > 0) {
-                // New sale, but we already have a monopoly with other retainers. Match our own lowest price.
-                result.CalculatedPrice = activeListings.Min(l => l.Price);
+            else if (pricing.Listings.Count > 0) {
+                result.CalculatedPrice = pricing.Listings.Min(l => l.Price);
             }
             else {
-                // Brand new sale, market is entirely empty.
-                result.CalculatedPrice = this.CalculateFallbackPrice(activeListings, vendorSellPrice, vendorBuyPrice, config);
+                result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
                 if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
                     result.Action = lossAction;
                     if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
@@ -108,10 +104,11 @@ public class PriceCalculationService : IPriceCalculationService {
         return true;
     }
 
-    private uint CalculateFallbackPrice(IReadOnlyList<LowestPriceResult> allListings, uint vendorSell, uint vendorBuy, PluginConfiguration config) {
+    private uint CalculateFallbackPrice(MarketItemPricing pricing, uint vendorSell, uint vendorBuy, PluginConfiguration config) {
         return config.EmptyMarketFallbackMode switch {
-            FallbackPricingMode.AverageListingPrice => allListings.Count > 0 ? (uint)allListings.Average(l => l.Price) : (uint)(vendorSell * config.EmptyMarketFallbackMultiplier),
-            FallbackPricingMode.MaxListingPrice => allListings.Count > 0 ? allListings.Max(l => l.Price) : (uint)(vendorSell * config.EmptyMarketFallbackMultiplier),
+            // Apply the actual Universalis average sale price as the priority fallback when the market is empty
+            FallbackPricingMode.AverageListingPrice => pricing.AverageSalePrice > 0 ? pricing.AverageSalePrice : (uint)(vendorSell * config.EmptyMarketFallbackMultiplier),
+            FallbackPricingMode.MaxListingPrice => pricing.Listings.Count > 0 ? pricing.Listings.Max(l => l.Price) : (pricing.AverageSalePrice > 0 ? pricing.AverageSalePrice : (uint)(vendorSell * config.EmptyMarketFallbackMultiplier)),
             FallbackPricingMode.VendorBuyMultiple => (uint)(vendorBuy * config.EmptyMarketFallbackMultiplier),
             _ => (uint)(vendorSell * config.EmptyMarketFallbackMultiplier)
         };

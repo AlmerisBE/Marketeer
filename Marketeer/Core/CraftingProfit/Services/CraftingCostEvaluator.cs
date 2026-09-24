@@ -6,6 +6,7 @@ using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketPricing.Contracts;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Marketeer.Core.CraftingProfit.Services;
@@ -28,8 +29,8 @@ public class CraftingCostEvaluator : ICraftingCostEvaluator {
         };
 
         try {
-            var currentMarketData = await this.priceProvider.GetLowestPriceAsync(config.ItemId, worldId, false);
-            result.CurrentMarketPrice = currentMarketData?.Price ?? 0;
+            var currentMarketData = await this.priceProvider.GetPricingAsync(config.ItemId, worldId, false);
+            result.CurrentMarketPrice = currentMarketData?.Listings.OrderBy(l => l.Price).FirstOrDefault()?.Price ?? 0;
 
             var recipe = this.recipeDataService.GetPrimaryRecipe(config.ItemId);
             if (recipe != null) {
@@ -118,7 +119,7 @@ public class CraftingCostEvaluator : ICraftingCostEvaluator {
     }
 
     private async Task<uint> GetMarketPriceAsync(uint itemId, uint worldId) {
-        var priceData = await this.priceProvider.GetLowestPriceAsync(itemId, worldId, false);
-        return priceData?.Price ?? 0;
+        var priceData = await this.priceProvider.GetPricingAsync(itemId, worldId, false);
+        return priceData?.Listings.OrderBy(l => l.Price).FirstOrDefault()?.Price ?? 0;
     }
 }

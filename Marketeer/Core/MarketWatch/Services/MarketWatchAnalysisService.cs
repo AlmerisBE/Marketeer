@@ -1,7 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Models;
-using Marketeer.Core.Logging.Contracts;
+﻿using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
@@ -16,20 +13,20 @@ namespace Marketeer.Core.MarketWatch.Services;
 public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
     private IMarketWatchRepository repository;
     private IMarketPriceCacheService priceProvider;
-    private IObjectTable objectTable;
+    private IMarketWatchPlayerContext playerContext;
     private IItemResolverService itemResolver;
     private ILoggerService logger;
 
     public MarketWatchAnalysisService(
         IMarketWatchRepository repository,
         IMarketPriceCacheService priceProvider,
-        IObjectTable objectTable,
+        IMarketWatchPlayerContext playerContext,
         IItemResolverService itemResolver,
         ILoggerService logger) {
 
         this.repository = repository;
         this.priceProvider = priceProvider;
-        this.objectTable = objectTable;
+        this.playerContext = playerContext;
         this.itemResolver = itemResolver;
         this.logger = logger;
     }
@@ -37,50 +34,27 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
     public async Task<IReadOnlyList<MarketWatchAlert>> AnalyzeMarketAsync(bool bypassCache = false) {
         var alerts = new List<MarketWatchAlert>();
 
-        if (this.objectTable.Length == 0) {
-            return alerts;
-        }
+        if (!this.playerContext.IsPlayerAvailable()) return alerts;
 
-        var localPlayer = this.objectTable[0] as IPlayerCharacter;
-        if (localPlayer == null) {
-            return alerts;
-        }
+        var worldId = this.playerContext.GetCurrentWorldId();
+        var eligibleItems = this.repository.GetAllWatchedItems().Where(i => i.IsEligibleForPolling()).ToList();
 
-        var worldId = localPlayer.CurrentWorld.RowId;
-        var eligibleItems = this.repository.GetAllWatchedItems()
-            .Where(i => i.IsEligibleForPolling())
-            .ToList();
-
-        if (eligibleItems.Count == 0) {
-            return alerts;
-        }
-
-        var itemIds = eligibleItems.Select(i => i.ItemId).Distinct().ToList();
+        if (eligibleItems.Count == 0) return alerts;
 
         try {
-            // On transmet le bypassCache au provider
-            var lowestPrices = await this.priceProvider.GetLowestPricesAsync(itemIds, worldId, bypassCache);
+            // Map WatchedItems correctly to exact FFXIV IDs (including HQ offsets) for specific querying
+            var itemIds = eligibleItems.Select(i => i.IsHighQuality ? i.ItemId + 1000000u : i.ItemId).Distinct().ToList();
+            var pricings = await this.priceProvider.GetPricingsAsync(itemIds, worldId, bypassCache);
 
             foreach (var item in eligibleItems) {
-                var itemPrices = lowestPrices.Where(p => p.ItemId == item.ItemId).ToList();
-                if (itemPrices.Count == 0) {
-                    continue;
-                }
+                var queryId = item.IsHighQuality ? item.ItemId + 1000000u : item.ItemId;
+                var pricing = pricings.FirstOrDefault(p => p.ItemId == queryId);
 
-                LowestPriceResult? effectiveMarketData = null;
+                if (pricing == null || pricing.Listings.Count == 0) continue;
 
-                if (item.IsHighQuality) {
-                    // RULE 2 & 4: If HQ tracked, we only care about HQ competitors/opportunities
-                    effectiveMarketData = itemPrices.FirstOrDefault(p => p.IsHq);
-                }
-                else {
-                    // RULE 1 & 3: If NQ tracked, a cheap HQ is a valid purchase and a dangerous competitor. Use absolute lowest.
-                    effectiveMarketData = itemPrices.OrderBy(p => p.Price).FirstOrDefault();
-                }
-
-                if (effectiveMarketData == null) {
-                    continue;
-                }
+                // Since pricing already strictly filters by HQ status internally based on queryId, we just take the absolute lowest.
+                var effectiveMarketData = pricing.Listings.OrderBy(p => p.Price).FirstOrDefault();
+                if (effectiveMarketData == null) continue;
 
                 var itemName = this.itemResolver.ResolveItemName(item.ItemId);
 
@@ -88,7 +62,7 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
                     alerts.Add(new MarketWatchAlert {
                         ItemId = item.ItemId,
                         ItemName = itemName,
-                        IsHighQuality = effectiveMarketData.IsHq, // Return the actual quality of the found deal
+                        IsHighQuality = effectiveMarketData.IsHq,
                         AlertType = MarketWatchAlertType.BuyTargetReached,
                         TargetPrice = item.TargetBuyPrice.Value,
                         CurrentPrice = effectiveMarketData.Price,
@@ -100,7 +74,7 @@ public class MarketWatchAnalysisService : IMarketWatchAnalysisService {
                     alerts.Add(new MarketWatchAlert {
                         ItemId = item.ItemId,
                         ItemName = itemName,
-                        IsHighQuality = item.IsHighQuality, // Sell alerts concern the tracked item type
+                        IsHighQuality = item.IsHighQuality,
                         AlertType = MarketWatchAlertType.SellTargetReached,
                         TargetPrice = item.TargetSellPrice.Value,
                         CurrentPrice = effectiveMarketData.Price,

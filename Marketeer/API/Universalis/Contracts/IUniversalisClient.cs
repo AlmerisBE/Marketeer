@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 namespace Marketeer.API.Universalis.Contracts;
 
 public interface IUniversalisClient {
-    Task<IReadOnlyList<LowestPriceResult>> FetchPricesAsync(IEnumerable<uint> itemIds, uint worldId);
+    Task<IReadOnlyList<UniversalisItemData>> FetchDataAsync(IEnumerable<uint> baseItemIds, uint worldId);
 }

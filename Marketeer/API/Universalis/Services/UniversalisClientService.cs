@@ -23,9 +23,9 @@ public class UniversalisClientService : IUniversalisClient {
         }
     }
 
-    public async Task<IReadOnlyList<LowestPriceResult>> FetchPricesAsync(IEnumerable<uint> itemIds, uint worldId) {
-        var results = new List<LowestPriceResult>();
-        var idsList = itemIds.Distinct().ToList();
+    public async Task<IReadOnlyList<UniversalisItemData>> FetchDataAsync(IEnumerable<uint> baseItemIds, uint worldId) {
+        var results = new List<UniversalisItemData>();
+        var idsList = baseItemIds.Distinct().ToList();
 
         if (idsList.Count == 0) return results;
 
@@ -44,13 +44,13 @@ public class UniversalisClientService : IUniversalisClient {
 
                 if (batch.Count == 1) {
                     var data = JsonSerializer.Deserialize<UniversalisResponse>(content);
-                    this.ExtractLowestPrices(data, batch[0], results);
+                    this.ExtractData(data, batch[0], results);
                 }
                 else {
                     var multiData = JsonSerializer.Deserialize<UniversalisMultiResponse>(content);
                     if (multiData?.Items != null) {
                         foreach (var id in batch) {
-                            if (multiData.Items.TryGetValue(id, out var data)) this.ExtractLowestPrices(data, id, results);
+                            if (multiData.Items.TryGetValue(id, out var data)) this.ExtractData(data, id, results);
                         }
                     }
                 }
@@ -63,18 +63,25 @@ public class UniversalisClientService : IUniversalisClient {
         return results;
     }
 
-    private void ExtractLowestPrices(UniversalisResponse? data, uint baseItemId, List<LowestPriceResult> results) {
-        if (data != null && data.Listings != null) {
-            foreach (var listing in data.Listings) {
-                // Reconstruct the in-game ItemID by adding the HQ offset if necessary
-                uint actualItemId = listing.IsHq ? baseItemId + 1000000u : baseItemId;
-                results.Add(new LowestPriceResult {
-                    ItemId = actualItemId,
-                    Price = listing.PricePerUnit,
-                    RetainerName = listing.RetainerName ?? string.Empty,
-                    IsHq = listing.IsHq
-                });
+    private void ExtractData(UniversalisResponse? data, uint baseItemId, List<UniversalisItemData> results) {
+        if (data != null) {
+            var itemData = new UniversalisItemData {
+                BaseItemId = baseItemId,
+                AveragePriceNq = (uint)Math.Round(data.AveragePriceNq),
+                AveragePriceHq = (uint)Math.Round(data.AveragePriceHq)
+            };
+
+            if (data.Listings != null) {
+                foreach (var listing in data.Listings) {
+                    itemData.Listings.Add(new LowestPriceResult {
+                        ItemId = listing.IsHq ? baseItemId + 1000000u : baseItemId,
+                        Price = listing.PricePerUnit,
+                        RetainerName = listing.RetainerName ?? string.Empty,
+                        IsHq = listing.IsHq
+                    });
+                }
             }
+            results.Add(itemData);
         }
     }
 }

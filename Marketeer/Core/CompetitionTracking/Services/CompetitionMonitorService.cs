@@ -133,25 +133,22 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
             foreach (var character in initialCharacters) {
                 if (!character.Listings.Any()) continue;
 
-                // Strip HQ offset to query Universalis properly
-                var baseItemIds = character.Listings.Select(listing => listing.ItemId > 1000000u ? listing.ItemId - 1000000u : listing.ItemId).Distinct();
-                var lowestPrices = await this.priceProvider.GetLowestPricesAsync(baseItemIds, character.HomeWorldId, bypassCache: false);
+                var itemIds = character.Listings.Select(listing => listing.ItemId).Distinct();
+                var pricings = await this.priceProvider.GetPricingsAsync(itemIds, character.HomeWorldId, bypassCache: false);
 
                 var liveCharacters = this.retainerState.GetAllCharactersListings();
                 var liveCharacter = liveCharacters.FirstOrDefault(c => c.CharacterName == character.CharacterName && c.HomeWorldId == character.HomeWorldId);
                 if (liveCharacter == null) continue;
 
                 foreach (var listing in liveCharacter.Listings) {
-                    // Match the exact ItemID (HQ matches HQ perfectly because UniversalisClientService added the offset back)
-                    var itemPrices = lowestPrices.Where(price => price.ItemId == listing.ItemId).ToList();
-
-                    var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.CurrentPrice, itemPrices);
+                    var itemPricing = pricings.FirstOrDefault(p => p.ItemId == listing.ItemId) ?? new MarketItemPricing { ItemId = listing.ItemId };
+                    var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.CurrentPrice, itemPricing);
 
                     bool shouldProcess = calcResult.Action == PricingAction.CancelListing ||
                                          (calcResult.Action == PricingAction.UpdatePrice && calcResult.CalculatedPrice != listing.CurrentPrice);
 
                     if (shouldProcess) {
-                        var marketLowest = itemPrices.OrderBy(p => p.Price).FirstOrDefault();
+                        var marketLowest = itemPricing.Listings.OrderBy(p => p.Price).FirstOrDefault();
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
                         undercuts.Add(new UndercutItem {

@@ -8,7 +8,7 @@ using Microsoft.Data.Sqlite;
 using NSubstitute;
 using Xunit;
 
-namespace Marketeer.Tests.UI.SalesHistory.Services;
+namespace Marketeer.Tests.Core.SalesHistory.Services;
 
 public class SalesRepositoryTests : IDisposable {
     private IDatabaseService mockDb;
@@ -21,10 +21,10 @@ public class SalesRepositoryTests : IDisposable {
         this.mockConfig = Substitute.For<IConfigurationService>();
         this.mockLogger = Substitute.For<ILoggerService>();
 
-        // Generate a unique database name for each test instance to ensure strict TDD isolation
-        var dbName = Guid.NewGuid().ToString();
-        var connectionString = $"Data Source={dbName};Mode=Memory;Cache=Shared";
+        // Create a shared in-memory database string for cross-connection persistence during the test
+        var connectionString = "Data Source=TestSalesDb;Mode=Memory;Cache=Shared";
 
+        // Keep one connection open to ensure the in-memory database is not destroyed between calls
         this.keepAliveConnection = new SqliteConnection(connectionString);
         this.keepAliveConnection.Open();
 
@@ -55,10 +55,10 @@ public class SalesRepositoryTests : IDisposable {
         var date = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Local);
 
         var sale1 = new SaleRecord { RetainerId = 1, ItemId = 100, Quantity = 2, UnitPrice = 500, BuyerName = "John Doe", SaleDate = date, ListingDate = date };
-        var sale2 = new SaleRecord { RetainerId = 2, ItemId = 100, Quantity = 2, UnitPrice = 500, BuyerName = "John Doe", SaleDate = date, ListingDate = date };
+        var sale2 = new SaleRecord { RetainerId = 2, ItemId = 100, Quantity = 2, UnitPrice = 500, BuyerName = "John Doe", SaleDate = date, ListingDate = date }; // Retainer ID differs, but constraint ignores it
 
         repo.AddSales(new[] { sale1 });
-        repo.AddSales(new[] { sale2 });
+        repo.AddSales(new[] { sale2 }); // Should be ignored based on UNIQUE(ItemId, Quantity, UnitPrice, BuyerName, SaleDate)
 
         var results = repo.GetAllSales();
 
@@ -74,12 +74,13 @@ public class SalesRepositoryTests : IDisposable {
 
         this.mockConfig.GetConfig().Returns(config);
 
+        // The constructor triggers InitializeTable and MigrateLegacyData
         var repo = new SalesRepository(this.mockDb, this.mockConfig, this.mockLogger);
         var results = repo.GetAllSales();
 
         Assert.Single(results);
         Assert.Equal(999u, results[0].ItemId);
-        Assert.Empty(config.SalesHistory);
+        Assert.Empty(config.SalesHistory); // Verify legacy list was cleared
         this.mockConfig.Received(1).Save();
     }
 

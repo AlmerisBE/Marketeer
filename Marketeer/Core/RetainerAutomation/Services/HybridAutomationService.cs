@@ -1,5 +1,4 @@
 ﻿using Dalamud.Plugin.Services;
-using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
@@ -30,7 +29,9 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private DateTime sequenceStartTime;
     private DateTime nextActionAt;
     private DateTime searchResultOpenTime;
-    private Task<IReadOnlyList<LowestPriceResult>>? priceFetchTask;
+
+    // Updated to expect MarketItemPricing models instead of raw LowestPriceResult lists
+    private Task<IReadOnlyList<MarketItemPricing>>? priceFetchTask;
     private int stateMachineIndex;
 
     public event Action<uint>? CancellationRequested;
@@ -105,7 +106,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         if (updatedItemIds.Contains(listing.ItemId)) {
             var localPlayer = this.objectTable.LocalPlayer;
             if (localPlayer != null && localPlayer.CurrentWorld.RowId == worldId) {
-                this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { listing.ItemId }, worldId, false);
+                // Updated to call GetPricingsAsync
+                this.priceFetchTask = this.priceProvider.GetPricingsAsync(new[] { listing.ItemId }, worldId, false);
             }
         }
     }
@@ -153,7 +155,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                             var localPlayer = this.objectTable.LocalPlayer;
                             if (localPlayer != null && this.currentListing != null) {
                                 this.logger.Warning("[HybridAutomation] Live scanner timed out or market is empty. Falling back to API.");
-                                this.priceFetchTask = this.priceProvider.GetLowestPricesAsync(new[] { this.currentListing.ItemId }, localPlayer.CurrentWorld.RowId, true);
+                                // Updated to call GetPricingsAsync
+                                this.priceFetchTask = this.priceProvider.GetPricingsAsync(new[] { this.currentListing.ItemId }, localPlayer.CurrentWorld.RowId, true);
                             }
                             this.searchResultOpenTime = DateTime.MinValue;
                         }
@@ -178,8 +181,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         if (listing == null || fetchTask == null) return;
 
-        var prices = fetchTask.Result.Where(p => p.ItemId == listing.ItemId).ToList();
-        var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.PricePerUnit, prices);
+        var pricing = fetchTask.Result.FirstOrDefault(p => p.ItemId == listing.ItemId) ?? new MarketItemPricing { ItemId = listing.ItemId };
+        var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.PricePerUnit, pricing);
 
         this.uiInteraction.CloseItemSearchResult();
 
