@@ -100,4 +100,41 @@ public class SalesRepositoryTests : IDisposable {
         this.keepAliveConnection.Close();
         this.keepAliveConnection.Dispose();
     }
+
+    [Fact]
+    public void GetGlobalSummary_ReturnsCorrectAggregates() {
+        var repo = new SalesRepository(this.mockDb, this.mockConfig, this.mockLogger);
+        var date = DateTime.Now;
+
+        repo.AddSales(new[] {
+            new SaleRecord { ItemId = 1, Quantity = 2, UnitPrice = 100, BuyerName = "Buyer1", SaleDate = date, ListingDate = date },
+            new SaleRecord { ItemId = 2, Quantity = 3, UnitPrice = 200, BuyerName = "Buyer2", SaleDate = date, ListingDate = date }
+        });
+
+        var summary = repo.GetGlobalSummary();
+
+        Assert.Equal(2, summary.TotalSalesCount);
+        Assert.Equal(5u, summary.TotalItemsSold);
+        Assert.Equal(800ul, summary.TotalRevenue); // (2*100) + (3*200) = 800
+    }
+
+    [Fact]
+    public void GetFastestSellingItems_FiltersCorrectlyAndCalculatesAverages() {
+        var repo = new SalesRepository(this.mockDb, this.mockConfig, this.mockLogger);
+        var listingDate = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Local);
+        var saleDate = listingDate.AddHours(2);
+
+        repo.AddSales(new[] {
+            new SaleRecord { ItemId = 100, Quantity = 1, UnitPrice = 500, BuyerName = "A", ListingDate = listingDate, SaleDate = saleDate },
+            new SaleRecord { ItemId = 100, Quantity = 1, UnitPrice = 500, BuyerName = "B", ListingDate = listingDate, SaleDate = saleDate.AddHours(2) }, // Diff: 2h and 4h -> avg 3h
+            new SaleRecord { ItemId = 999, Quantity = 1, UnitPrice = 500, BuyerName = "C", ListingDate = DateTime.MinValue, SaleDate = saleDate } // Should be ignored (legacy)
+        });
+
+        var fastest = repo.GetFastestSellingItems(10);
+
+        Assert.Single(fastest);
+        Assert.Equal(100u, fastest[0].ItemId);
+        Assert.Equal(TimeSpan.FromHours(3), fastest[0].AverageTimeToSell);
+        Assert.Equal(2, fastest[0].SalesCount);
+    }
 }

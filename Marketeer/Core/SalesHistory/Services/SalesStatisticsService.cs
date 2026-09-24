@@ -9,68 +9,33 @@ namespace Marketeer.Core.SalesHistory.Services;
 public class SalesStatisticsService : ISalesStatisticsService {
     private ISalesRepository salesRepository;
     private IItemResolverService itemResolver;
-    private ISalesAnalysisService analysisService;
 
-    public SalesStatisticsService(ISalesRepository salesRepository, IItemResolverService itemResolver, ISalesAnalysisService analysisService) {
+    public SalesStatisticsService(ISalesRepository salesRepository, IItemResolverService itemResolver) {
         this.salesRepository = salesRepository;
         this.itemResolver = itemResolver;
-        this.analysisService = analysisService;
     }
 
     public SalesGlobalSummary GetGlobalSummary() {
-        var sales = this.salesRepository.GetAllSales();
-        if (sales.Count == 0) return new SalesGlobalSummary();
-
-        var totalItems = (uint)sales.Sum(s => s.Quantity);
-        var totalRevenue = sales.Aggregate(0ul, (acc, s) => acc + (ulong)s.Quantity * s.UnitPrice);
-
-        return new SalesGlobalSummary {
-            TotalSalesCount = sales.Count,
-            TotalItemsSold = totalItems,
-            AverageItemsPerSale = (double)totalItems / sales.Count,
-            TotalRevenue = totalRevenue,
-            AverageRevenuePerSale = (double)totalRevenue / sales.Count
-        };
+        return this.salesRepository.GetGlobalSummary();
     }
 
     public IReadOnlyList<ItemSalesSummary> GetTopBestSellers(int limit = 10) {
-        var sales = this.salesRepository.GetAllSales();
-        var grouped = sales.GroupBy(s => s.ItemId);
-        var summaries = new List<ItemSalesSummary>();
-
-        foreach (var group in grouped) {
-            summaries.Add(this.analysisService.AnalyzeItem(group.Key, group.ToList()));
-        }
-
-        return summaries.OrderByDescending(s => s.TotalRevenue).Take(limit).ToList();
+        return this.salesRepository.GetTopBestSellers(limit);
     }
 
     public IReadOnlyList<FastestSellingItem> GetFastestSellingItems(int limit = 10) {
-        // Enforcing Year > 2000 safely eliminates legacy scraped data and protects against DateTime.MinValue timezone shifts
-        var sales = this.salesRepository.GetAllSales()
-            .Where(s => s.ListingDate.Year > 2000 && s.SaleDate > s.ListingDate)
-            .ToList();
+        var items = this.salesRepository.GetFastestSellingItems(limit);
 
-        var grouped = sales.GroupBy(s => s.ItemId);
-        var results = new List<FastestSellingItem>();
-
-        foreach (var group in grouped) {
-            var avgTicks = group.Average(s => (s.SaleDate - s.ListingDate).Ticks);
-            results.Add(new FastestSellingItem {
-                ItemId = group.Key,
-                ItemName = this.itemResolver.ResolveItemName(group.Key),
-                AverageTimeToSell = TimeSpan.FromTicks((long)avgTicks),
-                SalesCount = group.Count()
-            });
+        foreach (var item in items) {
+            item.ItemName = this.itemResolver.ResolveItemName(item.ItemId);
         }
 
-        return results.OrderBy(x => x.AverageTimeToSell).Take(limit).ToList();
+        return items;
     }
 
     public IReadOnlyList<DailyChartData> GetDailySalesChartData(int days = 14) {
-        var sales = this.salesRepository.GetAllSales();
         var cutoff = DateTime.UtcNow.Date.AddDays(-days + 1);
-        var recentSales = sales.Where(s => s.SaleDate.Date >= cutoff).ToList();
+        var recentSales = this.salesRepository.GetSalesSince(cutoff);
 
         var grouped = recentSales.GroupBy(s => s.SaleDate.Date).ToDictionary(g => g.Key, g => g.ToList());
         var results = new List<DailyChartData>();
@@ -84,9 +49,7 @@ public class SalesStatisticsService : ISalesStatisticsService {
                     Revenue = daySales.Aggregate(0ul, (acc, s) => acc + (ulong)s.Quantity * s.UnitPrice)
                 });
             }
-            else {
-                results.Add(new DailyChartData { Date = date, SalesCount = 0, Revenue = 0 });
-            }
+            else results.Add(new DailyChartData { Date = date, SalesCount = 0, Revenue = 0 });
         }
 
         return results;

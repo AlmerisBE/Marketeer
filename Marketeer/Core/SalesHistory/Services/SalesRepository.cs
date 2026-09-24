@@ -92,7 +92,6 @@ public class SalesRepository : ISalesRepository {
                 pQuantity.Value = (long)sale.Quantity;
                 pUnitPrice.Value = (long)sale.UnitPrice;
                 pBuyerName.Value = sale.BuyerName;
-                // Store DateTime as Ticks (INTEGER) for flawless native SQLite sorting and precision
                 pSaleDate.Value = sale.SaleDate.Ticks;
                 pListingDate.Value = sale.ListingDate.Ticks;
 
@@ -131,6 +130,145 @@ public class SalesRepository : ISalesRepository {
         }
         catch (Exception ex) {
             this.logger.Error(ex, "Failed to retrieve sales records from the database.");
+        }
+
+        return sales.AsReadOnly();
+    }
+
+    public SalesGlobalSummary GetGlobalSummary() {
+        try {
+            using var connection = this.databaseService.CreateConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(1), SUM(Quantity), SUM(Quantity * UnitPrice) FROM SalesHistory;";
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read() && !reader.IsDBNull(0) && reader.GetInt32(0) > 0) {
+                int count = reader.GetInt32(0);
+                uint totalItems = (uint)reader.GetInt64(1);
+                ulong totalRevenue = (ulong)reader.GetInt64(2);
+
+                return new SalesGlobalSummary {
+                    TotalSalesCount = count,
+                    TotalItemsSold = totalItems,
+                    AverageItemsPerSale = (double)totalItems / count,
+                    TotalRevenue = totalRevenue,
+                    AverageRevenuePerSale = (double)totalRevenue / count
+                };
+            }
+        }
+        catch (Exception ex) {
+            this.logger.Error(ex, "Failed to retrieve global sales summary.");
+        }
+
+        return new SalesGlobalSummary();
+    }
+
+    public IReadOnlyList<ItemSalesSummary> GetTopBestSellers(int limit) {
+        var results = new List<ItemSalesSummary>();
+
+        try {
+            using var connection = this.databaseService.CreateConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT ItemId, SUM(Quantity), AVG(Quantity), AVG(UnitPrice), SUM(Quantity * UnitPrice), MIN(SaleDate), MAX(SaleDate)
+                FROM SalesHistory
+                GROUP BY ItemId
+                ORDER BY SUM(Quantity * UnitPrice) DESC
+                LIMIT @Limit;";
+            command.Parameters.AddWithValue("@Limit", limit);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) {
+                var minDate = new DateTime(reader.GetInt64(5), DateTimeKind.Local);
+                var maxDate = new DateTime(reader.GetInt64(6), DateTimeKind.Local);
+                var timespan = maxDate - minDate;
+                var daysElapsed = timespan.TotalDays > 0 ? timespan.TotalDays : 1.0;
+                var quantity = (uint)reader.GetInt64(1);
+
+                results.Add(new ItemSalesSummary {
+                    ItemId = (uint)reader.GetInt64(0),
+                    TotalQuantitySold = quantity,
+                    AverageStackSize = reader.GetDouble(2),
+                    AverageUnitPrice = reader.GetDouble(3),
+                    TotalRevenue = (ulong)reader.GetInt64(4),
+                    SalesPerDay = quantity / daysElapsed
+                });
+            }
+        }
+        catch (Exception ex) {
+            this.logger.Error(ex, "Failed to retrieve top best sellers.");
+        }
+
+        return results.AsReadOnly();
+    }
+
+    public IReadOnlyList<FastestSellingItem> GetFastestSellingItems(int limit) {
+        var results = new List<FastestSellingItem>();
+
+        try {
+            using var connection = this.databaseService.CreateConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            long year2000Ticks = new DateTime(2000, 1, 1).Ticks;
+
+            command.CommandText = @"
+                SELECT ItemId, AVG(SaleDate - ListingDate), COUNT(1)
+                FROM SalesHistory
+                WHERE ListingDate > @Year2000 AND SaleDate > ListingDate
+                GROUP BY ItemId
+                ORDER BY AVG(SaleDate - ListingDate) ASC
+                LIMIT @Limit;";
+
+            command.Parameters.AddWithValue("@Year2000", year2000Ticks);
+            command.Parameters.AddWithValue("@Limit", limit);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) {
+                results.Add(new FastestSellingItem {
+                    ItemId = (uint)reader.GetInt64(0),
+                    AverageTimeToSell = TimeSpan.FromTicks((long)reader.GetDouble(1)),
+                    SalesCount = reader.GetInt32(2)
+                });
+            }
+        }
+        catch (Exception ex) {
+            this.logger.Error(ex, "Failed to retrieve fastest selling items.");
+        }
+
+        return results.AsReadOnly();
+    }
+
+    public IReadOnlyList<SaleRecord> GetSalesSince(DateTime cutoff) {
+        var sales = new List<SaleRecord>();
+
+        try {
+            using var connection = this.databaseService.CreateConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT RetainerId, ItemId, Quantity, UnitPrice, BuyerName, SaleDate, ListingDate FROM SalesHistory WHERE SaleDate >= @Cutoff;";
+            command.Parameters.AddWithValue("@Cutoff", cutoff.Ticks);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) {
+                sales.Add(new SaleRecord {
+                    RetainerId = (ulong)reader.GetInt64(0),
+                    ItemId = (uint)reader.GetInt64(1),
+                    Quantity = (uint)reader.GetInt64(2),
+                    UnitPrice = (uint)reader.GetInt64(3),
+                    BuyerName = reader.GetString(4),
+                    SaleDate = new DateTime(reader.GetInt64(5), DateTimeKind.Local),
+                    ListingDate = new DateTime(reader.GetInt64(6), DateTimeKind.Local)
+                });
+            }
+        }
+        catch (Exception ex) {
+            this.logger.Error(ex, "Failed to retrieve recent sales.");
         }
 
         return sales.AsReadOnly();
