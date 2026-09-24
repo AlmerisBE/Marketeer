@@ -19,9 +19,7 @@ public class SalesStatisticsService : ISalesStatisticsService {
 
     public SalesGlobalSummary GetGlobalSummary() {
         var sales = this.salesRepository.GetAllSales();
-        if (sales.Count == 0) {
-            return new SalesGlobalSummary();
-        }
+        if (sales.Count == 0) return new SalesGlobalSummary();
 
         var totalItems = (uint)sales.Sum(s => s.Quantity);
         var totalRevenue = sales.Aggregate(0ul, (acc, s) => acc + (ulong)s.Quantity * s.UnitPrice);
@@ -48,8 +46,9 @@ public class SalesStatisticsService : ISalesStatisticsService {
     }
 
     public IReadOnlyList<FastestSellingItem> GetFastestSellingItems(int limit = 10) {
+        // Enforcing Year > 2000 safely eliminates legacy scraped data and protects against DateTime.MinValue timezone shifts
         var sales = this.salesRepository.GetAllSales()
-            .Where(s => s.ListingDate != DateTime.MinValue && s.SaleDate > s.ListingDate)
+            .Where(s => s.ListingDate.Year > 2000 && s.SaleDate > s.ListingDate)
             .ToList();
 
         var grouped = sales.GroupBy(s => s.ItemId);
