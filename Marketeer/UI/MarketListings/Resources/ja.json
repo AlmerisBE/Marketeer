@@ -1,6 +1,6 @@
 {
   "Group_Market": "マーケット",
-  "VendorAlerts_TabName": "赤字販売",
+  "Menu_VendorAlerts": "価格アラート",
   "VendorAlerts_NoIssues": "問題ありません！NPCへの売却価格を下回る価格で出品されているアイテムはありません。",
   "VendorAlerts_WarningMessage": "警告: 現在 {0} 個のアイテムが、NPCに直接売却した場合と同等以下の価格で出品されています。",
   "VendorAlerts_ColItem": "アイテム",

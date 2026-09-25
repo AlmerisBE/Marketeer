@@ -1,6 +1,7 @@
 {
   "Group_MarketWatch": "Marktbeobachtung",
-  "MarketWatch_TabName": "Beobachtungsliste",
+  "Menu_Watchlist": "Beobachtungsliste",
+  "Menu_Opportunities": "Gelegenheiten",
   "MarketWatch_Header": "Markt-Beobachtungsliste",
   "MarketWatch_SelectAnItem": "Wähle einen Gegenstand...",
   "MarketWatch_BtnAdd": "Hinzufügen",

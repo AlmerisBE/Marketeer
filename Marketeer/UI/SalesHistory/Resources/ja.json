@@ -1,6 +1,7 @@
 {
-  "Group_Market": "マーケット",
-  "Group_Statistics": "統計",
+  "Group_History": "分析と履歴",
+  "Menu_SalesHistory": "販売履歴",
+  "SalesTab_History": "履歴",
   "SalesTab_Title": "販売実績",
   "SalesTab_SearchPlaceholder": "アイテムを検索...",
   "SalesTab_ColName": "名前",

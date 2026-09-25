@@ -1,6 +1,7 @@
 {
   "Group_MarketWatch": "Market Watch",
-  "MarketWatch_TabName": "Watchlist",
+  "Menu_Watchlist": "Watchlist",
+  "Menu_Opportunities": "Opportunities",
   "MarketWatch_Header": "Market Watchlist",
   "MarketWatch_SelectAnItem": "Select an item...",
   "MarketWatch_BtnAdd": "Add",

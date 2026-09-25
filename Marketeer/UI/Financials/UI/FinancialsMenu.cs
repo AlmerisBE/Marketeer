@@ -11,9 +11,9 @@ public class FinancialsMenu : INavigationNode {
     private IFinancialService financialService;
     private ILocalizationService localizationService;
 
-    public string GroupName => this.localizationService.Translate("Group_Financials");
-    public string Name => this.localizationService.Translate("Financials_TabName") ?? "Financials";
-    public int Priority => 50;
+    public string GroupName => this.localizationService.Translate("Group_History") ?? "Analysis & History";
+    public string Name => this.localizationService.Translate("Menu_Financials") ?? "Financial Overview";
+    public int Priority => 35;
 
     public bool HasContent => true;
     public bool DefaultExpanded => false;

@@ -1,6 +1,7 @@
 {
   "Group_MarketWatch": "マーケット監視",
-  "MarketWatch_TabName": "ウォッチリスト",
+  "Menu_Watchlist": "ウォッチリスト",
+  "Menu_Opportunities": "チャンス",
   "MarketWatch_Header": "マーケットウォッチリスト",
   "MarketWatch_SelectAnItem": "アイテムを選択...",
   "MarketWatch_BtnAdd": "追加",

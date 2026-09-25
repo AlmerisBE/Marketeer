@@ -12,9 +12,9 @@ public class CompetitionMenu : INavigationNode {
     private ICompetitionStateService competitionState;
     private ILocalizationService localizationService;
 
-    public string GroupName => this.localizationService.Translate("Group_Market");
-    public string Name => this.localizationService.Translate("Undercuts_TabName");
-    public int Priority => 40;
+    public string GroupName => this.localizationService.Translate("Group_ActiveSales") ?? "Sales & Competition";
+    public string Name => this.localizationService.Translate("Menu_Competition") ?? "Competition";
+    public int Priority => 20;
 
     public bool HasContent => true;
     public bool DefaultExpanded => false;
@@ -36,7 +36,6 @@ public class CompetitionMenu : INavigationNode {
             return;
         }
 
-        // We rely on the MarketeerGuideWindow and native UI highlights to assist the user.
         var groupedByCharacter = items.GroupBy(u => u.CharacterName);
 
         foreach (var group in groupedByCharacter) {
@@ -53,19 +52,14 @@ public class CompetitionMenu : INavigationNode {
 
                     foreach (var item in group) {
                         ImGui.TableNextRow();
-
                         ImGui.TableNextColumn();
                         ImGui.TextUnformatted(item.ItemName);
-
                         ImGui.TableNextColumn();
                         ImGui.TextUnformatted(item.RetainerName);
-
                         ImGui.TableNextColumn();
                         ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), item.OurPrice.ToString("N0"));
-
                         ImGui.TableNextColumn();
                         ImGui.TextColored(new Vector4(0.4f, 1.0f, 0.4f, 1.0f), item.ServerCheapestPrice.ToString("N0"));
-
                         ImGui.TableNextColumn();
                         ImGui.TextUnformatted(item.CompetitorName);
                     }

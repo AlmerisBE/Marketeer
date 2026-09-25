@@ -1,6 +1,7 @@
 {
-  "Group_Market": "Marché",
-  "Group_Statistics": "Statistiques",
+  "Group_History": "Analyses & Historique",
+  "Menu_SalesHistory": "Historique des ventes",
+  "SalesTab_History": "Historique",
   "SalesTab_Title": "Ventes réalisées",
   "SalesTab_SearchPlaceholder": "Rechercher des objets...",
   "SalesTab_ColName": "Nom",

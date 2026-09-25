@@ -19,8 +19,5 @@ public class SalesHistoryUiFeature : IFeatureModule {
 
         services.AddSingleton<SalesMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<SalesMenu>());
-
-        services.AddSingleton<SalesStatisticsMenu>();
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<SalesStatisticsMenu>());
     }
 }

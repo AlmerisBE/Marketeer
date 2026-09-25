@@ -11,9 +11,9 @@ public class VendorAlertsMenu : INavigationNode {
     private IListingOptimizationService optimizationService;
     private ILocalizationService localization;
 
-    public string GroupName => this.localization.Translate("Group_Market");
-    public string Name => this.localization.Translate("VendorAlerts_TabName");
-    public int Priority => 50;
+    public string GroupName => this.localization.Translate("Group_ActiveSales") ?? "Sales & Competition";
+    public string Name => this.localization.Translate("Menu_VendorAlerts") ?? "Price Alerts";
+    public int Priority => 25;
 
     public bool HasContent => true;
     public bool DefaultExpanded => false;
@@ -50,19 +50,14 @@ public class VendorAlertsMenu : INavigationNode {
 
             foreach (var listing in listings) {
                 ImGui.TableNextRow();
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(listing.ItemName);
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(listing.CharacterName);
-
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(listing.RetainerName);
-
                 ImGui.TableNextColumn();
                 ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), $"{listing.Price:N0}");
-
                 ImGui.TableNextColumn();
                 ImGui.TextColored(new Vector4(0.4f, 1.0f, 0.4f, 1.0f), $"{listing.VendorPrice:N0}");
             }

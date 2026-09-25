@@ -23,8 +23,8 @@ public class MarketWatchMenu : INavigationNode {
     private ItemSearchResult? selectedItem;
     private bool isHqSearch = false;
 
-    public string GroupName => this.localization.Translate("Group_MarketWatch");
-    public string Name => this.localization.Translate("MarketWatch_TabName");
+    public string GroupName => this.localization.Translate("Group_MarketWatch") ?? "Market Watch";
+    public string Name => this.localization.Translate("Menu_Watchlist") ?? "Watchlist";
     public int Priority => 50;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

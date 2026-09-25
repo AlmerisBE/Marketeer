@@ -1,6 +1,6 @@
 {
   "Group_Financials": "Statistics",
-  "Financials_TabName": "Financial Statistics",
+  "Menu_Financials": "Financial Overview",
   "Financials_LiquidGil": "Grand Total (Liquid Gil):",
   "Financials_MarketValue": "Grand Total (Active Market Value):",
   "Financials_ColHeader_CharacterRetainer": "Character / Retainer",

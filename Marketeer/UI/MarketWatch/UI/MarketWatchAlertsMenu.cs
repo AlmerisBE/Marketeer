@@ -13,8 +13,8 @@ public class MarketWatchAlertsMenu : INavigationNode {
     private IMarketWatchAlertState alertState;
     private ILocalizationService localization;
 
-    public string GroupName => this.localization.Translate("Group_MarketWatch");
-    public string Name => this.localization.Translate("MarketWatch_AlertsTabName");
+    public string GroupName => this.localization.Translate("Group_MarketWatch") ?? "Market Watch";
+    public string Name => this.localization.Translate("Menu_Opportunities") ?? "Opportunities";
     public int Priority => 51;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

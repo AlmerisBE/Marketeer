@@ -1,6 +1,6 @@
 {
-  "Group_Market": "Markt",
-  "Undercuts_TabName": "Unterbietungen",
+  "Group_ActiveSales": "Verkauf & Konkurrenz",
+  "Menu_Competition": "Konkurrenz",
   "Command_Price_Description": "Überprüft den niedrigsten Preis für einen Gegenstand. Verwendung: /marketeer price lowest <Gegenstandsname>",
   "Command_Price_InvalidArgs": "Ungültige Argumente. Verwendung: /marketeer price lowest <Gegenstandsname>",
   "Command_Price_ItemNotFound": "Gegenstand '{0}' konnte nicht gefunden werden.",

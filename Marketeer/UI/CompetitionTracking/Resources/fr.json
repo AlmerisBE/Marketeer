@@ -1,6 +1,6 @@
 {
-  "Group_Market": "Marché",
-  "Undercuts_TabName": "Concurrence",
+  "Group_ActiveSales": "Ventes & Concurrence",
+  "Menu_Competition": "Concurrence",
   "Command_Price_Description": "Vérifie le prix le plus bas pour un objet. Utilisation : /marketeer price lowest <nom de l'objet>",
   "Command_Price_InvalidArgs": "Arguments invalides. Utilisation : /marketeer price lowest <nom de l'objet>",
   "Command_Price_ItemNotFound": "L'objet '{0}' est introuvable.",

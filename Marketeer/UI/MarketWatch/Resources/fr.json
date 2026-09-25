@@ -1,6 +1,7 @@
 {
   "Group_MarketWatch": "Veille du Marché",
-  "MarketWatch_TabName": "Liste de suivi",
+  "Menu_Watchlist": "Liste de suivi",
+  "Menu_Opportunities": "Opportunités",
   "MarketWatch_Header": "Liste de suivi du marché",
   "MarketWatch_SelectAnItem": "Sélectionnez un objet...",
   "MarketWatch_BtnAdd": "Ajouter",

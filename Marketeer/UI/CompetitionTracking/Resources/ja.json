@@ -1,6 +1,6 @@
 {
-  "Group_Market": "マーケット",
-  "Undercuts_TabName": "価格競争",
+  "Group_ActiveSales": "販売と競争",
+  "Menu_Competition": "競争",
   "Command_Price_Description": "アイテムの最安値を確認します。使用方法: /marketeer price lowest <アイテム名>",
   "Command_Price_InvalidArgs": "無効な引数です。使用方法: /marketeer price lowest <アイテム名>",
   "Command_Price_ItemNotFound": "アイテム '{0}' が見つかりませんでした。",
