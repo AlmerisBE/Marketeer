@@ -1,5 +1,6 @@
 ﻿using Marketeer.API.InventoryTracking.Contracts;
 using Marketeer.API.InventoryTracking.Services;
+using Marketeer.Core.CraftingProfit.Contracts;
 using Marketeer.Core.Framework;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -13,6 +14,7 @@ public class InventoryTrackingFeature : IFeatureModule {
 
         services.AddSingleton<RetainerInventoryTrackerService>();
         services.AddSingleton<PlayerInventoryTrackerService>();
+        services.AddSingleton<ICraftingInventoryService, CraftingInventoryService>();
     }
 
     public void Initialize(IServiceProvider provider) {

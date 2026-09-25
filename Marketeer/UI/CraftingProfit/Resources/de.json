@@ -22,5 +22,6 @@
   "CraftingProfit_TooltipFree": "Aus dem Lager / Gratis Zutat",
   "CraftingProfit_TooltipCraft": "Diese Zutat herstellen",
   "CraftingProfit_TooltipOpenRecipe": "Handwerker-Notizbuch öffnen",
-  "CraftingProfit_TooltipOpenMap": "Sammelort auf der Karte anzeigen"
+  "CraftingProfit_TooltipOpenMap": "Sammelort auf der Karte anzeigen",
+  "CraftingProfit_ColInStock": "Auf Lager"
 }

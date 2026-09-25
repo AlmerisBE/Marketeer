@@ -22,5 +22,6 @@
   "CraftingProfit_TooltipFree": "Utiliser le stock / Composant gratuit",
   "CraftingProfit_TooltipCraft": "Fabriquer ce composant",
   "CraftingProfit_TooltipOpenRecipe": "Ouvrir le carnet d'artisanat",
-  "CraftingProfit_TooltipOpenMap": "Afficher la zone de récolte sur la carte"
+  "CraftingProfit_TooltipOpenMap": "Afficher la zone de récolte sur la carte",
+  "CraftingProfit_ColInStock": "En stock"
 }

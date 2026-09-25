@@ -22,5 +22,6 @@
   "CraftingProfit_TooltipFree": "Use from stock / Free component",
   "CraftingProfit_TooltipCraft": "Craft this component",
   "CraftingProfit_TooltipOpenRecipe": "Open Crafting Log",
-  "CraftingProfit_TooltipOpenMap": "Show gathering location on map"
+  "CraftingProfit_TooltipOpenMap": "Show gathering location on map",
+  "CraftingProfit_ColInStock": "In Stock"
 }

@@ -22,5 +22,6 @@
   "CraftingProfit_TooltipFree": "在庫を使用 / 無料素材",
   "CraftingProfit_TooltipCraft": "この素材を製作する",
   "CraftingProfit_TooltipOpenRecipe": "製作手帳を開く",
-  "CraftingProfit_TooltipOpenMap": "採集場所をマップに表示する"
+  "CraftingProfit_TooltipOpenMap": "採集場所をマップに表示する",
+  "CraftingProfit_ColInStock": "在庫"
 }
