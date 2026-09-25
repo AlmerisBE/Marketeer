@@ -23,5 +23,7 @@
   "CraftingProfit_TooltipCraft": "Craft this component",
   "CraftingProfit_TooltipOpenRecipe": "Open Crafting Log",
   "CraftingProfit_TooltipOpenMap": "Show gathering location on map",
-  "CraftingProfit_ColInStock": "In Stock"
+  "CraftingProfit_ColInStock": "In Stock",
+  "CraftingProfit_MaxCraftable": "Max: {0}",
+  "CraftingProfit_MaxCraftableLabel": "Possible Crafts (from stock): {0}"
 }

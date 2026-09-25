@@ -23,5 +23,7 @@
   "CraftingProfit_TooltipCraft": "Diese Zutat herstellen",
   "CraftingProfit_TooltipOpenRecipe": "Handwerker-Notizbuch öffnen",
   "CraftingProfit_TooltipOpenMap": "Sammelort auf der Karte anzeigen",
-  "CraftingProfit_ColInStock": "Auf Lager"
+  "CraftingProfit_ColInStock": "Auf Lager",
+  "CraftingProfit_MaxCraftable": "Max: {0}",
+  "CraftingProfit_MaxCraftableLabel": "Mögliche Herstellungen (auf Lager): {0}"
 }

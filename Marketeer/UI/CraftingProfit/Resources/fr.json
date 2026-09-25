@@ -23,5 +23,7 @@
   "CraftingProfit_TooltipCraft": "Fabriquer ce composant",
   "CraftingProfit_TooltipOpenRecipe": "Ouvrir le carnet d'artisanat",
   "CraftingProfit_TooltipOpenMap": "Afficher la zone de récolte sur la carte",
-  "CraftingProfit_ColInStock": "En stock"
+  "CraftingProfit_ColInStock": "En stock",
+  "CraftingProfit_MaxCraftable": "Max : {0}",
+  "CraftingProfit_MaxCraftableLabel": "Fabrications possibles (via stock) : {0}"
 }

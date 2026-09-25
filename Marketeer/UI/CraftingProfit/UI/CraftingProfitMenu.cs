@@ -120,6 +120,7 @@ public class CraftingProfitMenu : INavigationNode {
 
         uint yieldQty = evalResult?.ResultQuantity ?? 1;
         string headerTitle = yieldQty > 1 ? $"{itemName} (x{yieldQty})" : itemName;
+        if (evalResult != null) headerTitle += $" [{this.localization.Translate("CraftingProfit_MaxCraftable", evalResult.MaxCraftable)}]";
 
         int profit = evalResult?.Profit ?? 0;
         var headerColor = profit > 0 ? new Vector4(0.4f, 1.0f, 0.4f, 1.0f) : new Vector4(1.0f, 0.4f, 0.4f, 1.0f);
@@ -132,7 +133,10 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.Indent();
             ImGui.Spacing();
 
-            if (evalResult != null) ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", evalResult.CurrentMarketPrice));
+            if (evalResult != null) {
+                ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MaxCraftableLabel", evalResult.MaxCraftable));
+                ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", evalResult.CurrentMarketPrice));
+            }
             else ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", "-"));
 
             var removeText = this.localization.Translate("CraftingProfit_BtnRemove");
@@ -167,11 +171,10 @@ public class CraftingProfitMenu : INavigationNode {
             ImGui.Spacing();
 
             if (evalResult != null && evalResult.ComponentEvaluations != null && evalResult.ComponentEvaluations.Count > 0) {
-                // Modified to 7 columns
                 if (ImGui.BeginTable($"CraftingTable_{config.ItemId}", 7, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable)) {
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColIngredient"), ImGuiTableColumnFlags.WidthStretch);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColQty"), ImGuiTableColumnFlags.WidthFixed, 40f);
-                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColInStock"), ImGuiTableColumnFlags.WidthFixed, 60f);
+                    ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColInStock"), ImGuiTableColumnFlags.WidthFixed, 75f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColUnitCost"), ImGuiTableColumnFlags.WidthFixed, 75f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColTotalCost"), ImGuiTableColumnFlags.WidthFixed, 75f);
                     ImGui.TableSetupColumn(this.localization.Translate("CraftingProfit_ColMaxBuy"), ImGuiTableColumnFlags.WidthFixed, 90f);
@@ -212,16 +215,21 @@ public class CraftingProfitMenu : INavigationNode {
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(eval.QuantityRequired.ToString("N0"));
 
-        // New Column: In Stock
         ImGui.TableNextColumn();
         uint ownedQty = this.inventoryService.GetTotalOwnedQuantity(eval.ItemId);
-        if (ownedQty >= eval.QuantityRequired) {
-            ImGui.TextColored(new Vector4(0.3f, 1.0f, 0.3f, 1.0f), ownedQty.ToString("N0"));
+        string stockText = ownedQty.ToString("N0");
+
+        if (eval.MaxCraftable > ownedQty) stockText = $"{ownedQty:N0} (+{eval.MaxCraftable - ownedQty:N0})";
+
+        if (eval.MaxCraftable >= eval.QuantityRequired) {
+            ImGui.TextColored(new Vector4(0.3f, 1.0f, 0.3f, 1.0f), stockText);
         }
-        else if (ownedQty > 0) {
-            ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.2f, 1.0f), ownedQty.ToString("N0"));
+        else if (eval.MaxCraftable > 0) {
+            ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.2f, 1.0f), stockText);
         }
-        else ImGui.TextDisabled("0");
+        else {
+            ImGui.TextDisabled(stockText);
+        }
 
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(eval.UnitCost.ToString("N0"));

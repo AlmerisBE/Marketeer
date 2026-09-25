@@ -23,6 +23,8 @@ public class ComponentEvaluation {
     public uint UnitCost { get; set; }
     public uint TargetUnitCost { get; set; }
 
+    public uint MaxCraftable { get; set; }
+
     public uint TotalCost => this.IsCostIgnored ? 0u : this.UnitCost * this.QuantityRequired;
     public uint TotalTargetCost => this.IsCostIgnored ? 0u : (this.TargetUnitCost > 0 ? this.TargetUnitCost : this.UnitCost) * this.QuantityRequired;
 
@@ -40,6 +42,8 @@ public class CraftingProfitResult {
 
     public uint BatchTargetCraftingCost { get; set; }
     public uint TotalTargetCraftingCost { get; set; }
+
+    public uint MaxCraftable { get; set; }
 
     public List<ComponentEvaluation> ComponentEvaluations { get; set; } = new();
 
