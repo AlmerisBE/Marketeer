@@ -9,17 +9,17 @@ namespace Marketeer.UI.Shell.UI;
 
 public class WelcomeMenu : INavigationNode {
     private IDalamudPluginInterface pluginInterface;
-    private ILocalizationService localizationService;
+    private ILocalizationService localization;
 
-    public string GroupName => this.localizationService.Translate("Group_General");
-    public string Name => this.localizationService.Translate("Dashboard_WelcomeTab");
+    public string GroupName => this.localization.Translate("Group_General");
+    public string Name => this.localization.Translate("Dashboard_WelcomeTab");
     public int Priority => 0;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
-    public WelcomeMenu(IDalamudPluginInterface pluginInterface, ILocalizationService localizationService) {
+    public WelcomeMenu(IDalamudPluginInterface pluginInterface, ILocalizationService localization) {
         this.pluginInterface = pluginInterface;
-        this.localizationService = localizationService;
+        this.localization = localization;
     }
 
     public IEnumerable<INavigationNode> GetChildren() => [];
@@ -31,8 +31,27 @@ public class WelcomeMenu : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
-        ImGui.TextWrapped(this.localizationService.Translate("Dashboard_WelcomeText1"));
+        ImGui.TextWrapped(this.localization.Translate("Dashboard_WelcomeText1"));
         ImGui.Spacing();
-        ImGui.TextWrapped(this.localizationService.Translate("Dashboard_WelcomeText2"));
+        ImGui.TextWrapped(this.localization.Translate("Dashboard_WelcomeText2"));
+
+        ImGui.Spacing();
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        this.DrawSection("Welcome_Sec_Guidance_Title", "Welcome_Sec_Guidance_Desc");
+        this.DrawSection("Welcome_Sec_Chars_Title", "Welcome_Sec_Chars_Desc");
+        this.DrawSection("Welcome_Sec_Sales_Title", "Welcome_Sec_Sales_Desc");
+        this.DrawSection("Welcome_Sec_History_Title", "Welcome_Sec_History_Desc");
+        this.DrawSection("Welcome_Sec_Watch_Title", "Welcome_Sec_Watch_Desc");
+        this.DrawSection("Welcome_Sec_Crafting_Title", "Welcome_Sec_Crafting_Desc");
+        this.DrawSection("Welcome_Sec_Config_Title", "Welcome_Sec_Config_Desc");
+    }
+
+    private void DrawSection(string titleKey, string descKey) {
+        ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.4f, 1.0f), this.localization.Translate(titleKey));
+        ImGui.TextWrapped(this.localization.Translate(descKey));
+        ImGui.Spacing();
     }
 }

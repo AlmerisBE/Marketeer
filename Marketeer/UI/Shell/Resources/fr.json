@@ -37,5 +37,19 @@
   "About_Feature4": "Évaluateur de rentabilité pour l'artisanat.",
   "About_LinksHeader": "Liens & Support",
   "About_Github": "Dépôt GitHub",
-  "About_Discord": "Rejoindre le serveur Discord"
+  "About_Discord": "Rejoindre le serveur Discord",
+  "Welcome_Sec_Guidance_Title": "Fenêtre de Guidance & Automatisation",
+  "Welcome_Sec_Guidance_Desc": "Cette fenêtre flottante intelligente apparaît lorsque vous interagissez avec une sonnette. Elle vous guide pas-à-pas pour ajuster vos prix, annuler des ventes à perte et changer de servant automatiquement grâce à son bouton d'action unique.",
+  "Welcome_Sec_Chars_Title": "Personnages & Inventaires",
+  "Welcome_Sec_Chars_Desc": "Consultez l'inventaire complet de tous vos personnages et servants sans devoir vous reconnecter. Identifiez facilement les servants qui nécessitent une mise à jour de leurs prix.",
+  "Welcome_Sec_Sales_Title": "Ventes & Concurrence",
+  "Welcome_Sec_Sales_Desc": "Surveillez vos offres actives. La section 'Concurrence' vous indique où vous avez été sous-coté et vous propose de vous aligner, tandis que les 'Alertes de prix' signalent les objets vendus à perte (sous le prix d'achat des PNJ).",
+  "Welcome_Sec_History_Title": "Analyses & Historique",
+  "Welcome_Sec_History_Desc": "Suivez vos ventes réalisées, analysez vos meilleurs revenus, la vélocité de vos objets, et visualisez l'évolution de vos finances grâce à des graphiques dynamiques.",
+  "Welcome_Sec_Watch_Title": "Veille du Marché",
+  "Welcome_Sec_Watch_Desc": "Définissez des prix cibles à l'achat ou à la vente pour des objets spécifiques. Marketeer vous alertera silencieusement en arrière-plan si des opportunités se présentent.",
+  "Welcome_Sec_Crafting_Title": "Évaluateur de Profit (Artisanat)",
+  "Welcome_Sec_Crafting_Desc": "Calculez la rentabilité de vos sessions d'artisanat de manière prédictive. L'outil analyse vos stocks actuels et vous indique le profit net en simulant l'arborescence complète des recettes.",
+  "Welcome_Sec_Config_Title": "Configuration (Important)",
+  "Welcome_Sec_Config_Desc": "Personnalisez votre stratégie commerciale : définissez vos règles de sous-cotation (absolue en Gils ou relative en %), configurez votre liste blanche pour ne pas attaquer vos amis, ajustez votre comportement face aux pertes, et activez les délais humains pour l'automatisation."
 }

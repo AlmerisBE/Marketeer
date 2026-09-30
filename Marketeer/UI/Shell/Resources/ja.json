@@ -37,5 +37,19 @@
   "About_Feature4": "製作利益の評価",
   "About_LinksHeader": "リンクとサポート",
   "About_Github": "GitHub リポジトリ",
-  "About_Discord": "Discord に参加する"
+  "About_Discord": "Discord に参加する",
+  "Welcome_Sec_Guidance_Title": "ガイダンスウィンドウと自動化",
+  "Welcome_Sec_Guidance_Desc": "このスマートなフローティングウィンドウは、呼び鈴を調べたときに表示されます。単一のアクションボタンを使用して、価格の調整、赤字出品の取り消し、リテイナーの自動切り替えを段階的に案内します。",
+  "Welcome_Sec_Chars_Title": "キャラクターと所持品",
+  "Welcome_Sec_Chars_Desc": "ログインし直すことなく、すべてのキャラクターとリテイナーの所持品を閲覧できます。価格更新が必要なリテイナーを簡単に特定できます。",
+  "Welcome_Sec_Sales_Title": "販売と競争",
+  "Welcome_Sec_Sales_Desc": "アクティブな出品を監視します。「価格競争」セクションでは値下げされたアイテムをハイライト表示し、「価格アラート」ではNPCの売却価格を下回って出品されているアイテムを警告します。",
+  "Welcome_Sec_History_Title": "分析と履歴",
+  "Welcome_Sec_History_Desc": "完了した販売を追跡し、トップセラーやアイテムの販売速度を分析し、動的なチャートを通じて財務の成長を視覚化します。",
+  "Welcome_Sec_Watch_Title": "マーケット監視",
+  "Welcome_Sec_Watch_Desc": "特定のアイテムに目標の購入価格または販売価格を設定します。チャンスが到来すると、Marketeerがバックグラウンドで通知します。",
+  "Welcome_Sec_Crafting_Title": "利益評価 (製作)",
+  "Welcome_Sec_Crafting_Desc": "製作セッションの収益性を予測計算します。現在の素材在庫を分析し、レシピツリー全体をシミュレートすることで純利益を表示します。",
+  "Welcome_Sec_Config_Title": "設定 (重要)",
+  "Welcome_Sec_Config_Desc": "取引戦略をカスタマイズします。値下げルール（ギル指定または％指定）を定義し、フレンドを値下げしないためのホワイトリストを設定し、損失防止アクションを調整し、自動化のためのランダム遅延を有効にします。"
 }

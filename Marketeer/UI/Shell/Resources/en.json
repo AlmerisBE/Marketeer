@@ -37,5 +37,19 @@
   "About_Feature4": "Crafting profit evaluator.",
   "About_LinksHeader": "Links & Support",
   "About_Github": "GitHub Repository",
-  "About_Discord": "Join the Discord"
+  "About_Discord": "Join the Discord",
+  "Welcome_Sec_Guidance_Title": "Guidance Window & Automation",
+  "Welcome_Sec_Guidance_Desc": "This smart floating window appears when you interact with a Summoning Bell. It provides step-by-step guidance to adjust prices, cancel unprofitable listings, and switch retainers automatically using its single action button.",
+  "Welcome_Sec_Chars_Title": "Characters & Inventories",
+  "Welcome_Sec_Chars_Desc": "Browse the complete inventory of all your characters and retainers without having to log in. Easily identify retainers that require a price update.",
+  "Welcome_Sec_Sales_Title": "Sales & Competition",
+  "Welcome_Sec_Sales_Desc": "Monitor your active listings. The 'Competition' section highlights where you've been undercut and helps you match prices, while 'Price Alerts' warn you of items listed below their NPC vendor price.",
+  "Welcome_Sec_History_Title": "Analysis & History",
+  "Welcome_Sec_History_Desc": "Track your completed sales, analyze top earners and item velocity, and visualize your financial growth through dynamic charts.",
+  "Welcome_Sec_Watch_Title": "Market Watch",
+  "Welcome_Sec_Watch_Desc": "Set target buy or sell prices for specific items. Marketeer will quietly alert you in the background when opportunities arise.",
+  "Welcome_Sec_Crafting_Title": "Profit Evaluator (Crafting)",
+  "Welcome_Sec_Crafting_Desc": "Predictively calculate the profitability of your crafting sessions. The tool analyzes your current component stocks and shows net profit by simulating the entire recipe tree.",
+  "Welcome_Sec_Config_Title": "Configuration (Important)",
+  "Welcome_Sec_Config_Desc": "Customize your trading strategy: define undercutting rules (absolute Gil or relative %), configure your whitelist to avoid undercutting friends, adjust loss-prevention behavior, and enable humanized delays for automation."
 }

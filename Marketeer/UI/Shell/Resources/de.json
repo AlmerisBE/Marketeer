@@ -37,5 +37,19 @@
   "About_Feature4": "Gewinnkalkulator für Handwerker.",
   "About_LinksHeader": "Links & Support",
   "About_Github": "GitHub-Repository",
-  "About_Discord": "Dem Discord-Server beitreten"
+  "About_Discord": "Dem Discord-Server beitreten",
+  "Welcome_Sec_Guidance_Title": "Übersichtsfenster & Automatisierung",
+  "Welcome_Sec_Guidance_Desc": "Dieses intelligente, schwebende Fenster erscheint, wenn du mit einer Krämerklingel interagierst. Es führt dich Schritt für Schritt durch Preisanpassungen, das Stornieren unrentabler Angebote und den automatischen Gehilfenwechsel über eine einzige Aktionstaste.",
+  "Welcome_Sec_Chars_Title": "Charaktere & Inventare",
+  "Welcome_Sec_Chars_Desc": "Durchsuche das gesamte Inventar all deiner Charaktere und Gehilfen, ohne dich umloggen zu müssen. Erkenne leicht, welche Gehilfen eine Preisaktualisierung benötigen.",
+  "Welcome_Sec_Sales_Title": "Verkauf & Konkurrenz",
+  "Welcome_Sec_Sales_Desc": "Überwache deine aktiven Angebote. Der Bereich 'Konkurrenz' zeigt dir, wo du unterboten wurdest, während 'Preisalarme' dich vor Gegenständen warnen, die unter ihrem NPC-Verkaufspreis gelistet sind.",
+  "Welcome_Sec_History_Title": "Analyse & Historie",
+  "Welcome_Sec_History_Desc": "Verfolge deine abgeschlossenen Verkäufe, analysiere deine Bestseller sowie die Verkaufsgeschwindigkeit und visualisiere dein finanzielles Wachstum anhand dynamischer Diagramme.",
+  "Welcome_Sec_Watch_Title": "Marktbeobachtung",
+  "Welcome_Sec_Watch_Desc": "Lege Zielkauf- oder Verkaufspreise für bestimmte Gegenstände fest. Marketeer wird dich im Hintergrund lautlos benachrichtigen, wenn sich Gelegenheiten ergeben.",
+  "Welcome_Sec_Crafting_Title": "Profit-Auswerter (Handwerk)",
+  "Welcome_Sec_Crafting_Desc": "Berechne vorausschauend die Rentabilität deiner Handwerkssitzungen. Das Tool analysiert deine aktuellen Materialbestände und zeigt dir den Nettogewinn durch Simulation des gesamten Rezeptbaums.",
+  "Welcome_Sec_Config_Title": "Konfiguration (Wichtig)",
+  "Welcome_Sec_Config_Desc": "Passe deine Handelsstrategie an: Definiere Unterbietungsregeln (absolut in Gil oder relativ in %), richte deine Whitelist ein, passe das Verhalten zur Verlustvermeidung an und aktiviere menschliche Verzögerungen für die Automatisierung."
 }
