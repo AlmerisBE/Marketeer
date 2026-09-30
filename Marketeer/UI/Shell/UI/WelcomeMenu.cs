@@ -17,6 +17,17 @@ public class WelcomeMenu : INavigationNode {
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
+    // We expose the data structure defining the sections to allow headless unit testing
+    public IReadOnlyList<(string TitleKey, string DescKey)> Sections => new List<(string, string)> {
+        ("Welcome_Sec_Guidance_Title", "Welcome_Sec_Guidance_Desc"),
+        ("Welcome_Sec_Chars_Title", "Welcome_Sec_Chars_Desc"),
+        ("Welcome_Sec_Sales_Title", "Welcome_Sec_Sales_Desc"),
+        ("Welcome_Sec_History_Title", "Welcome_Sec_History_Desc"),
+        ("Welcome_Sec_Watch_Title", "Welcome_Sec_Watch_Desc"),
+        ("Welcome_Sec_Crafting_Title", "Welcome_Sec_Crafting_Desc"),
+        ("Welcome_Sec_Config_Title", "Welcome_Sec_Config_Desc")
+    };
+
     public WelcomeMenu(IDalamudPluginInterface pluginInterface, ILocalizationService localization) {
         this.pluginInterface = pluginInterface;
         this.localization = localization;
@@ -40,13 +51,9 @@ public class WelcomeMenu : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
-        this.DrawSection("Welcome_Sec_Guidance_Title", "Welcome_Sec_Guidance_Desc");
-        this.DrawSection("Welcome_Sec_Chars_Title", "Welcome_Sec_Chars_Desc");
-        this.DrawSection("Welcome_Sec_Sales_Title", "Welcome_Sec_Sales_Desc");
-        this.DrawSection("Welcome_Sec_History_Title", "Welcome_Sec_History_Desc");
-        this.DrawSection("Welcome_Sec_Watch_Title", "Welcome_Sec_Watch_Desc");
-        this.DrawSection("Welcome_Sec_Crafting_Title", "Welcome_Sec_Crafting_Desc");
-        this.DrawSection("Welcome_Sec_Config_Title", "Welcome_Sec_Config_Desc");
+        foreach (var section in this.Sections) {
+            this.DrawSection(section.TitleKey, section.DescKey);
+        }
     }
 
     private void DrawSection(string titleKey, string descKey) {
