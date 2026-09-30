@@ -190,7 +190,13 @@ public class NativeRetainerListHighlighterService : IDisposable {
 
     private unsafe string ExtractString(nint stringPtr) {
         if (stringPtr == IntPtr.Zero) return string.Empty;
-        return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
+
+        try {
+            return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
+        }
+        catch (Exception) {
+            return MemoryHelper.ReadStringNullTerminated(stringPtr);
+        }
     }
 
     public void Dispose() {

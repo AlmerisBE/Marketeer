@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -58,25 +57,17 @@ public class NativeListingHighlighterService : IDisposable {
     private unsafe void OnRetainerSellListUpdate(AddonEvent type, AddonArgs args) {
         try {
             var addon = (AtkUnitBase*)args.Addon.Address;
-            if (addon == null || !addon->IsVisible) {
-                return;
-            }
+            if (addon == null || !addon->IsVisible) return;
 
             var localPlayer = this.objectTable.LocalPlayer;
-            if (localPlayer == null) {
-                return;
-            }
+            if (localPlayer == null) return;
 
             var currentCharacterName = localPlayer.Name.TextValue;
             var activeId = this.listingProvider.GetActiveRetainerId();
-            if (!activeId.HasValue) {
-                return;
-            }
+            if (!activeId.HasValue) return;
 
             var activeRetainer = this.retainerProvider.GetActiveRetainers().FirstOrDefault(r => r.RetainerId == activeId.Value);
-            if (activeRetainer == null) {
-                return;
-            }
+            if (activeRetainer == null) return;
 
             var activeRetainerName = activeRetainer.Name;
             var slots = this.inventoryService.GetInventorySlots(InventoryType.RetainerMarket);
@@ -85,11 +76,8 @@ public class NativeListingHighlighterService : IDisposable {
             foreach (var slot in slots.Where(s => s.IsOccupied)) {
                 allItemNames.Add(this.itemResolver.ResolveItemName(slot.ItemId));
             }
-            if (allItemNames.Count == 0) {
-                return;
-            }
+            if (allItemNames.Count == 0) return;
 
-            // Create tuples of (ItemName, Price) to uniquely identify specific listings
             var undercuts = this.competitionState.GetUndercutItems()
                 .Where(u => u.CharacterName == currentCharacterName && u.RetainerName == activeRetainerName)
                 .Select(u => (ItemName: u.ItemName, Price: u.Price, Quantity: u.Quantity))
@@ -108,15 +96,11 @@ public class NativeListingHighlighterService : IDisposable {
     }
 
     private unsafe void TraverseAndColor(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity)> undercuts, HashSet<(string ItemName, uint Price, uint Quantity)> suboptimals) {
-        if (uldManager == null) {
-            return;
-        }
+        if (uldManager == null) return;
 
         for (int i = 0; i < uldManager->NodeListCount; i++) {
             var node = uldManager->NodeList[i];
-            if (node == null || !node->IsVisible()) {
-                continue;
-            }
+            if (node == null || !node->IsVisible()) continue;
 
             if ((ushort)node->Type >= 1000) {
                 var compNode = (AtkComponentNode*)node;
@@ -130,12 +114,10 @@ public class NativeListingHighlighterService : IDisposable {
 
                     foreach (var textNodePtr in textNodes) {
                         var textNode = (AtkTextNode*)textNodePtr;
-                        var text = this.ExtractString((byte*)textNode->NodeText.StringPtr);
+                        var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr);
 
                         if (!string.IsNullOrWhiteSpace(text)) {
-                            if (matchedItem == null) {
-                                matchedItem = this.GetMatchingItemName(text, allItems);
-                            }
+                            if (matchedItem == null) matchedItem = this.GetMatchingItemName(text, allItems);
 
                             var digits = new string(text.Where(char.IsDigit).ToArray());
                             if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedNum)) {
@@ -148,7 +130,6 @@ public class NativeListingHighlighterService : IDisposable {
                         bool isSuboptimal = false;
                         bool isUndercut = false;
 
-                        // Verify that BOTH the specific Price and Quantity parameters exist within this UI row's rendered text
                         foreach (var sub in suboptimals) {
                             if (sub.ItemName == matchedItem && rowNumbers.Contains(sub.Price) && rowNumbers.Contains(sub.Quantity)) {
                                 isSuboptimal = true;
@@ -163,33 +144,14 @@ public class NativeListingHighlighterService : IDisposable {
                             }
                         }
 
-                        bool needsHighlight = isSuboptimal || isUndercut;
-
                         ByteColor targetColor;
-                        if (isSuboptimal) {
-                            targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
-                        }
-                        else if (isUndercut) {
-                            targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
-                        }
-                        else {
-                            targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
-                        }
+                        if (isSuboptimal) targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
+                        else if (isUndercut) targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+                        else targetColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
 
                         foreach (var textNodePtr in textNodes) {
                             var textNode = (AtkTextNode*)textNodePtr;
                             textNode->TextColor = targetColor;
-
-                            if (needsHighlight && (byte*)textNode->NodeText.StringPtr != null) {
-                                var seString = MemoryHelper.ReadSeStringNullTerminated((nint)(byte*)textNode->NodeText.StringPtr);
-                                if (seString.Payloads.Any(p => p is UIForegroundPayload || p is UIGlowPayload)) {
-                                    seString.Payloads.RemoveAll(p => p is UIForegroundPayload || p is UIGlowPayload);
-                                    var encoded = seString.Encode().Concat(new byte[] { 0 }).ToArray();
-                                    fixed (byte* ptr = encoded) {
-                                        textNode->SetText(ptr);
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -200,19 +162,13 @@ public class NativeListingHighlighterService : IDisposable {
     }
 
     private unsafe void CollectVisibleTextNodes(AtkUldManager* uldManager, List<nint> list) {
-        if (uldManager == null) {
-            return;
-        }
+        if (uldManager == null) return;
 
         for (int i = 0; i < uldManager->NodeListCount; i++) {
             var node = uldManager->NodeList[i];
-            if (node == null || !node->IsVisible()) {
-                continue;
-            }
+            if (node == null || !node->IsVisible()) continue;
 
-            if (node->Type == NodeType.Text) {
-                list.Add((nint)node);
-            }
+            if (node->Type == NodeType.Text) list.Add((nint)node);
             else if ((ushort)node->Type >= 1000) {
                 var compNode = (AtkComponentNode*)node;
                 if (compNode->Component != null) {
@@ -224,32 +180,31 @@ public class NativeListingHighlighterService : IDisposable {
 
     protected virtual string? GetMatchingItemName(string uiText, HashSet<string> allItems) {
         var cleanText = uiText.Replace("\uE03C", "").Trim();
-        if (string.IsNullOrEmpty(cleanText)) {
-            return null;
-        }
+        if (string.IsNullOrEmpty(cleanText)) return null;
 
         bool isTruncated = cleanText.EndsWith("...") || cleanText.EndsWith("…");
         string searchName = isTruncated ? cleanText.TrimEnd('.', '…').Trim() : cleanText;
 
         foreach (var item in allItems) {
             if (isTruncated) {
-                if (item.StartsWith(searchName, StringComparison.InvariantCultureIgnoreCase)) {
-                    return item;
-                }
+                if (item.StartsWith(searchName, StringComparison.InvariantCultureIgnoreCase)) return item;
             }
-            else if (item.Equals(searchName, StringComparison.InvariantCultureIgnoreCase)) {
-                return item;
-            }
+            else if (item.Equals(searchName, StringComparison.InvariantCultureIgnoreCase)) return item;
         }
 
         return null;
     }
 
-    private unsafe string ExtractString(byte* stringPtr) {
-        if (stringPtr == null) {
-            return string.Empty;
+    private unsafe string ExtractString(nint stringPtr) {
+        if (stringPtr == IntPtr.Zero) return string.Empty;
+
+        try {
+            return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
         }
-        return MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr).TextValue ?? string.Empty;
+        catch (Exception) {
+            // Graceful fallback to raw UTF8 decoding if the SeString payload is corrupted or missing boundaries
+            return MemoryHelper.ReadStringNullTerminated(stringPtr);
+        }
     }
 
     public void Dispose() {

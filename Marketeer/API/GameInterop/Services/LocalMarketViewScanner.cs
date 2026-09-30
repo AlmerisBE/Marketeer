@@ -175,8 +175,13 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
     private unsafe string ExtractString(nint stringPtr) {
         if (stringPtr == IntPtr.Zero) return string.Empty;
-        // Native compatibility update for Dawntrail CStringPointer format
-        return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
+
+        try {
+            return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
+        }
+        catch (Exception) {
+            return MemoryHelper.ReadStringNullTerminated(stringPtr);
+        }
     }
 
     private unsafe float GetAbsoluteX(nint nodePtr) {
