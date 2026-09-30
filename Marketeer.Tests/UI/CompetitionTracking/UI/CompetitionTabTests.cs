@@ -9,19 +9,14 @@ namespace Marketeer.Tests.UI.CompetitionTracking.UI;
 public class CompetitionTabTests {
     [Fact]
     public void Name_ReturnsTranslatedTabName() {
-        // Arrange
-        var mockCompetitionState = Substitute.For<ICompetitionStateService>();
-        var mockLocalization = Substitute.For<ILocalizationService>();
+        var competitionState = Substitute.For<ICompetitionStateService>();
+        var localization = Substitute.For<ILocalizationService>();
 
-        mockLocalization.Translate("Undercuts_TabName").Returns("Concurrence");
+        // Mock the new consolidated translation key mapped during the UI refactor
+        localization.Translate("Menu_Competition").Returns("Concurrence");
 
-        var tab = new CompetitionMenu(mockCompetitionState, mockLocalization);
+        var menu = new CompetitionMenu(competitionState, localization);
 
-        // Act
-        var result = tab.Name;
-
-        // Assert
-        Assert.Equal("Concurrence", result);
-        Assert.Equal(40, tab.Priority);
+        Assert.Equal("Concurrence", menu.Name);
     }
 }

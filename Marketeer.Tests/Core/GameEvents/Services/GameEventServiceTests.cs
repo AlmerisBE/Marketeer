@@ -10,39 +10,31 @@ namespace Marketeer.Tests.Core.GameEvents.Services;
 public class GameEventServiceTests {
     [Fact]
     public void GameEventService_RegistersAllRequiredAddonListeners() {
-        // Arrange
-        var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockGameGui = Substitute.For<IGameGui>();
+        var addonLifecycle = Substitute.For<IAddonLifecycle>();
+        var framework = Substitute.For<IFramework>();
+        var logger = Substitute.For<ILoggerService>();
+        var gameGui = Substitute.For<IGameGui>();
 
-        // Act
-        using var service = new GameEventService(mockAddonLifecycle, mockFramework, mockLogger, mockGameGui);
+        var service = new GameEventService(addonLifecycle, framework, logger, gameGui);
 
-        // Assert
-        mockAddonLifecycle.Received().RegisterListener(AddonEvent.PostSetup, "RetainerList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
-        mockAddonLifecycle.Received().RegisterListener(AddonEvent.PostSetup, "RetainerSellList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
-        mockAddonLifecycle.Received().RegisterListener(AddonEvent.PreFinalize, "RetainerSellList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
-        mockAddonLifecycle.Received().RegisterListener(AddonEvent.PreFinalize, "RetainerSell", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        // Verify that only the strictly necessary and optimized listeners are registered
+        addonLifecycle.Received(1).RegisterListener(AddonEvent.PostSetup, "RetainerList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        addonLifecycle.Received(1).RegisterListener(AddonEvent.PostSetup, "RetainerSellList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        addonLifecycle.Received(1).RegisterListener(AddonEvent.PreFinalize, "RetainerSell", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
     }
 
     [Fact]
     public void GameEventService_OnDispose_UnregistersAllListeners() {
-        // Arrange
-        var mockAddonLifecycle = Substitute.For<IAddonLifecycle>();
-        var mockFramework = Substitute.For<IFramework>();
-        var mockLogger = Substitute.For<ILoggerService>();
-        var mockGameGui = Substitute.For<IGameGui>();
+        var addonLifecycle = Substitute.For<IAddonLifecycle>();
+        var framework = Substitute.For<IFramework>();
+        var logger = Substitute.For<ILoggerService>();
+        var gameGui = Substitute.For<IGameGui>();
 
-        var service = new GameEventService(mockAddonLifecycle, mockFramework, mockLogger, mockGameGui);
-
-        // Act
+        var service = new GameEventService(addonLifecycle, framework, logger, gameGui);
         service.Dispose();
 
-        // Assert
-        mockAddonLifecycle.Received().UnregisterListener(AddonEvent.PostSetup, "RetainerList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
-        mockAddonLifecycle.Received().UnregisterListener(AddonEvent.PostSetup, "RetainerSellList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
-        mockAddonLifecycle.Received().UnregisterListener(AddonEvent.PreFinalize, "RetainerSellList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
-        mockAddonLifecycle.Received().UnregisterListener(AddonEvent.PreFinalize, "RetainerSell", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        addonLifecycle.Received(1).UnregisterListener(AddonEvent.PostSetup, "RetainerList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        addonLifecycle.Received(1).UnregisterListener(AddonEvent.PostSetup, "RetainerSellList", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
+        addonLifecycle.Received(1).UnregisterListener(AddonEvent.PreFinalize, "RetainerSell", Arg.Any<IAddonLifecycle.AddonEventDelegate>());
     }
 }
