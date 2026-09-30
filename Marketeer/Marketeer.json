@@ -2,7 +2,7 @@
   "Author": "Almeris",
   "Name": "Marketeer",
   "InternalName": "Marketeer",
-  "AssemblyVersion": "0.0.0.1",
+  "AssemblyVersion": "1.0.0.0",
   "Description": "Manage your market board prices.",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 15,
@@ -20,3 +20,4 @@
     "trading"
   ]
 }
+
