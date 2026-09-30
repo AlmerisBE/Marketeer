@@ -119,4 +119,23 @@ public class UniversalisClientServiceTests {
         // Verify that the logger recorded the retries
         logger.Received(2).Warning(Arg.Is<string>(s => s.Contains("GatewayTimeout")));
     }
+
+    [Fact]
+    public async Task FetchDataAsync_WhenApiReturnsNotFound_ReturnsEmptySilently() {
+        var mockHandler = new MockHttpMessageHandler(null, HttpStatusCode.NotFound);
+        var httpClient = new HttpClient(mockHandler) { BaseAddress = new Uri("https://test.local/") };
+        var logger = Substitute.For<ILoggerService>();
+
+        var service = new UniversalisClientService(httpClient, logger);
+
+        // Act
+        var results = await service.FetchDataAsync(new[] { 9999u }, 73);
+
+        // Assert
+        Assert.Empty(results);
+
+        // Ensure no false-positive errors are logged for a naturally empty market
+        logger.DidNotReceive().Error(Arg.Any<string>());
+        logger.DidNotReceive().Warning(Arg.Any<string>());
+    }
 }

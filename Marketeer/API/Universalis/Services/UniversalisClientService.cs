@@ -19,7 +19,11 @@ public class UniversalisClientService : IUniversalisClient {
         this.httpClient = httpClient;
         this.logger = logger;
 
-        if (this.httpClient.BaseAddress == null) this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
+        if (this.httpClient.BaseAddress == null) {
+            this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
+            this.httpClient.DefaultRequestHeaders.Add("User-Agent", "Marketeer/0.0.0.1 (Dalamud Plugin)");
+            this.httpClient.Timeout = TimeSpan.FromSeconds(15);
+        }
     }
 
     public async Task<IReadOnlyList<UniversalisItemData>> FetchDataAsync(IEnumerable<uint> baseItemIds, uint worldId) {
@@ -38,12 +42,22 @@ public class UniversalisClientService : IUniversalisClient {
 
                 HttpResponseMessage? response = null;
                 bool success = false;
+                bool is404 = false;
+                int attemptsUsed = 0;
 
                 for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                    attemptsUsed = attempt;
                     try {
-                        response = await this.httpClient.GetAsync($"{worldId}/{idsString}");
+                        // Limiting entries reduces Universalis DB strain and drastically cuts down 504 timeouts
+                        response = await this.httpClient.GetAsync($"{worldId}/{idsString}?entries=10");
 
                         if (response.IsSuccessStatusCode) {
+                            success = true;
+                            break;
+                        }
+
+                        if (response.StatusCode == HttpStatusCode.NotFound) {
+                            is404 = true;
                             success = true;
                             break;
                         }
@@ -57,16 +71,22 @@ public class UniversalisClientService : IUniversalisClient {
                             break;
                         }
                     }
+                    catch (TaskCanceledException) {
+                        this.logger.Warning($"Universalis API request timed out for batch on world {worldId} (Attempt {attempt}/{maxRetries}). Retrying...");
+                        await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
+                    }
                     catch (Exception ex) {
                         this.logger.Error(ex, $"Exception during Universalis API call for batch on world {worldId} (Attempt {attempt}/{maxRetries}).");
                         await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
                     }
                 }
 
-                if (!success || response == null) {
-                    this.logger.Error($"Failed to fetch data from Universalis for batch on world {worldId} after {maxRetries} attempts.");
+                if (!success) {
+                    this.logger.Error($"Failed to fetch data from Universalis for batch on world {worldId} after {attemptsUsed} attempts.");
                     continue;
                 }
+
+                if (is404 || response == null) continue;
 
                 var content = await response.Content.ReadAsStringAsync();
 
@@ -95,7 +115,8 @@ public class UniversalisClientService : IUniversalisClient {
         return statusCode == HttpStatusCode.GatewayTimeout ||
                statusCode == HttpStatusCode.BadGateway ||
                statusCode == HttpStatusCode.ServiceUnavailable ||
-               statusCode == HttpStatusCode.TooManyRequests;
+               statusCode == HttpStatusCode.TooManyRequests ||
+               statusCode == HttpStatusCode.RequestTimeout;
     }
 
     private void ExtractData(UniversalisResponse? data, uint baseItemId, List<UniversalisItemData> results) {
