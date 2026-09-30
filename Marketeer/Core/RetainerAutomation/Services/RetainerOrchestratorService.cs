@@ -116,7 +116,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (this.uiInteraction.IsAddonReady(targetWindowName)) {
             if (this.hasReachedTargetMenu && this.currentTask != null) {
-                if (this.Throttle("TickTask", 100)) { // Fast tick for business logic
+                if (this.Throttle("TickTask", 100)) {
                     if (this.currentTask.OnTick()) {
                         if (this.Throttle("CloseTaskMenu", this.GetThrottleMs(500))) {
                             if (this.currentTargetMenu == RetainerTargetMenu.MarketListings) this.uiInteraction.CloseRetainerMarket();
@@ -124,6 +124,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
                             this.hasReachedTargetMenu = false;
                             this.currentTask.OnMenuClosed(this.currentRetainer);
+                            this.currentRetainer = string.Empty; // Force moving to the next retainer natively
                         }
                     }
                 }
@@ -138,7 +139,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         }
 
         if (this.uiInteraction.IsAddonReady("SelectString")) {
-            if (this.uiInteraction.IsMenuReadyForRetainer(this.currentRetainer)) {
+            if (!string.IsNullOrEmpty(this.currentRetainer) && this.uiInteraction.IsMenuReadyForRetainer(this.currentRetainer)) {
                 var optionText = this.currentTargetMenu == RetainerTargetMenu.MarketListings
                     ? this.localization.Translate("RetainerMenu_SellItems")
                     : this.localization.Translate("RetainerMenu_SalesHistory");

@@ -11,19 +11,22 @@ using System.Threading.Tasks;
 
 namespace Marketeer.API.Universalis.Services;
 
-public class UniversalisClientService : IUniversalisClient {
+public class UniversalisClientService : IUniversalisClient, IDisposable {
     private HttpClient httpClient;
     private ILoggerService logger;
 
-    public UniversalisClientService(HttpClient httpClient, ILoggerService logger) {
-        this.httpClient = httpClient;
+    public UniversalisClientService(ILoggerService logger, HttpMessageHandler? handler = null) {
         this.logger = logger;
 
-        if (this.httpClient.BaseAddress == null) {
-            this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
-            this.httpClient.DefaultRequestHeaders.Add("User-Agent", "Marketeer/0.0.0.1 (Dalamud Plugin)");
-            this.httpClient.Timeout = TimeSpan.FromSeconds(15);
-        }
+        var httpHandler = handler ?? new HttpClientHandler {
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+        };
+
+        this.httpClient = new HttpClient(httpHandler) {
+            BaseAddress = new Uri("https://universalis.app/api/v2/"),
+            Timeout = TimeSpan.FromSeconds(15)
+        };
+        this.httpClient.DefaultRequestHeaders.Add("User-Agent", "Marketeer/1.0.0.0 (Dalamud Plugin)");
     }
 
     public async Task<IReadOnlyList<UniversalisItemData>> FetchDataAsync(IEnumerable<uint> baseItemIds, uint worldId) {
@@ -48,7 +51,6 @@ public class UniversalisClientService : IUniversalisClient {
                 for (int attempt = 1; attempt <= maxRetries; attempt++) {
                     attemptsUsed = attempt;
                     try {
-                        // Limiting entries reduces Universalis DB strain and drastically cuts down 504 timeouts
                         response = await this.httpClient.GetAsync($"{worldId}/{idsString}?entries=10");
 
                         if (response.IsSuccessStatusCode) {
@@ -74,6 +76,10 @@ public class UniversalisClientService : IUniversalisClient {
                     catch (TaskCanceledException) {
                         this.logger.Warning($"Universalis API request timed out for batch on world {worldId} (Attempt {attempt}/{maxRetries}). Retrying...");
                         await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
+                    }
+                    catch (ObjectDisposedException) {
+                        this.logger.Warning($"Universalis API request aborted due to service disposal (Plugin reloaded).");
+                        return results; // Abort entirely and silently
                     }
                     catch (Exception ex) {
                         this.logger.Error(ex, $"Exception during Universalis API call for batch on world {worldId} (Attempt {attempt}/{maxRetries}).");
@@ -141,5 +147,9 @@ public class UniversalisClientService : IUniversalisClient {
             }
             results.Add(itemData);
         }
+    }
+
+    public void Dispose() {
+        this.httpClient?.Dispose();
     }
 }
