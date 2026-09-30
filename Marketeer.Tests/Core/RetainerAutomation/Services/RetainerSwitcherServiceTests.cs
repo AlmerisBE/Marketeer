@@ -28,7 +28,6 @@ public class RetainerSwitcherServiceTests {
 
         service.SwitchTo("MyTargetRetainer", true);
 
-        // Using Reflection bypasses Dalamud delegate type changes and prevents CS0246 errors
         Action triggerUpdate = () => {
             var method = typeof(RetainerSwitcherService).GetMethod("OnFrameworkUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
             method?.Invoke(service, new object[] { framework });
@@ -44,7 +43,7 @@ public class RetainerSwitcherServiceTests {
         uiInteraction.IsAddonReady("RetainerList").Returns(true);
         triggerUpdate();
 
-        // State 2: Interact with list
+        // State 2: Interact with list and move to State 3
         triggerUpdate();
         uiInteraction.Received(1).SelectRetainer("MyTargetRetainer");
 
@@ -53,7 +52,10 @@ public class RetainerSwitcherServiceTests {
         uiInteraction.IsAddonReady("SelectString").Returns(true);
         uiInteraction.IsMenuReadyForRetainer("MyTargetRetainer").Returns(true);
 
-        // State 3: Menu validation and Market execution
+        // State 3: Observe SelectString is open, move to State 4
+        triggerUpdate();
+
+        // State 4: Menu validation and Market execution
         triggerUpdate();
         uiInteraction.Received(1).OpenRetainerMarket();
 
@@ -97,7 +99,15 @@ public class RetainerSwitcherServiceTests {
         uiInteraction.IsAddonReady("RetainerList").Returns(true);
         triggerUpdate(); // Transition State 1 -> 2
 
-        triggerUpdate(); // State 2: Select
+        triggerUpdate(); // State 2 -> 3 (Select)
         uiInteraction.Received(1).SelectRetainer("MyTargetRetainer");
+
+        // UI Sim: List closes, SelectString opens
+        uiInteraction.IsAddonReady("RetainerList").Returns(false);
+        uiInteraction.IsAddonReady("SelectString").Returns(true);
+        uiInteraction.IsMenuReadyForRetainer("MyTargetRetainer").Returns(true);
+
+        triggerUpdate(); // State 3 -> 4
+        triggerUpdate(); // State 4 -> Execution
     }
 }
