@@ -1,123 +1,62 @@
-# BasePlugin - Dalamud Plugin Template
+# Marketeer
 
-[![Build and Release Plugin](https://github.com/AlmerisBE/BasePlugin/actions/workflows/release.yml/badge.svg)](https://github.com/AlmerisBE/BasePlugin/actions/workflows/release.yml)
+![Dalamud API](https://img.shields.io/badge/Dalamud%20API-v10-blue.svg)
+![License](https://img.shields.io/badge/License-AGPL%203.0-green.svg)
+![Language](https://img.shields.io/badge/Language-C%23%2012.0-purple.svg)
 
-A robust, enterprise-grade template for building [Dalamud](https://github.com/goatcorp/Dalamud) plugins for Final Fantasy XIV. 
+**Marketeer** is an all-in-one market board, inventory, and retainer management plugin for Final Fantasy XIV (via Dalamud). It is designed to optimize your trading strategies, eliminate tedious market board clicking, and maximize your profits across all your characters.
 
-This template is built upon the **Vertical Slice Architecture** pattern, utilizing **SOLID principles**, robust **Dependency Injection** (via `Microsoft.Extensions.DependencyInjection`), and is fully set up for **Test-Driven Development (TDD)** using xUnit and NSubstitute.
+## 🌟 Key Features
 
----
+### ⚔️ Sales & Competition
+* **Undercut Tracking:** Instantly identify which of your listings have been undercut and match server-lowest prices.
+* **Loss Prevention & Price Alerts:** Get warned before selling items below their NPC vendor buy price.
+* **Market Watchlist:** Set target buy/sell prices for specific items. Marketeer will silently monitor the market and notify you in the chat when an opportunity arises.
 
-## 🌟 Core Features Included
+### 🤖 Retainer Automation & Guidance
+* **Stateless Event-Driven Automation:** Experience lightning-fast, zero-delay retainer interactions.
+* **Smart Guidance Window:** A context-aware overlay that appears when you interact with a Summoning Bell, offering 1-click execution for price adjustments, listing cancellations, and retainer switching.
+* **Auto-Switcher:** Seamlessly transitions between retainers natively without manual menu navigation.
 
-This base plugin provides a solid foundation so you can immediately focus on your business logic instead of boilerplate code:
+### 📊 Analysis & Financial History
+* **Sales History:** A dedicated tracker for your completed sales, powered by a highly optimized, asynchronous SQLite storage layer.
+* **Dynamic Charts & Metrics:** Visualize your revenue over the last 14 days, identify your top 10 best-sellers, and track item sales velocity (sales per day).
+* **Multi-Character Dashboard:** Track liquid Gil and active market values across all your alts and retainers without needing to log into them.
 
-*   **🧩 Feature Module Architecture**: Automatically discovers and registers services, commands, and UI windows using reflection (`IFeatureModule`). No more bloated `Plugin.cs`.
-*   **💉 Dependency Injection**: Native support for constructor injection for all your services and Dalamud APIs.
-*   **💬 Command Dispatcher**: A routing system that maps chat commands (e.g., `/myplugin config`) to specific `ICommand` classes.
-*   **🌐 Modular Localization**: A JSON-based embedded localization system (`en`, `fr`, `de`, `ja`) with automatic fallback mechanisms.
-*   **⚙️ Configuration & UI**: Pre-configured ImGui window (`WindowSystem` via `Dalamud.Bindings.ImGui`) linked to the Dalamud `IPluginConfiguration` save states.
-*   **📜 Unified Logging**: An abstraction over `IPluginLog` (`ILoggerService`) to ensure consistent logging across your application and easy mocking in unit tests.
-*   **🧪 TDD Ready**: A pre-configured `xUnit` test project demonstrating how to mock Dalamud interfaces and test your services.
+### 🔨 Crafting Profit Evaluator
+* **Recursive Material Requirements Planning (MRP):** Predictively calculate the profitability of your crafting sessions.
+* **Inventory Awareness:** The evaluator automatically scans your aggregated cross-character and retainer inventories to factor in the materials you already own, calculating exact net profits based on live Universalis pricing and historical velocity.
 
----
+## 📥 Installation
 
-## 🚀 Getting Started
+1. Open the Dalamud Settings menu in FFXIV (`/xlsettings`).
+2. Go to the **Experimental** tab.
+3. Under **Custom Plugin Repositories**, add the following URL:
+   [https://raw.githubusercontent.com/AlmerisBE/Marketeer/main/repo.json](https://raw.githubusercontent.com/AlmerisBE/Marketeer/main/repo.json)
+(Note: Update the URL above to match your actual GitHub Pages or raw JSON deployment URL).
+4. Click the + button and save.
+5. Open the Plugin Installer (/xlplugins), search for Marketeer, and click Install.
 
-To create a new plugin from this template:
+## ⚙️ Commands
+* /marketeer - Toggles the main Marketeer dashboard.
+* /marketeer config - Opens the configuration and settings menu.
+* /marketeer price <item name> - Checks the current lowest price for a specific item.
+* /marketeer guide - Toggles the visibility of the Retainer Guidance overlay.
 
-### 1. Create your repository
-Click the green **Use this template** button at the top of this repository on GitHub to create your own copy.
+## 🛠️ Development & Architecture
+Marketeer is built strictly following SOLID principles, utilizing Test-Driven Development (TDD) and a Vertical Slice Architecture (Feature Modules).
+* **Dependency Injection:** Powered by Microsoft.Extensions.DependencyInjection.
+* **Headless Testing:** UI logic and state evaluation are strictly decoupled from the native Dalamud.Bindings.ImGui rendering layer to ensure a fully isolated xUnit test suite.
+* **Memory Over UI:** State evaluation heavily favors reading native FFXIV memory (FFXIVClientStructs) over error-prone UI scraping, utilizing IsFullyLoaded() checks for rock-solid stability.
 
-### 2. Rename the project
-Once cloned to your local machine, you need to replace the `BasePlugin` placeholder with your actual plugin name.
+## Prerequisites
+* Visual Studio 2022 (or Rider).
+* .NET 8.0 SDK (or higher).
+* The latest Dalamud API build environment.
 
-1. Rename the folders: `BasePlugin` and `BasePlugin.Tests`.
-2. Rename the `.sln` and `.csproj` files.
-3. Open the solution in Visual Studio and perform a global **Find and Replace** (Ctrl+Shift+F):
-   * Find: `BasePlugin`
-   * Replace: `YourPluginName`
-4. Update the `BasePlugin.json` file with your plugin's metadata (Author, Description, etc.).
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome!
+Please ensure that any pull requests adhere to the existing architectural style (Feature encapsulation, interface-segregation, and file-scoped namespaces) and pass the TDD xUnit test suite.
 
-### 3. Build & Run
-Build the solution in `Debug | x64`. 
-Load the resulting folder into Dalamud via the `/xlsettings` > **Experimental** > **Dev Plugin Locations** menu.
-
----
-
-## 🏗️ Architecture Guide: How to add a new Feature
-
-Instead of organizing files by technical type (e.g., all interfaces in one folder, all models in another), this template groups code by **Feature** (Vertical Slicing).
-
-To add a new feature (e.g., `AutoLoot`):
-
-### 1. Create the Feature Folder
-Create a new directory: `Features/AutoLoot/`. Inside, you can have subfolders like `Services/`, `Commands/`, `UI/`, and `Contracts/`.
-
-### 2. Define the Feature Module
-Create a registration class that implements `IFeatureModule`. The core system will automatically detect this and register your services on startup.
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-using BasePlugin.Core;
-using BasePlugin.Features.AutoLoot.Contracts;
-using BasePlugin.Features.AutoLoot.Services;
-using BasePlugin.Features.AutoLoot.Commands;
-using BasePlugin.Features.Command.Contracts;
-
-namespace BasePlugin.Features.AutoLoot;
-
-public class AutoLootFeature : IFeatureModule {
-    public void RegisterServices(IServiceCollection services) {
-        services.AddSingleton<IAutoLootService, AutoLootService>();
-        services.AddSingleton<ICommand, ToggleAutoLootCommand>();
-    }
-}
-```
-
-### 3. Add a Command
-Implement the `ICommand` interface. The `CommandDispatcher` will route user input directly to your `Execute` method.
-
-```csharp
-using BasePlugin.Features.Command.Contracts;
-
-namespace BasePlugin.Features.AutoLoot.Commands;
-
-public class ToggleAutoLootCommand : ICommand {
-    public string CommandTrigger => "autoloot";
-    public string Description => "Toggles the auto-loot feature.";
-
-    public void Execute(string arguments) {
-        // Your command logic here
-    }
-}
-```
-
-### 4. Add Localized Text
-Create a `Resources/` folder in your feature directory and add an `en.json` file. Ensure it is marked as an **Embedded Resource** by MSBuild (already configured in the `.csproj`).
-
-```json
-{
-  "AutoLoot_Enabled": "Auto-Loot is now enabled!"
-}
-```
-
-Create a provider to feed this JSON into the global translation engine:
-
-```csharp
-using BasePlugin.Features.Localization.Providers;
-
-namespace BasePlugin.Features.AutoLoot.Providers;
-
-public class AutoLootLocalizationProvider : JsonLocalizationProvider {
-    protected override string ResourceBasePath => "BasePlugin.Features.AutoLoot.Resources";
-}
-```
-
-*(Don't forget to register this provider in your `AutoLootFeature`!)*
-
----
-
-## 🤝 Contributing & License
-
-This template is provided as-is to help the Final Fantasy XIV community build better, more maintainable plugins. Feel free to fork, improve, and submit pull requests.
+## 📝 License
+This project is licensed under the AGPL-3.0 License. See the LICENSE file for details.
