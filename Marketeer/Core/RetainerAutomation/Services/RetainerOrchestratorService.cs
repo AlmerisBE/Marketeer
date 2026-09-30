@@ -12,242 +12,194 @@ using System.Collections.Generic;
 namespace Marketeer.Core.RetainerAutomation.Services;
 
 public class RetainerOrchestratorService : IRetainerOrchestratorService, IDisposable {
-    private const double RetainerAvailabilityDelay = 5.0;
-
     private IFramework framework;
-    private IRetainerUiInteractionService uiInteractionService;
+    private IRetainerUiInteractionService uiInteraction;
     private INativeWindowService windowService;
-    private ILocalizationService localizationService;
+    private ILocalizationService localization;
     private IConfigurationService configService;
     private ILoggerService logger;
-    private IWorldInteractionService worldInteractionService;
+    private IWorldInteractionService worldInteraction;
 
-    private Queue<string> retainerQueue;
-    private string currentRetainerName;
+    private Queue<string> retainerQueue = new();
+    private string currentRetainer = string.Empty;
     private RetainerTargetMenu currentTargetMenu;
     private IRetainerTask? currentTask;
 
-    private OrchestrationStep currentStep;
-
-    private DateTime actionAvailableAt;
+    private bool hasReachedTargetMenu;
     private DateTime timeoutAt;
-    private DateTime stepEnteredAt;
+    private Dictionary<string, DateTime> throttles = new();
 
     public bool IsActive { get; private set; }
 
     public RetainerOrchestratorService(
         IFramework framework,
-        IRetainerUiInteractionService uiInteractionService,
+        IRetainerUiInteractionService uiInteraction,
         INativeWindowService windowService,
-        ILocalizationService localizationService,
+        ILocalizationService localization,
         IConfigurationService configService,
         ILoggerService logger,
-        IWorldInteractionService worldInteractionService) {
+        IWorldInteractionService worldInteraction) {
 
         this.framework = framework;
-        this.uiInteractionService = uiInteractionService;
+        this.uiInteraction = uiInteraction;
         this.windowService = windowService;
-        this.localizationService = localizationService;
+        this.localization = localization;
         this.configService = configService;
         this.logger = logger;
-        this.worldInteractionService = worldInteractionService;
-
-        this.retainerQueue = new Queue<string>();
-        this.currentRetainerName = string.Empty;
-        this.currentStep = OrchestrationStep.Idle;
+        this.worldInteraction = worldInteraction;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
     public void StartOrchestration(IEnumerable<string> retainerNames, RetainerTargetMenu targetMenu, IRetainerTask task) {
-        if (this.IsActive) {
-            this.logger.Warning("Cannot start orchestration: another orchestration is already active.");
-            return;
-        }
+        if (this.IsActive) return;
 
         this.retainerQueue = new Queue<string>(retainerNames);
         if (this.retainerQueue.Count == 0) return;
 
         this.currentTargetMenu = targetMenu;
         this.currentTask = task;
-        this.IsActive = true;
-        this.logger.Info($"Starting Retainer Orchestration for {this.retainerQueue.Count} retainers. Target Menu: {targetMenu}.");
+        this.currentRetainer = string.Empty;
+        this.hasReachedTargetMenu = false;
+        this.timeoutAt = DateTime.UtcNow.AddSeconds(20);
+        this.throttles.Clear();
 
-        if (!this.uiInteractionService.IsAddonReady("RetainerList")) this.SetState(OrchestrationStep.OpenBell, 0);
-        else this.AdvanceToNextRetainerOrFinish();
+        this.IsActive = true;
+        this.logger.Info($"Starting Orchestration for {this.retainerQueue.Count} retainers.");
     }
 
     public void Abort() {
         this.IsActive = false;
-        this.currentStep = OrchestrationStep.Idle;
         this.currentTask?.OnAbort();
         this.currentTask = null;
-        this.logger.Info("Retainer orchestration sequence aborted/concluded.");
+        this.logger.Info("Retainer orchestration aborted/concluded.");
     }
 
-    private void OnFrameworkUpdate(IFramework frameworkInstance) {
+    private int GetThrottleMs(int baseMs) {
+        var config = this.configService.GetConfig();
+        if (!config.EnableAutomationDelay) return baseMs;
+
+        var min = config.AutomationDelayMin * 1000;
+        var max = config.AutomationDelayMax * 1000;
+        if (min > max) min = max;
+
+        return baseMs + new Random().Next(min, max);
+    }
+
+    private bool Throttle(string key, int baseCooldownMs = 500) {
+        var now = DateTime.UtcNow;
+        if (!this.throttles.TryGetValue(key, out var lastTime) || (now - lastTime).TotalMilliseconds > baseCooldownMs) {
+            this.throttles[key] = now;
+            return true;
+        }
+        return false;
+    }
+
+    private void OnFrameworkUpdate(IFramework fw) {
         if (!this.IsActive) return;
 
-        this.uiInteractionService.SkipDialogue();
+        this.uiInteraction.SkipDialogue();
 
-        if (DateTime.Now < this.actionAvailableAt) return;
-
-        if (DateTime.Now > this.timeoutAt) {
-            this.logger.Error($"Orchestration step {this.currentStep} timed out. Aborting.");
-            this.uiInteractionService.CloseUnexpectedWindows();
+        if (DateTime.UtcNow > this.timeoutAt) {
+            this.logger.Error($"Orchestration timed out on retainer '{this.currentRetainer}'. Aborting.");
+            this.uiInteraction.CloseUnexpectedWindows();
             this.Abort();
             return;
         }
 
-        switch (this.currentStep) {
-            case OrchestrationStep.OpenBell: this.ProcessOpenBell(); break;
-            case OrchestrationStep.WaitBell: this.ProcessWaitBell(); break;
-            case OrchestrationStep.SelectRetainer: this.ProcessSelectRetainer(); break;
-            case OrchestrationStep.WaitSelectStringOpen: this.ProcessWaitSelectStringOpen(); break;
-            case OrchestrationStep.OpenMenu: this.ProcessOpenMenu(); break;
-            case OrchestrationStep.WaitMenu: this.ProcessWaitMenu(); break;
-            case OrchestrationStep.ExecutingTask: this.ProcessExecutingTask(); break;
-            case OrchestrationStep.CloseMenu: this.ProcessCloseMenu(); break;
-            case OrchestrationStep.WaitMenuClosed: this.ProcessWaitMenuClosed(); break;
-            case OrchestrationStep.WaitSelectStringReturn: this.ProcessWaitSelectStringReturn(); break;
-            case OrchestrationStep.CloseSelectString: this.ProcessCloseSelectString(); break;
-            case OrchestrationStep.WaitRetainerListReturn: this.ProcessWaitRetainerListReturn(); break;
-            case OrchestrationStep.CloseRetainerList: this.ProcessCloseRetainerList(); break;
-        }
-    }
-
-    private void ProcessOpenBell() {
-        if (this.worldInteractionService.InteractWithSummoningBell()) {
-            this.SetState(OrchestrationStep.WaitBell, 0);
-        }
-        else {
-            this.logger.Warning("Cannot start orchestration: Summoning bell not in range and menu not open.");
-            this.Abort();
-        }
-    }
-
-    private void ProcessWaitBell() {
-        if (this.uiInteractionService.IsAddonReady("RetainerList")) this.AdvanceToNextRetainerOrFinish();
-    }
-
-    private void AdvanceToNextRetainerOrFinish() {
-        if (this.retainerQueue.Count > 0) {
-            this.currentRetainerName = this.retainerQueue.Dequeue();
-            this.SetState(OrchestrationStep.SelectRetainer, this.GetRandomDelay());
-        }
-        else this.SetState(OrchestrationStep.CloseRetainerList, this.GetRandomDelay());
-    }
-
-    private void ProcessSelectRetainer() {
-        if (this.uiInteractionService.IsRetainerAvailable(this.currentRetainerName)) {
-            if (this.uiInteractionService.SelectRetainer(this.currentRetainerName)) {
-                this.SetState(OrchestrationStep.WaitSelectStringOpen, 0);
-                return;
-            }
+        if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
+            if (this.Throttle("SelectYesNo", this.GetThrottleMs(500))) this.uiInteraction.ConfirmYesNo();
+            return;
         }
 
-        if ((DateTime.Now - this.stepEnteredAt).TotalSeconds > RetainerAvailabilityDelay) {
-            this.logger.Warning($"Skipping retainer {this.currentRetainerName} as it is not available.");
-            this.AdvanceToNextRetainerOrFinish();
-        }
-    }
-
-    private void ProcessWaitSelectStringOpen() {
-        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
-            this.SetState(OrchestrationStep.OpenMenu, this.GetRandomDelay());
-        }
-    }
-
-    private void ProcessOpenMenu() {
-        var optionText = this.currentTargetMenu == RetainerTargetMenu.MarketListings
-            ? this.localizationService.Translate("RetainerMenu_SellItems")
-            : this.localizationService.Translate("RetainerMenu_SalesHistory");
-
-        if (this.uiInteractionService.IsMenuOptionAvailable(optionText)) {
-            if (this.uiInteractionService.SelectMenuOption(optionText)) {
-                this.SetState(OrchestrationStep.WaitMenu, 0);
-                return;
-            }
-        }
-
-        if ((DateTime.Now - this.stepEnteredAt).TotalSeconds > RetainerAvailabilityDelay) {
-            this.logger.Warning($"Skipping interaction, menu option '{optionText}' not available.");
-            this.AdvanceToNextRetainerOrFinish();
-        }
-    }
-
-    private void ProcessWaitMenu() {
         var targetWindowName = this.currentTargetMenu == RetainerTargetMenu.MarketListings ? "RetainerSellList" : "RetainerHistory";
 
-        if (this.uiInteractionService.IsAddonReady(targetWindowName)) {
-            this.currentTask?.OnMenuOpened(this.currentRetainerName);
-            this.SetState(OrchestrationStep.ExecutingTask, this.GetRandomDelay());
-            this.timeoutAt = DateTime.MaxValue; // Suspend timeout while task executes natively
+        if (this.uiInteraction.IsAddonReady(targetWindowName)) {
+            if (this.hasReachedTargetMenu && this.currentTask != null) {
+                if (this.Throttle("TickTask", 100)) { // Fast tick for business logic
+                    if (this.currentTask.OnTick()) {
+                        if (this.Throttle("CloseTaskMenu", this.GetThrottleMs(500))) {
+                            if (this.currentTargetMenu == RetainerTargetMenu.MarketListings) this.uiInteraction.CloseRetainerMarket();
+                            else this.uiInteraction.CloseSalesHistory();
+
+                            this.hasReachedTargetMenu = false;
+                            this.currentTask.OnMenuClosed(this.currentRetainer);
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (this.Throttle("CloseSubMenu", this.GetThrottleMs(500))) {
+                if (this.uiInteraction.IsAddonReady("RetainerSellList")) this.uiInteraction.CloseRetainerMarket();
+                if (this.uiInteraction.IsAddonReady("RetainerHistory")) this.uiInteraction.CloseSalesHistory();
+            }
+            return;
         }
-    }
 
-    private void ProcessExecutingTask() {
-        if (this.currentTask != null) {
-            if (this.currentTask.OnTick()) this.SetState(OrchestrationStep.CloseMenu, this.GetRandomDelay());
+        if (this.uiInteraction.IsAddonReady("SelectString")) {
+            if (this.uiInteraction.IsMenuReadyForRetainer(this.currentRetainer)) {
+                var optionText = this.currentTargetMenu == RetainerTargetMenu.MarketListings
+                    ? this.localization.Translate("RetainerMenu_SellItems")
+                    : this.localization.Translate("RetainerMenu_SalesHistory");
+
+                if (this.uiInteraction.IsMenuOptionAvailable(optionText)) {
+                    if (this.Throttle("OpenTargetMenu", this.GetThrottleMs(500))) {
+                        this.uiInteraction.SelectMenuOption(optionText);
+                        this.hasReachedTargetMenu = true;
+                        this.currentTask?.OnMenuOpened(this.currentRetainer);
+                        this.timeoutAt = DateTime.MaxValue; // Suspend timeout while task operates
+                    }
+                }
+                else {
+                    if (this.Throttle("CloseSelectString", this.GetThrottleMs(500))) {
+                        this.logger.Warning($"Option not available. Skipping {this.currentRetainer}.");
+                        this.uiInteraction.CloseSelectString();
+                        this.currentRetainer = string.Empty; // Force next retainer
+                    }
+                }
+            }
+            else {
+                if (this.Throttle("CloseSelectString", this.GetThrottleMs(500))) {
+                    this.uiInteraction.CloseSelectString();
+                }
+            }
+            return;
         }
-        else this.SetState(OrchestrationStep.CloseMenu, 0);
-    }
 
-    private void ProcessCloseMenu() {
-        bool success = this.currentTargetMenu == RetainerTargetMenu.MarketListings
-            ? this.uiInteractionService.CloseRetainerMarket()
-            : this.uiInteractionService.CloseSalesHistory();
+        if (this.uiInteraction.IsAddonReady("RetainerList")) {
+            if (this.retainerQueue.Count == 0 && string.IsNullOrEmpty(this.currentRetainer)) {
+                if (this.Throttle("CloseRetainerList", this.GetThrottleMs(500))) {
+                    var window = this.windowService.GetWindow("RetainerList");
+                    if (window != null && window.IsVisible) window.SendCallback(-1);
+                    this.Abort();
+                }
+            }
+            else {
+                if (string.IsNullOrEmpty(this.currentRetainer)) {
+                    this.currentRetainer = this.retainerQueue.Dequeue();
+                    this.timeoutAt = DateTime.UtcNow.AddSeconds(20); // Reset timeout for new retainer
+                }
 
-        if (success) {
-            this.currentTask?.OnMenuClosed(this.currentRetainerName);
-            this.SetState(OrchestrationStep.WaitMenuClosed, 0);
+                if (this.uiInteraction.IsRetainerAvailable(this.currentRetainer)) {
+                    if (this.Throttle("SelectRetainer", this.GetThrottleMs(1000))) {
+                        this.uiInteraction.SelectRetainer(this.currentRetainer);
+                    }
+                }
+                else {
+                    this.logger.Warning($"Retainer {this.currentRetainer} not found. Skipping.");
+                    this.currentRetainer = string.Empty;
+                }
+            }
+            return;
         }
-        else this.AdvanceToNextRetainerOrFinish();
-    }
 
-    private void ProcessWaitMenuClosed() {
-        var targetWindowName = this.currentTargetMenu == RetainerTargetMenu.MarketListings ? "RetainerSellList" : "RetainerHistory";
-        var window = this.windowService.GetWindow(targetWindowName);
-
-        if (window == null || !window.IsVisible) this.SetState(OrchestrationStep.WaitSelectStringReturn, 0);
-    }
-
-    private void ProcessWaitSelectStringReturn() {
-        if (this.uiInteractionService.IsAddonReady("SelectString")) this.SetState(OrchestrationStep.CloseSelectString, this.GetRandomDelay());
-    }
-
-    private void ProcessCloseSelectString() {
-        if (this.uiInteractionService.CloseSelectString()) this.SetState(OrchestrationStep.WaitRetainerListReturn, 0);
-        else this.AdvanceToNextRetainerOrFinish();
-    }
-
-    private void ProcessWaitRetainerListReturn() {
-        if (this.uiInteractionService.IsAddonReady("RetainerList")) this.AdvanceToNextRetainerOrFinish();
-    }
-
-    private void ProcessCloseRetainerList() {
-        var window = this.windowService.GetWindow("RetainerList");
-        if (window != null && window.IsVisible) window.SendCallback(-1);
-
-        this.Abort();
-    }
-
-    private void SetState(OrchestrationStep nextStep, double delaySeconds) {
-        this.currentStep = nextStep;
-        this.stepEnteredAt = DateTime.Now;
-        this.actionAvailableAt = DateTime.Now.AddSeconds(delaySeconds);
-        this.timeoutAt = DateTime.Now.AddSeconds(20);
-    }
-
-    private double GetRandomDelay() {
-        var config = this.configService.GetConfig();
-        if (!config.EnableAutomationDelay) return 0;
-
-        var min = config.AutomationDelayMin;
-        var max = config.AutomationDelayMax;
-        if (min > max) min = max;
-
-        return min + (new Random().NextDouble() * (max - min));
+        if (this.Throttle("InteractBell", 2000)) {
+            if (!this.worldInteraction.InteractWithSummoningBell()) {
+                this.logger.Warning("Cannot orchestrate: Bell not in range.");
+                this.Abort();
+            }
+        }
     }
 
     public void Dispose() {

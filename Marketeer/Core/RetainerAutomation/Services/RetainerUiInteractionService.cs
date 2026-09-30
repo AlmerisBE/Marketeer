@@ -31,7 +31,7 @@ public unsafe class RetainerUiInteractionService : IRetainerUiInteractionService
 
         var addon = (AtkUnitBase*)addonPtr.Address;
 
-        return addon->IsVisible && addon->UldManager.NodeListCount > 0;
+        return addon->IsVisible && addon->UldManager.NodeListCount > 0 && addon->IsFullyLoaded();
     }
 
     public bool IsRetainerAvailable(string retainerName) {

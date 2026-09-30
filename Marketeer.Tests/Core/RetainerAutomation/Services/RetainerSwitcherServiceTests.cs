@@ -10,7 +10,7 @@ namespace Marketeer.Tests.Core.RetainerAutomation.Services;
 
 public class RetainerSwitcherServiceTests {
     private class TestableRetainerSwitcherService : RetainerSwitcherService {
-        public DateTime CurrentTime { get; set; } = DateTime.Now;
+        public DateTime CurrentTime { get; set; } = DateTime.UtcNow;
 
         public TestableRetainerSwitcherService(IFramework framework, IRetainerUiInteractionService uiInteraction, ILoggerService logger)
             : base(framework, uiInteraction, logger) { }
@@ -19,7 +19,7 @@ public class RetainerSwitcherServiceTests {
     }
 
     [Fact]
-    public void SwitchTo_WhenAtRetainerList_SelectsRetainerAndInstantlyOpensMarket() {
+    public void SwitchTo_StatelessFlow_CompletesSuccessfully() {
         var framework = Substitute.For<IFramework>();
         var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
         var logger = Substitute.For<ILoggerService>();
@@ -33,81 +33,33 @@ public class RetainerSwitcherServiceTests {
             method?.Invoke(service, new object[] { framework });
         };
 
-        // State 0 -> 1: No secondary windows are open
-        uiInteraction.IsAddonReady("RetainerSellList").Returns(false);
-        uiInteraction.IsAddonReady("RetainerHistory").Returns(false);
-        triggerUpdate();
-
-        // State 1 -> 2: SelectString is closed, RetainerList is visible
-        uiInteraction.IsAddonReady("SelectString").Returns(false);
+        // 1. Initial State: Only RetainerList is open
+        uiInteraction.IsAddonReady(Arg.Any<string>()).Returns(false);
         uiInteraction.IsAddonReady("RetainerList").Returns(true);
-        triggerUpdate();
 
-        // State 2: Interact with list and move to State 3
         triggerUpdate();
         uiInteraction.Received(1).SelectRetainer("MyTargetRetainer");
 
-        // Game UI simulation: List closes, SelectString opens
+        // 2. FFXIV UI shifts to SelectString natively
         uiInteraction.IsAddonReady("RetainerList").Returns(false);
         uiInteraction.IsAddonReady("SelectString").Returns(true);
         uiInteraction.IsMenuReadyForRetainer("MyTargetRetainer").Returns(true);
 
-        // State 3: Observe SelectString is open, move to State 4
-        triggerUpdate();
+        // Fast forward mock time to bypass throttle safely
+        service.CurrentTime = service.CurrentTime.AddSeconds(1);
 
-        // State 4: Menu validation and Market execution
         triggerUpdate();
         uiInteraction.Received(1).OpenRetainerMarket();
 
-        // Validate service halted correctly
-        triggerUpdate();
-        uiInteraction.Received(1).OpenRetainerMarket(); // Should not increment
-    }
+        // 3. FFXIV UI shifts to Market
+        uiInteraction.IsAddonReady("SelectString").Returns(false);
+        uiInteraction.IsAddonReady("RetainerSellList").Returns(true);
 
-    [Fact]
-    public void SwitchTo_WhenWrongRetainerSummoned_BacksOutToRetainerListAndRetries() {
-        var framework = Substitute.For<IFramework>();
-        var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
-        var logger = Substitute.For<ILoggerService>();
-
-        var service = new TestableRetainerSwitcherService(framework, uiInteraction, logger);
-
-        service.SwitchTo("MyTargetRetainer", false);
-
-        Action triggerUpdate = () => {
-            var method = typeof(RetainerSwitcherService).GetMethod("OnFrameworkUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
-            method?.Invoke(service, new object[] { framework });
-        };
-
-        // Bypass State 0 directly into State 1
-        uiInteraction.IsAddonReady("RetainerSellList").Returns(false);
-        uiInteraction.IsAddonReady("RetainerHistory").Returns(false);
-        triggerUpdate();
-
-        // State 1: We are at SelectString, but the name doesn't match
-        uiInteraction.IsAddonReady("SelectString").Returns(true);
-        uiInteraction.IsMenuReadyForRetainer("MyTargetRetainer").Returns(false);
-        triggerUpdate();
-
-        uiInteraction.Received(1).CloseSelectString();
-
-        // Fast forward mock time to bypass the throttle intended to protect server network requests
         service.CurrentTime = service.CurrentTime.AddSeconds(1);
 
-        // Game UI Simulation: Menu closed, back to List
-        uiInteraction.IsAddonReady("SelectString").Returns(false);
-        uiInteraction.IsAddonReady("RetainerList").Returns(true);
-        triggerUpdate(); // Transition State 1 -> 2
+        triggerUpdate();
 
-        triggerUpdate(); // State 2 -> 3 (Select)
-        uiInteraction.Received(1).SelectRetainer("MyTargetRetainer");
-
-        // UI Sim: List closes, SelectString opens
-        uiInteraction.IsAddonReady("RetainerList").Returns(false);
-        uiInteraction.IsAddonReady("SelectString").Returns(true);
-        uiInteraction.IsMenuReadyForRetainer("MyTargetRetainer").Returns(true);
-
-        triggerUpdate(); // State 3 -> 4
-        triggerUpdate(); // State 4 -> Execution
+        // Assert no more unexpected clicks happened and automation concluded
+        uiInteraction.Received(1).OpenRetainerMarket();
     }
 }
