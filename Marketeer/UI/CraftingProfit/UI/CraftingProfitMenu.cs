@@ -135,7 +135,14 @@ public class CraftingProfitMenu : INavigationNode {
 
             if (evalResult != null) {
                 ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MaxCraftableLabel", evalResult.MaxCraftable));
+
                 ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", evalResult.CurrentMarketPrice));
+                ImGui.SameLine();
+                ImGui.TextDisabled(this.localization.Translate("CraftingProfit_Velocity", evalResult.SalesPerDay.ToString("0.0")));
+
+                if (evalResult.HistoricalAveragePrice > 0) {
+                    ImGui.TextDisabled(this.localization.Translate("CraftingProfit_AvgPrice", evalResult.HistoricalAveragePrice));
+                }
             }
             else ImGui.TextUnformatted(this.localization.Translate("CraftingProfit_MarketPrice", "-"));
 

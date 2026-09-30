@@ -35,6 +35,8 @@ public class CraftingProfitResult {
     public uint ItemId { get; set; }
     public uint ResultQuantity { get; set; } = 1;
     public uint CurrentMarketPrice { get; set; }
+    public uint HistoricalAveragePrice { get; set; }
+    public float SalesPerDay { get; set; }
     public uint TargetSellPrice { get; set; }
 
     public uint BatchCraftingCost { get; set; }

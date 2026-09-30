@@ -15,4 +15,10 @@ public class UniversalisResponse {
 
     [JsonPropertyName("averagePriceHQ")]
     public float AveragePriceHq { get; set; }
+
+    [JsonPropertyName("nqSaleVelocity")]
+    public float NqSaleVelocity { get; set; }
+
+    [JsonPropertyName("hqSaleVelocity")]
+    public float HqSaleVelocity { get; set; }
 }

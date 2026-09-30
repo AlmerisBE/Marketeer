@@ -92,6 +92,8 @@ public class UniversalisClientServiceTests {
             ""itemID"": 1234,
             ""averagePriceNQ"": 650.0,
             ""averagePriceHQ"": 1200.0,
+            ""nqSaleVelocity"": 5.2,
+            ""hqSaleVelocity"": 1.1,
             ""listings"": [
                 { ""pricePerUnit"": 500, ""retainerName"": ""TestRetainer"", ""hq"": false }
             ]
@@ -115,6 +117,7 @@ public class UniversalisClientServiceTests {
         var data = results[0];
         Assert.Equal(1234u, data.BaseItemId);
         Assert.Equal(650u, data.AveragePriceNq);
+        Assert.Equal(5.2f, data.NqSaleVelocity);
 
         // Verify that the logger recorded the retries
         logger.Received(2).Warning(Arg.Is<string>(s => s.Contains("GatewayTimeout")));

@@ -25,5 +25,7 @@
   "CraftingProfit_TooltipOpenMap": "Show gathering location on map",
   "CraftingProfit_ColInStock": "In Stock",
   "CraftingProfit_MaxCraftable": "Max: {0}",
-  "CraftingProfit_MaxCraftableLabel": "Possible Crafts (from stock): {0}"
+  "CraftingProfit_MaxCraftableLabel": "Possible Crafts (from stock): {0}",
+  "CraftingProfit_AvgPrice": "Historical Avg Price: {0}g",
+  "CraftingProfit_Velocity": "({0} sales/day)"
 }

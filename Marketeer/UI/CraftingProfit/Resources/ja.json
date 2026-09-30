@@ -25,5 +25,7 @@
   "CraftingProfit_TooltipOpenMap": "採集場所をマップに表示する",
   "CraftingProfit_ColInStock": "在庫",
   "CraftingProfit_MaxCraftable": "最大: {0}",
-  "CraftingProfit_MaxCraftableLabel": "可能な製作数 (在庫から): {0}"
+  "CraftingProfit_MaxCraftableLabel": "可能な製作数 (在庫から): {0}",
+  "CraftingProfit_AvgPrice": "過去の平均価格: {0}g",
+  "CraftingProfit_Velocity": "({0} 販売/日)"
 }

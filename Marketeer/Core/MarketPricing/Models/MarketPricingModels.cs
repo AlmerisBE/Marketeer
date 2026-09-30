@@ -8,6 +8,7 @@ public class MarketItemPricing {
     public uint ItemId { get; set; }
     public IReadOnlyList<LowestPriceResult> Listings { get; set; } = new List<LowestPriceResult>();
     public uint AverageSalePrice { get; set; }
+    public float SalesPerDay { get; set; }
 }
 
 public class CachedPriceData {

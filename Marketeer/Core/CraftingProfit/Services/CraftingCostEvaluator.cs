@@ -37,7 +37,10 @@ public class CraftingCostEvaluator : ICraftingCostEvaluator {
         try {
             var currentMarketData = await this.priceProvider.GetPricingAsync(config.ItemId, worldId, false);
             var lowestLive = currentMarketData?.Listings.Count > 0 ? currentMarketData.Listings[0].Price : 0;
+
             result.CurrentMarketPrice = lowestLive;
+            result.HistoricalAveragePrice = currentMarketData?.AverageSalePrice ?? 0;
+            result.SalesPerDay = currentMarketData?.SalesPerDay ?? 0f;
 
             var recipe = this.recipeDataService.GetPrimaryRecipe(config.ItemId);
             if (recipe != null) {

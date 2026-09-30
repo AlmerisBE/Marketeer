@@ -54,7 +54,9 @@ public class CraftingCostEvaluatorTests {
 
         var pricing = new MarketItemPricing {
             ItemId = 100,
-            Listings = new List<LowestPriceResult> { new LowestPriceResult { Price = 4500 } }
+            Listings = new List<LowestPriceResult> { new LowestPriceResult { Price = 4500 } },
+            AverageSalePrice = 4000,
+            SalesPerDay = 15.5f
         };
 
         priceCache.GetPricingAsync(100u, 73u, false).Returns(pricing);
@@ -64,6 +66,8 @@ public class CraftingCostEvaluatorTests {
 
         Assert.Equal(100u, result.ItemId);
         Assert.Equal(4500u, result.CurrentMarketPrice);
+        Assert.Equal(4000u, result.HistoricalAveragePrice);
+        Assert.Equal(15.5f, result.SalesPerDay);
 
         // Let's verify the simulation!
         // We need 1xA and 1xB per final product.

@@ -25,5 +25,7 @@
   "CraftingProfit_TooltipOpenMap": "Afficher la zone de récolte sur la carte",
   "CraftingProfit_ColInStock": "En stock",
   "CraftingProfit_MaxCraftable": "Max : {0}",
-  "CraftingProfit_MaxCraftableLabel": "Fabrications possibles (via stock) : {0}"
+  "CraftingProfit_MaxCraftableLabel": "Fabrications possibles (via stock) : {0}",
+  "CraftingProfit_AvgPrice": "Prix moyen historique : {0}g",
+  "CraftingProfit_Velocity": "({0} ventes/jour)"
 }

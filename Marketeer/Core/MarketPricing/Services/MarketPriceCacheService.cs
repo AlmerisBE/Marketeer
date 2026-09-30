@@ -71,16 +71,22 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
 
                     // Safely merge Universalis average prices with Live Scanner data if it exists and is fresh
                     if (!this.cache.TryGetValue(nqKey, out var nqExisting) || nqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - nqExisting.LastUpdated).TotalMinutes >= 10) {
-                        var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.Where(l => !l.IsHq).ToList(), AverageSalePrice = data.AveragePriceNq };
+                        var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.Where(l => !l.IsHq).ToList(), AverageSalePrice = data.AveragePriceNq, SalesPerDay = data.NqSaleVelocity };
                         this.cache[nqKey] = new CachedPriceData { ItemId = nqId, Pricing = nqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
                     }
-                    else if (nqExisting.Source == PriceSourceType.LocalScanner) nqExisting.Pricing.AverageSalePrice = data.AveragePriceNq;
+                    else {
+                        nqExisting.Pricing.AverageSalePrice = data.AveragePriceNq;
+                        nqExisting.Pricing.SalesPerDay = data.NqSaleVelocity;
+                    }
 
                     if (!this.cache.TryGetValue(hqKey, out var hqExisting) || hqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - hqExisting.LastUpdated).TotalMinutes >= 10) {
-                        var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.Where(l => l.IsHq).ToList(), AverageSalePrice = data.AveragePriceHq };
+                        var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.Where(l => l.IsHq).ToList(), AverageSalePrice = data.AveragePriceHq, SalesPerDay = data.HqSaleVelocity };
                         this.cache[hqKey] = new CachedPriceData { ItemId = hqId, Pricing = hqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
                     }
-                    else if (hqExisting.Source == PriceSourceType.LocalScanner) hqExisting.Pricing.AverageSalePrice = data.AveragePriceHq;
+                    else {
+                        hqExisting.Pricing.AverageSalePrice = data.AveragePriceHq;
+                        hqExisting.Pricing.SalesPerDay = data.HqSaleVelocity;
+                    }
                 }
 
                 foreach (var id in idsToFetch) {

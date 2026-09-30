@@ -124,7 +124,9 @@ public class UniversalisClientService : IUniversalisClient {
             var itemData = new UniversalisItemData {
                 BaseItemId = baseItemId,
                 AveragePriceNq = (uint)Math.Round(data.AveragePriceNq),
-                AveragePriceHq = (uint)Math.Round(data.AveragePriceHq)
+                AveragePriceHq = (uint)Math.Round(data.AveragePriceHq),
+                NqSaleVelocity = data.NqSaleVelocity,
+                HqSaleVelocity = data.HqSaleVelocity
             };
 
             if (data.Listings != null) {

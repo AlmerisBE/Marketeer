@@ -25,5 +25,7 @@
   "CraftingProfit_TooltipOpenMap": "Sammelort auf der Karte anzeigen",
   "CraftingProfit_ColInStock": "Auf Lager",
   "CraftingProfit_MaxCraftable": "Max: {0}",
-  "CraftingProfit_MaxCraftableLabel": "Mögliche Herstellungen (auf Lager): {0}"
+  "CraftingProfit_MaxCraftableLabel": "Mögliche Herstellungen (auf Lager): {0}",
+  "CraftingProfit_AvgPrice": "Historischer Durchschn. Preis: {0}g",
+  "CraftingProfit_Velocity": "({0} Verkäufe/Tag)"
 }

@@ -7,4 +7,6 @@ public class UniversalisItemData {
     public List<LowestPriceResult> Listings { get; set; } = new();
     public uint AveragePriceNq { get; set; }
     public uint AveragePriceHq { get; set; }
+    public float NqSaleVelocity { get; set; }
+    public float HqSaleVelocity { get; set; }
 }
