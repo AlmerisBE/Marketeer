@@ -32,5 +32,31 @@
 1. Open the Dalamud Settings menu in FFXIV (`/xlsettings`).
 2. Go to the **Experimental** tab.
 3. Under **Custom Plugin Repositories**, add the following URL:
-   ```text
    [https://raw.githubusercontent.com/AlmerisBE/Marketeer/main/repo.json](https://raw.githubusercontent.com/AlmerisBE/Marketeer/main/repo.json)
+(Note: Update the URL above to match your actual GitHub Pages or raw JSON deployment URL).
+4. Click the + button and save.
+5. Open the Plugin Installer (/xlplugins), search for Marketeer, and click Install.
+
+## ⚙️ Commands
+* /marketeer - Toggles the main Marketeer dashboard.
+* /marketeer config - Opens the configuration and settings menu.
+* /marketeer price <item name> - Checks the current lowest price for a specific item.
+* /marketeer guide - Toggles the visibility of the Retainer Guidance overlay.
+
+## 🛠️ Development & Architecture
+Marketeer is built strictly following SOLID principles, utilizing Test-Driven Development (TDD) and a Vertical Slice Architecture (Feature Modules).
+* **Dependency Injection:** Powered by Microsoft.Extensions.DependencyInjection.
+* **Headless Testing:** UI logic and state evaluation are strictly decoupled from the native Dalamud.Bindings.ImGui rendering layer to ensure a fully isolated xUnit test suite.
+* **Memory Over UI:** State evaluation heavily favors reading native FFXIV memory (FFXIVClientStructs) over error-prone UI scraping, utilizing IsFullyLoaded() checks for rock-solid stability.
+
+## Prerequisites
+* Visual Studio 2022 (or Rider).
+* .NET 8.0 SDK (or higher).
+* The latest Dalamud API build environment.
+
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome!
+Please ensure that any pull requests adhere to the existing architectural style (Feature encapsulation, interface-segregation, and file-scoped namespaces) and pass the TDD xUnit test suite.
+
+## 📝 License
+This project is licensed under the AGPL-3.0 License. See the LICENSE file for details.
