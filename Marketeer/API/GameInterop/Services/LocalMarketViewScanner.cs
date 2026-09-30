@@ -23,6 +23,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
     private bool isEnabled;
     private DateTime lastScanTime;
+    private uint lastScannedItemId;
 
     public LocalMarketViewScanner(
         IAddonLifecycle addonLifecycle,
@@ -39,6 +40,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
         this.isEnabled = false;
         this.lastScanTime = DateTime.MinValue;
+        this.lastScannedItemId = 0;
     }
 
     public void Enable() {
@@ -57,7 +59,8 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
     }
 
     private unsafe void OnAddonUpdate(AddonEvent type, AddonArgs args) {
-        if ((DateTime.Now - this.lastScanTime).TotalMilliseconds < 1000) return;
+        // Enforce a strict 1.5-second debounce to prevent micro-stuttering and cache thrashing during scroll events
+        if ((DateTime.Now - this.lastScanTime).TotalMilliseconds < 1500) return;
 
         var addon = (AtkUnitBase*)args.Addon.Address;
         if (addon == null || !addon->IsVisible) return;
@@ -75,7 +78,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                 var node = addon->UldManager.NodeList[i];
                 if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
                     var textNode = (AtkTextNode*)node;
-
                     var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr).Trim();
 
                     if (!string.IsNullOrWhiteSpace(text)) {
@@ -90,6 +92,9 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
             }
 
             if (targetItemId == 0) return;
+
+            // Debounce matching same-item spam unless 5 seconds have passed
+            if (targetItemId == this.lastScannedItemId && (DateTime.Now - this.lastScanTime).TotalSeconds < 5) return;
 
             var results = new List<LowestPriceResult>();
 
@@ -106,6 +111,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
             if (results.Count > 0) {
                 this.priceCache.UpdateLocalPrices(targetItemId, worldId, results);
                 this.lastScanTime = DateTime.Now;
+                this.lastScannedItemId = targetItemId;
             }
         }
         catch (Exception ex) {
@@ -151,7 +157,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                         var retainerName = textNodes.Last().Text.Trim();
 
                         if (uint.TryParse(priceStr, out var price) && !string.IsNullOrWhiteSpace(retainerName)) {
-                            // Ensure local scraped prices also match the universal +1M offset for HQ items
                             uint actualItemId = isHq ? baseItemId + 1000000u : baseItemId;
                             results.Add(new LowestPriceResult {
                                 ItemId = actualItemId,
@@ -170,6 +175,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
     private unsafe string ExtractString(nint stringPtr) {
         if (stringPtr == IntPtr.Zero) return string.Empty;
+        // Native compatibility update for Dawntrail CStringPointer format
         return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
     }
 
