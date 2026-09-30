@@ -84,4 +84,39 @@ public class UniversalisClientServiceTests {
         Assert.NotNull(item2);
         Assert.Contains(item2.Listings, r => r.ItemId == 5678u && r.Price == 1000u && !r.IsHq);
     }
+
+    [Fact]
+    public async Task FetchDataAsync_WhenApiReturnsGatewayTimeout_RetriesAndEventuallySucceeds() {
+        var jsonResponse = @"
+        {
+            ""itemID"": 1234,
+            ""averagePriceNQ"": 650.0,
+            ""averagePriceHQ"": 1200.0,
+            ""listings"": [
+                { ""pricePerUnit"": 500, ""retainerName"": ""TestRetainer"", ""hq"": false }
+            ]
+        }";
+
+        // Setup the mock to fail twice with 504, then succeed with 200 OK on the third attempt
+        var mockHandler = new MockHttpMessageHandler(null, HttpStatusCode.GatewayTimeout);
+        mockHandler.EnqueueResponse(null, HttpStatusCode.GatewayTimeout);
+        mockHandler.EnqueueResponse(jsonResponse, HttpStatusCode.OK);
+
+        var httpClient = new HttpClient(mockHandler) { BaseAddress = new Uri("https://test.local/") };
+        var logger = Substitute.For<ILoggerService>();
+
+        var service = new UniversalisClientService(httpClient, logger);
+
+        // Act
+        var results = await service.FetchDataAsync(new[] { 1234u }, 73);
+
+        // Assert
+        Assert.Single(results);
+        var data = results[0];
+        Assert.Equal(1234u, data.BaseItemId);
+        Assert.Equal(650u, data.AveragePriceNq);
+
+        // Verify that the logger recorded the retries
+        logger.Received(2).Warning(Arg.Is<string>(s => s.Contains("GatewayTimeout")));
+    }
 }

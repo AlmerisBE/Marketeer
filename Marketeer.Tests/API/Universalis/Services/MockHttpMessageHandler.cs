@@ -3,17 +3,21 @@
 namespace Marketeer.Tests.API.Universalis.Services;
 
 public class MockHttpMessageHandler : HttpMessageHandler {
-    private string? responseContent;
-    private HttpStatusCode statusCode;
+    private Queue<(string? Content, HttpStatusCode StatusCode)> responses = new();
 
     public MockHttpMessageHandler(string? responseContent, HttpStatusCode statusCode) {
-        this.responseContent = responseContent;
-        this.statusCode = statusCode;
+        this.responses.Enqueue((responseContent, statusCode));
+    }
+
+    public void EnqueueResponse(string? responseContent, HttpStatusCode statusCode) {
+        this.responses.Enqueue((responseContent, statusCode));
     }
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
-        var response = new HttpResponseMessage(this.statusCode) {
-            Content = this.responseContent != null ? new StringContent(this.responseContent) : null
+        var (content, statusCode) = this.responses.Count > 1 ? this.responses.Dequeue() : this.responses.Peek();
+
+        var response = new HttpResponseMessage(statusCode) {
+            Content = content != null ? new StringContent(content) : null
         };
         return Task.FromResult(response);
     }

@@ -4,6 +4,7 @@ using Marketeer.Core.Logging.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -18,9 +19,7 @@ public class UniversalisClientService : IUniversalisClient {
         this.httpClient = httpClient;
         this.logger = logger;
 
-        if (this.httpClient.BaseAddress == null) {
-            this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
-        }
+        if (this.httpClient.BaseAddress == null) this.httpClient.BaseAddress = new Uri("https://universalis.app/api/v2/");
     }
 
     public async Task<IReadOnlyList<UniversalisItemData>> FetchDataAsync(IEnumerable<uint> baseItemIds, uint worldId) {
@@ -29,14 +28,43 @@ public class UniversalisClientService : IUniversalisClient {
 
         if (idsList.Count == 0) return results;
 
+        int batchSize = 50;
+        int maxRetries = 3;
+
         try {
-            for (int i = 0; i < idsList.Count; i += 100) {
-                var batch = idsList.Skip(i).Take(100).ToList();
+            for (int i = 0; i < idsList.Count; i += batchSize) {
+                var batch = idsList.Skip(i).Take(batchSize).ToList();
                 var idsString = string.Join(",", batch);
 
-                var response = await this.httpClient.GetAsync($"{worldId}/{idsString}");
-                if (!response.IsSuccessStatusCode) {
-                    this.logger.Warning($"Universalis API returned {response.StatusCode} for batch on world {worldId}.");
+                HttpResponseMessage? response = null;
+                bool success = false;
+
+                for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        response = await this.httpClient.GetAsync($"{worldId}/{idsString}");
+
+                        if (response.IsSuccessStatusCode) {
+                            success = true;
+                            break;
+                        }
+
+                        if (this.IsTransientError(response.StatusCode)) {
+                            this.logger.Warning($"Universalis API returned {response.StatusCode} for batch on world {worldId} (Attempt {attempt}/{maxRetries}). Retrying in {attempt * 2}s...");
+                            await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
+                        }
+                        else {
+                            this.logger.Warning($"Universalis API returned {response.StatusCode} for batch on world {worldId}. Skipping batch.");
+                            break;
+                        }
+                    }
+                    catch (Exception ex) {
+                        this.logger.Error(ex, $"Exception during Universalis API call for batch on world {worldId} (Attempt {attempt}/{maxRetries}).");
+                        await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
+                    }
+                }
+
+                if (!success || response == null) {
+                    this.logger.Error($"Failed to fetch data from Universalis for batch on world {worldId} after {maxRetries} attempts.");
                     continue;
                 }
 
@@ -57,10 +85,17 @@ public class UniversalisClientService : IUniversalisClient {
             }
         }
         catch (Exception ex) {
-            this.logger.Error(ex, $"Failed to fetch data from Universalis for world {worldId}.");
+            this.logger.Error(ex, $"Critical failure while processing Universalis API data for world {worldId}.");
         }
 
         return results;
+    }
+
+    private bool IsTransientError(HttpStatusCode statusCode) {
+        return statusCode == HttpStatusCode.GatewayTimeout ||
+               statusCode == HttpStatusCode.BadGateway ||
+               statusCode == HttpStatusCode.ServiceUnavailable ||
+               statusCode == HttpStatusCode.TooManyRequests;
     }
 
     private void ExtractData(UniversalisResponse? data, uint baseItemId, List<UniversalisItemData> results) {
