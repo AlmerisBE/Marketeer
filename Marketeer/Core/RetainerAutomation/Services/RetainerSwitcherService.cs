@@ -29,91 +29,101 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
         this.shouldOpenMarketList = openMarketList;
         this.isSwitching = true;
         this.stateIndex = 0;
-        this.nextActionAt = this.GetNow();
-        this.timeoutAt = this.GetNow().AddSeconds(15);
+        this.nextActionAt = DateTime.MinValue; // Start immediately
+        this.timeoutAt = DateTime.Now.AddSeconds(15);
         this.logger.Info($"Automated switch initiated for retainer: {this.targetRetainer}. Open market requested: {openMarketList}");
     }
-
-    protected virtual DateTime GetNow() => DateTime.Now;
 
     private void OnFrameworkUpdate(IFramework fw) {
         if (!this.isSwitching) return;
 
-        if (this.GetNow() > this.timeoutAt) {
+        if (DateTime.Now > this.timeoutAt) {
             this.logger.Warning($"[RetainerSwitcherService] Sequence timed out for {this.targetRetainer}. Aborting.");
             this.isSwitching = false;
             this.uiInteraction.CloseUnexpectedWindows();
             return;
         }
 
-        if (this.GetNow() < this.nextActionAt) return;
-
         this.uiInteraction.SkipDialogue();
 
         if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
-            this.uiInteraction.ConfirmYesNo();
-            this.nextActionAt = this.GetNow().AddSeconds(0.5);
-            return;
+            if (DateTime.Now >= this.nextActionAt) {
+                this.uiInteraction.ConfirmYesNo();
+                this.nextActionAt = DateTime.Now.AddSeconds(0.5); // Throttle click spam
+            }
+            return; // Wait for it to close natively
         }
 
         switch (this.stateIndex) {
             case 0:
-                if (this.uiInteraction.IsAddonReady("RetainerSellList") || this.uiInteraction.IsAddonReady("RetainerHistory")) {
-                    this.uiInteraction.CloseUnexpectedWindows();
+                bool marketReady = this.uiInteraction.IsAddonReady("RetainerSellList");
+                bool historyReady = this.uiInteraction.IsAddonReady("RetainerHistory");
 
-                    bool closedMarket = this.uiInteraction.IsAddonReady("RetainerSellList") ? this.uiInteraction.CloseRetainerMarket() : true;
-                    bool closedHistory = this.uiInteraction.IsAddonReady("RetainerHistory") ? this.uiInteraction.CloseSalesHistory() : true;
-
-                    if (closedMarket && closedHistory) {
-                        this.nextActionAt = this.GetNow().AddSeconds(0.5);
-                        this.stateIndex = 1;
-                    }
+                if (!marketReady && !historyReady) {
+                    this.stateIndex = 1;
+                    this.nextActionAt = DateTime.MinValue; // Instantly advance
                 }
-                else this.stateIndex = 1;
+                else if (DateTime.Now >= this.nextActionAt) {
+                    if (marketReady) this.uiInteraction.CloseRetainerMarket();
+                    if (historyReady) this.uiInteraction.CloseSalesHistory();
+                    this.nextActionAt = DateTime.Now.AddSeconds(0.3);
+                }
                 break;
 
             case 1:
                 if (this.uiInteraction.IsAddonReady("SelectString")) {
                     if (this.uiInteraction.IsMenuReadyForRetainer(this.targetRetainer)) {
-                        this.stateIndex = 4;
-                        return;
+                        this.stateIndex = 3; // We are already on the correct retainer
+                        this.nextActionAt = DateTime.MinValue;
                     }
-
-                    if (this.uiInteraction.CloseSelectString()) {
-                        this.nextActionAt = this.GetNow().AddSeconds(0.5);
-                        this.stateIndex = 2;
+                    else if (DateTime.Now >= this.nextActionAt) {
+                        this.uiInteraction.CloseSelectString();
+                        this.nextActionAt = DateTime.Now.AddSeconds(0.3);
                     }
                 }
-                else this.stateIndex = 2;
+                else if (this.uiInteraction.IsAddonReady("RetainerList")) {
+                    this.stateIndex = 2; // Successfully returned to list
+                    this.nextActionAt = DateTime.MinValue;
+                }
                 break;
 
             case 2:
-                if (this.uiInteraction.IsAddonReady("RetainerList")) {
-                    this.nextActionAt = this.GetNow().AddSeconds(1.0);
+                if (this.uiInteraction.IsAddonReady("SelectString")) {
                     this.stateIndex = 3;
+                    this.nextActionAt = DateTime.MinValue;
+                }
+                else if (this.uiInteraction.IsAddonReady("RetainerList")) {
+                    if (DateTime.Now >= this.nextActionAt) {
+                        this.uiInteraction.SelectRetainer(this.targetRetainer);
+                        this.nextActionAt = DateTime.Now.AddSeconds(0.5); // Server needs time to summon the retainer
+                    }
                 }
                 break;
 
             case 3:
-                if (this.uiInteraction.IsAddonReady("RetainerList")) {
-                    if (this.uiInteraction.SelectRetainer(this.targetRetainer)) {
-                        this.nextActionAt = this.GetNow().AddSeconds(1.5);
-                        this.stateIndex = 4;
+                if (this.uiInteraction.IsAddonReady("SelectString")) {
+                    if (this.uiInteraction.IsMenuReadyForRetainer(this.targetRetainer)) {
+                        if (this.shouldOpenMarketList) {
+                            if (DateTime.Now >= this.nextActionAt) {
+                                this.uiInteraction.OpenRetainerMarket();
+                                this.logger.Info($"[RetainerSwitcherService] Switched and opened market for {this.targetRetainer}.");
+                                this.isSwitching = false;
+                            }
+                        }
+                        else {
+                            this.logger.Info($"[RetainerSwitcherService] Switched to {this.targetRetainer}.");
+                            this.isSwitching = false;
+                        }
+                    }
+                    else {
+                        // The wrong retainer was summoned (packet drop or spam click prevention). Go back and retry.
+                        this.stateIndex = 1;
+                        this.nextActionAt = DateTime.MinValue;
                     }
                 }
-                break;
-
-            case 4:
-                if (this.uiInteraction.IsAddonReady("SelectString")) {
-                    if (this.shouldOpenMarketList) this.uiInteraction.OpenRetainerMarket();
-
-                    this.logger.Info($"[RetainerSwitcherService] Successfully switched to {this.targetRetainer}. Sequence complete.");
-                    this.isSwitching = false;
-                    this.targetRetainer = string.Empty;
-                }
                 else if (this.uiInteraction.IsAddonReady("RetainerList")) {
-                    this.logger.Warning($"[RetainerSwitcherService] Retainer click ignored by server. Retrying...");
-                    this.stateIndex = 3;
+                    this.stateIndex = 2; // Kicked back to the list
+                    this.nextActionAt = DateTime.MinValue;
                 }
                 break;
         }

@@ -88,7 +88,6 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     private void OnFrameworkUpdate(IFramework frameworkInstance) {
         if (!this.IsActive) return;
 
-        // Dialogue skipping runs continuously before any delays to clear 'Talk' addons instantly
         this.uiInteractionService.SkipDialogue();
 
         if (DateTime.Now < this.actionAvailableAt) return;
@@ -134,9 +133,9 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     private void AdvanceToNextRetainerOrFinish() {
         if (this.retainerQueue.Count > 0) {
             this.currentRetainerName = this.retainerQueue.Dequeue();
-            this.SetState(OrchestrationStep.SelectRetainer, 1.0 + this.GetRandomDelay());
+            this.SetState(OrchestrationStep.SelectRetainer, this.GetRandomDelay());
         }
-        else this.SetState(OrchestrationStep.CloseRetainerList, 0.5 + this.GetRandomDelay());
+        else this.SetState(OrchestrationStep.CloseRetainerList, this.GetRandomDelay());
     }
 
     private void ProcessSelectRetainer() {
@@ -147,7 +146,6 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             }
         }
 
-        // Extended grace period to accommodate network lag or heavy server load
         if ((DateTime.Now - this.stepEnteredAt).TotalSeconds > RetainerAvailabilityDelay) {
             this.logger.Warning($"Skipping retainer {this.currentRetainerName} as it is not available.");
             this.AdvanceToNextRetainerOrFinish();
@@ -155,7 +153,9 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessWaitSelectStringOpen() {
-        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) this.SetState(OrchestrationStep.OpenMenu, 0.5 + this.GetRandomDelay());
+        if (this.uiInteractionService.IsMenuReadyForRetainer(this.currentRetainerName)) {
+            this.SetState(OrchestrationStep.OpenMenu, this.GetRandomDelay());
+        }
     }
 
     private void ProcessOpenMenu() {
@@ -181,14 +181,14 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (this.uiInteractionService.IsAddonReady(targetWindowName)) {
             this.currentTask?.OnMenuOpened(this.currentRetainerName);
-            this.SetState(OrchestrationStep.ExecutingTask, 0.5 + this.GetRandomDelay());
-            this.timeoutAt = DateTime.MaxValue;
+            this.SetState(OrchestrationStep.ExecutingTask, this.GetRandomDelay());
+            this.timeoutAt = DateTime.MaxValue; // Suspend timeout while task executes natively
         }
     }
 
     private void ProcessExecutingTask() {
         if (this.currentTask != null) {
-            if (this.currentTask.OnTick()) this.SetState(OrchestrationStep.CloseMenu, 0.5 + this.GetRandomDelay());
+            if (this.currentTask.OnTick()) this.SetState(OrchestrationStep.CloseMenu, this.GetRandomDelay());
         }
         else this.SetState(OrchestrationStep.CloseMenu, 0);
     }
@@ -213,7 +213,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     }
 
     private void ProcessWaitSelectStringReturn() {
-        if (this.uiInteractionService.IsAddonReady("SelectString")) this.SetState(OrchestrationStep.CloseSelectString, 0.5 + this.GetRandomDelay());
+        if (this.uiInteractionService.IsAddonReady("SelectString")) this.SetState(OrchestrationStep.CloseSelectString, this.GetRandomDelay());
     }
 
     private void ProcessCloseSelectString() {
