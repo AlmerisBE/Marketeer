@@ -32,8 +32,7 @@
 1. Open the Dalamud Settings menu in FFXIV (`/xlsettings`).
 2. Go to the **Experimental** tab.
 3. Under **Custom Plugin Repositories**, add the following URL:
-   [https://raw.githubusercontent.com/AlmerisBE/Marketeer/main/repo.json](https://raw.githubusercontent.com/AlmerisBE/Marketeer/main/repo.json)
-(Note: Update the URL above to match your actual GitHub Pages or raw JSON deployment URL).
+   [https://ffxiv.plugins.almeris.net/repo.json](https://ffxiv.plugins.almeris.net/repo.json)
 4. Click the + button and save.
 5. Open the Plugin Installer (/xlplugins), search for Marketeer, and click Install.
 
