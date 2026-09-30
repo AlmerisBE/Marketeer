@@ -8,7 +8,7 @@ if (-Not (Test-Path $csprojPath) -or -Not (Test-Path $jsonPath)) {
 }
 
 # Read current version from csproj
-$csprojContent = Get-Content $csprojPath -Raw
+$csprojContent = Get-Content -Path $csprojPath -Raw
 $versionMatch = [regex]::Match($csprojContent, "<Version>(.*?)</Version>")
 
 if (-Not $versionMatch.Success) {
@@ -83,17 +83,17 @@ Write-Host "$tagName" -ForegroundColor Yellow
 
 # Update Marketeer.csproj
 $csprojContent = $csprojContent -replace "<Version>.*?</Version>", "<Version>$newVersion</Version>"
-Set-Content -Path $csprojPath -Value$csprojContent
+Set-Content -Path $csprojPath -Value $csprojContent
 
 # Update Marketeer.json
-$jsonContent = Get-Content$jsonPath -Raw
-$jsonContent =$jsonContent -replace '"AssemblyVersion":\s*".*?"', "`"AssemblyVersion`": `"$newVersion`""
-Set-Content -Path $jsonPath -Value$jsonContent
+$jsonContent = Get-Content -Path $jsonPath -Raw
+$jsonContent = $jsonContent -replace '"AssemblyVersion":\s*".*?"', "`"AssemblyVersion`": `"$newVersion`""
+Set-Content -Path $jsonPath -Value $jsonContent
 
 Write-Host "Files updated successfully. Performing Git operations..." -ForegroundColor DarkGray
 
 # Git automation
-git add $csprojPath$jsonPath
+git add $csprojPath $jsonPath
 git commit -m "chore: bump version to $tagName"
 git tag $tagName
 
