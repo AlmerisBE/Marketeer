@@ -155,4 +155,47 @@ public class CompetitionEvaluatorServiceTests {
         // Assert that the UI model successfully received the TMV from the pricing entity
         Assert.Equal(8500u, undercut.AverageMarketPrice);
     }
+
+    [Fact]
+    public void TryEvaluateListing_WithUndercutNormalMarketStrategy_IgnoresDumpedListingsAndTargetsNormalPrice() {
+        var configService = Substitute.For<IConfigurationService>();
+        var whitelistManager = Substitute.For<IWhitelistManagerService>();
+        var anomalyDetector = Substitute.For<IMarketAnomalyDetector>();
+
+        configService.GetConfig().Returns(new PluginConfiguration {
+            CompetitorWhitelistBehavior = WhitelistBehavior.Ignore,
+            AnomalyStrategy = AnomalyDefenseStrategy.UndercutNormalMarket
+        });
+
+        // Simulate a market crash with a threshold of 5000
+        var anomalyReport = new AnomalyReport {
+            IsAnomalyDetected = true,
+            CrashThresholdPrice = 5000
+        };
+        anomalyDetector.EvaluateMarket(Arg.Any<MarketItemPricing>(), Arg.Any<bool>()).Returns(anomalyReport);
+
+        var service = new CompetitionEvaluatorService(configService, whitelistManager, anomalyDetector);
+
+        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 10000, IsHq = false };
+        var pricing = new MarketItemPricing {
+            ItemId = 1,
+            AverageSalePrice = 10000,
+            Listings = new List<LowestPriceResult> {
+                new LowestPriceResult { Price = 1000, RetainerName = "CrashingGuy1", IsHq = false }, // Dumped
+                new LowestPriceResult { Price = 2500, RetainerName = "CrashingGuy2", IsHq = false }, // Dumped
+                new LowestPriceResult { Price = 9000, RetainerName = "NormalGuy", IsHq = false },    // First normal competitor
+                new LowestPriceResult { Price = 9500, RetainerName = "OtherGuy", IsHq = false }
+            }
+        };
+
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+
+        Assert.True(result);
+        Assert.NotNull(undercut);
+
+        // Assert that the dumped listings were ignored and we target the first normal price (9000 - 1)
+        Assert.Equal(PricingAction.UpdatePrice, undercut.SuggestedAction);
+        Assert.Equal(8999u, undercut.TargetPrice);
+        Assert.Equal("NormalGuy", undercut.CompetitorName);
+    }
 }

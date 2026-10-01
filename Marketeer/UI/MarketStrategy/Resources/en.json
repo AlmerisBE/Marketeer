@@ -5,5 +5,6 @@
   "Config_AnomalyStrategy": "Defense Strategy",
   "Config_AnomalyStrategy_Ignore": "Follow Market (Ignore)",
   "Config_AnomalyStrategy_HoldPrice": "Hold True Value",
-  "Config_AnomalyStrategy_AlertAndPause": "Alert for Arbitrage & Pause"
+  "Config_AnomalyStrategy_AlertAndPause": "Alert for Arbitrage & Pause",
+  "Config_AnomalyStrategy_UndercutNormalMarket": "Ignore Crashes & Compete Normally"
 }

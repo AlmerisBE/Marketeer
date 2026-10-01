@@ -30,7 +30,6 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
         if (pricing.Listings == null || !pricing.Listings.Any()) return false;
 
         var config = this.configService.GetConfig();
-
         var anomalyReport = this.anomalyDetector.EvaluateMarket(pricing, listing.IsHq);
 
         var validCompetitors = pricing.Listings
@@ -39,6 +38,13 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
             .OrderBy(l => l.Price)
             .ToList();
 
+        // New Logic: Filter out dumped listings if the specific defense strategy is selected
+        if (anomalyReport != null && anomalyReport.IsAnomalyDetected && config.AnomalyStrategy == AnomalyDefenseStrategy.UndercutNormalMarket) {
+            validCompetitors = validCompetitors.Where(l => l.Price > anomalyReport.CrashThresholdPrice).ToList();
+        }
+
+        // If there are no normal competitors left, we have no one to undercut normally. 
+        // Returning false implicitly holds the price, which is the safest fallback.
         if (validCompetitors.Count == 0) return false;
 
         var lowestCompetitor = validCompetitors.First();
@@ -53,7 +59,6 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
 
         var suggestedAction = PricingAction.UpdatePrice;
 
-        // Defensive null check added here
         if (anomalyReport != null && anomalyReport.IsAnomalyDetected) {
             if (config.AnomalyStrategy == AnomalyDefenseStrategy.HoldPrice || config.AnomalyStrategy == AnomalyDefenseStrategy.AlertAndPause) {
                 targetPrice = listing.CurrentPrice;

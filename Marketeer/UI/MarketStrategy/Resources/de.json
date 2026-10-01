@@ -5,5 +5,6 @@
   "Config_AnomalyStrategy": "Verteidigungsstrategie",
   "Config_AnomalyStrategy_Ignore": "Dem Markt folgen (Ignorieren)",
   "Config_AnomalyStrategy_HoldPrice": "Wahren Wert halten",
-  "Config_AnomalyStrategy_AlertAndPause": "Warnung (Arbitrage) & Pausieren"
+  "Config_AnomalyStrategy_AlertAndPause": "Warnung (Arbitrage) & Pausieren",
+  "Config_AnomalyStrategy_UndercutNormalMarket": "Crashes ignorieren & normal konkurrieren"
 }

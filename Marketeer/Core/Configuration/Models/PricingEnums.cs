@@ -31,5 +31,6 @@ public enum FallbackPricingMode {
 public enum AnomalyDefenseStrategy {
     Ignore,
     HoldPrice,
-    AlertAndPause
+    AlertAndPause,
+    UndercutNormalMarket
 }

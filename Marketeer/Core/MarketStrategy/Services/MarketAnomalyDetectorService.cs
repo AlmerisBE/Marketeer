@@ -31,6 +31,7 @@ public class MarketAnomalyDetectorService : IMarketAnomalyDetector {
         report.TrueMarketValue = trueMarketValue;
 
         uint crashThresholdPrice = (uint)Math.Floor(trueMarketValue * config.AnomalyCrashThreshold);
+        report.CrashThresholdPrice = crashThresholdPrice;
 
         var relevantListings = pricing.Listings.Where(l => l.IsHq == isHq).ToList();
 
