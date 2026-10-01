@@ -35,6 +35,9 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     private DateTime lastBackgroundCheck = DateTime.UtcNow;
     private IReadOnlyList<UndercutItem> undercuts = new List<UndercutItem>();
 
+    // Tracks previously notified undercuts to prevent chat spam
+    private HashSet<uint> knownUndercutItemIds = new();
+
     public CompetitionMonitorService(
         IRetainerStateService retainerState,
         IMarketPriceCacheService priceProvider,
@@ -75,7 +78,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.marketListingTracker.LocalListingModified += this.OnLocalListingModified;
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.clientState.Login += this.OnLogin;
-
         this.framework.Update += this.OnFrameworkUpdate;
 
         this.isMonitoring = true;
@@ -133,7 +135,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
             var allCharacters = this.retainerState.GetAllCharactersListings();
             var worldId = allCharacters.FirstOrDefault(c => c.Listings.Any(l => l.ItemId == itemId))?.HomeWorldId ?? 0;
             if (worldId > 0) {
-                // Ensure we query the provider using the base item ID
                 uint baseItemId = itemId > 1000000u ? itemId - 1000000u : itemId;
                 await this.priceProvider.ForceRefreshAsync(new[] { baseItemId }, worldId);
             }
@@ -171,7 +172,6 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
                     var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
-                    // Delegate the mathematical decision strictly to the evaluator
                     if (this.evaluatorService.TryEvaluateListing(listing, itemPricing, character.CharacterName, resolvedItemName, out var undercutResult) && undercutResult != null) {
                         newUndercuts.Add(undercutResult);
                     }
@@ -180,10 +180,17 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
             this.stateMutator.UpdateUndercuts(newUndercuts);
 
-            if (newUndercuts.Any() && config.EnableChatNotifications) {
-                var notificationMessage = this.localization.Translate("Undercuts_Notification", newUndercuts.Count);
+            // Determine if there are *new* items being undercut that we haven't warned the user about yet
+            var currentUndercutIds = newUndercuts.Select(u => u.ItemId).ToHashSet();
+            bool hasNewUndercuts = currentUndercutIds.Except(this.knownUndercutItemIds).Any();
+
+            if (hasNewUndercuts && config.EnableChatNotifications) {
+                var notificationMessage = this.localization.Translate("Undercuts_Notification", newUndercuts.Count) ?? $"[Marketeer] {newUndercuts.Count} items are undercut!";
                 this.chatGui.Print(notificationMessage);
             }
+
+            // Sync state so we don't alert for these same items next iteration
+            this.knownUndercutItemIds = currentUndercutIds;
         }
         catch (Exception ex) {
             this.logger.Error(ex, "Failed to check undercuts in background task.");
