@@ -46,5 +46,12 @@
   "Config_FallbackMultiplier": "Multiplicateur de Repli",
   "Config_CancelPriority_Label": "Destination de l'annulation",
   "Config_CancelPriority_PlayerFirst": "Inventaire du joueur",
-  "Config_CancelPriority_RetainerFirst": "Inventaire du servant"
+  "Config_CancelPriority_RetainerFirst": "Inventaire du servant",
+  "Config_WhitelistedRetainers": "Servants sur liste blanche :",
+  "Config_Whitelist_AutoAdd": "Détecter mes servants",
+  "Button_Add": "Ajouter",
+  "Button_Remove": "Retirer",
+  "Config_Whitelist_ColRetainerName": "Nom du servant",
+  "Config_Whitelist_ColActions": "Actions",
+  "Menu_CompetitionWhitelist": "Liste Blanche"
 }

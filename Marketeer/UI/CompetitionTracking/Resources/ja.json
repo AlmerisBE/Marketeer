@@ -46,5 +46,12 @@
   "Config_FallbackMultiplier": "フォールバック倍率",
   "Config_CancelPriority_Label": "出品取り消し後の戻し先",
   "Config_CancelPriority_PlayerFirst": "プレイヤーの所持品",
-  "Config_CancelPriority_RetainerFirst": "リテイナーの所持品"
+  "Config_CancelPriority_RetainerFirst": "リテイナーの所持品",
+  "Config_WhitelistedRetainers": "ホワイトリストのリテイナー:",
+  "Config_Whitelist_AutoAdd": "自分のリテイナーを自動検出",
+  "Button_Add": "追加",
+  "Button_Remove": "削除",
+  "Config_Whitelist_ColRetainerName": "リテイナー名",
+  "Config_Whitelist_ColActions": "操作",
+  "Menu_CompetitionWhitelist": "ホワイトリスト"
 }

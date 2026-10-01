@@ -18,6 +18,7 @@ public class CompetitionConfigMenu : INavigationNode {
     public bool HasContent => true;
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
+    private string newRetainerName = string.Empty;
 
     public CompetitionConfigMenu(IConfigurationService configService, ILocalizationService localization) {
         this.configService = configService;
@@ -82,7 +83,13 @@ public class CompetitionConfigMenu : INavigationNode {
     private bool DrawWhitelistSettings(PluginConfiguration config) {
         bool changed = false;
 
-        if (ImGui.BeginCombo(this.localization.Translate("Config_WhitelistBehavior"), this.localization.Translate($"Config_WhitelistBehavior_{config.CompetitorWhitelistBehavior}"))) {
+        bool autoWhitelist = config.AutoWhitelistOwnRetainers;
+        if (ImGui.Checkbox(this.localization.Translate("Config_AutoWhitelistOwnRetainers") ?? "Auto-whitelist own retainers", ref autoWhitelist)) {
+            config.AutoWhitelistOwnRetainers = autoWhitelist;
+            changed = true;
+        }
+
+        if (ImGui.BeginCombo(this.localization.Translate("Config_WhitelistBehavior") ?? "Whitelist Behavior", this.localization.Translate($"Config_WhitelistBehavior_{config.CompetitorWhitelistBehavior}"))) {
             foreach (WhitelistBehavior behavior in Enum.GetValues(typeof(WhitelistBehavior))) {
                 if (ImGui.Selectable(this.localization.Translate($"Config_WhitelistBehavior_{behavior}"), config.CompetitorWhitelistBehavior == behavior)) {
                     config.CompetitorWhitelistBehavior = behavior;

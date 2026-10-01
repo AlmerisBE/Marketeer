@@ -23,12 +23,16 @@ public class CompetitionTrackingFeature : IFeatureModule {
         services.AddSingleton<ICompetitionStateMutator>(provider => provider.GetRequiredService<CompetitionStateService>());
         services.AddSingleton<ICompetitionMonitorService, CompetitionMonitorService>();
         services.AddSingleton<ICompetitionEvaluatorService, CompetitionEvaluatorService>();
+        services.AddSingleton<IWhitelistManagerService, WhitelistManagerService>();
 
         services.AddSingleton<CompetitionMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionMenu>());
 
         services.AddSingleton<CompetitionConfigMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionConfigMenu>());
+
+        services.AddSingleton<CompetitionWhitelistMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionWhitelistMenu>());
 
         services.AddSingleton<ICommand, PriceCommand>();
     }

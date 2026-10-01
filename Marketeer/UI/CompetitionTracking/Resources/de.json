@@ -46,5 +46,12 @@
   "Config_FallbackMultiplier": "Fallback-Multiplikator",
   "Config_CancelPriority_Label": "Ziel für abgebrochene Verkäufe",
   "Config_CancelPriority_PlayerFirst": "Spieler-Inventar",
-  "Config_CancelPriority_RetainerFirst": "Gehilfen-Inventar"
+  "Config_CancelPriority_RetainerFirst": "Gehilfen-Inventar",
+  "Config_WhitelistedRetainers": "Erlaubte Gehilfen:",
+  "Config_Whitelist_AutoAdd": "Eigene Gehilfen erfassen",
+  "Button_Add": "Hinzufügen",
+  "Button_Remove": "Entfernen",
+  "Config_Whitelist_ColRetainerName": "Gehilfenname",
+  "Config_Whitelist_ColActions": "Aktionen",
+  "Menu_CompetitionWhitelist": "Erlaubte Gehilfen"
 }

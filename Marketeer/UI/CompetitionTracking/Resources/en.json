@@ -46,5 +46,12 @@
   "Config_FallbackMultiplier": "Fallback Price Multiplier",
   "Config_CancelPriority_Label": "Cancelled Items Target",
   "Config_CancelPriority_PlayerFirst": "Player Inventory",
-  "Config_CancelPriority_RetainerFirst": "Retainer Inventory"
+  "Config_CancelPriority_RetainerFirst": "Retainer Inventory",
+  "Config_WhitelistedRetainers": "Whitelisted Retainers:",
+  "Config_Whitelist_AutoAdd": "Auto-detect Own Retainers",
+  "Button_Add": "Add",
+  "Button_Remove": "Remove",
+  "Config_Whitelist_ColRetainerName": "Retainer Name",
+  "Config_Whitelist_ColActions": "Actions",
+  "Menu_CompetitionWhitelist": "Whitelist"
 }
