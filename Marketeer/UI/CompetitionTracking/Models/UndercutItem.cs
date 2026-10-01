@@ -1,6 +1,6 @@
 ﻿using Marketeer.Core.MarketPricing.Models;
 
-namespace Marketeer.Core.CompetitionTracking.Models;
+namespace Marketeer.UI.CompetitionTracking.Models;
 
 public class UndercutItem {
     public int SlotIndex { get; set; }

@@ -1,4 +1,4 @@
-﻿using Marketeer.Core.CompetitionTracking.Contracts;
+﻿using Marketeer.UI.CompetitionTracking.Contracts;
 using Marketeer.UI.CompetitionTracking.UI;
 using Marketeer.UI.Localization.Contracts;
 using NSubstitute;

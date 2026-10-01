@@ -2,6 +2,7 @@
 using Marketeer.Core.CompetitionTracking.Services;
 using Marketeer.Core.Framework;
 using Marketeer.UI.CompetitionTracking.Commands;
+using Marketeer.UI.CompetitionTracking.Contracts;
 using Marketeer.UI.CompetitionTracking.Providers;
 using Marketeer.UI.CompetitionTracking.UI;
 using Marketeer.UI.Localization.Contracts;
@@ -16,7 +17,10 @@ public class CompetitionTrackingFeature : IFeatureModule {
         services.AddSingleton<ILocalizationProvider, CompetitionLocalizationProvider>();
 
         services.AddSingleton<IRetainerStateService, RetainerStateService>();
-        services.AddSingleton<ICompetitionStateService, CompetitionStateService>();
+
+        services.AddSingleton<CompetitionStateService>();
+        services.AddSingleton<ICompetitionStateService>(provider => provider.GetRequiredService<CompetitionStateService>());
+        services.AddSingleton<ICompetitionStateMutator>(provider => provider.GetRequiredService<CompetitionStateService>());
         services.AddSingleton<ICompetitionMonitorService, CompetitionMonitorService>();
 
         services.AddSingleton<CompetitionMenu>();

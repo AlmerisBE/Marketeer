@@ -1,11 +1,12 @@
 ﻿using Marketeer.Core.CompetitionTracking.Contracts;
-using Marketeer.Core.CompetitionTracking.Models;
+using Marketeer.UI.CompetitionTracking.Contracts;
+using Marketeer.UI.CompetitionTracking.Models;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Marketeer.Core.CompetitionTracking.Services;
 
-public class CompetitionStateService : ICompetitionStateService {
+public class CompetitionStateService : ICompetitionStateService, ICompetitionStateMutator {
     private IReadOnlyList<UndercutItem> undercuts = new List<UndercutItem>();
 
     public IReadOnlyList<UndercutItem> GetUndercutItems() {

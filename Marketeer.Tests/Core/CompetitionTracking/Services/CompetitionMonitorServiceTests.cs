@@ -10,6 +10,7 @@ using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.UI.CompetitionTracking.Models;
 using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
@@ -21,7 +22,7 @@ public class CompetitionMonitorServiceTests {
     public async Task CheckUndercutsAsync_WhenUndercutDetected_UpdatesState() {
         var retainerState = Substitute.For<IRetainerStateService>();
         var priceCache = Substitute.For<IMarketPriceCacheService>();
-        var compState = Substitute.For<ICompetitionStateService>();
+        var compState = Substitute.For<ICompetitionStateMutator>();
         var resolver = Substitute.For<IItemResolverService>();
         var tracker = Substitute.For<IMarketListingTrackerService>();
         var calcService = Substitute.For<IPriceCalculationService>();

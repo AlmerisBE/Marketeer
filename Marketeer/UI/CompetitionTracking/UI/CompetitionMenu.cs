@@ -1,5 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
-using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.UI.CompetitionTracking.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;

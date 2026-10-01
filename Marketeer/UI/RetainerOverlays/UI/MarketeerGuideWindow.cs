@@ -2,9 +2,9 @@
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Marketeer.API.GameInterop.Contracts;
-using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.RetainerAutomation.Contracts;
+using Marketeer.UI.CompetitionTracking.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.RetainerOverlays.Contracts;
 using Marketeer.UI.RetainerOverlays.Models;

@@ -1,5 +1,5 @@
-﻿using Marketeer.Core.CompetitionTracking.Models;
-using Marketeer.Core.CompetitionTracking.Services;
+﻿using Marketeer.Core.CompetitionTracking.Services;
+using Marketeer.UI.CompetitionTracking.Models;
 using Xunit;
 
 namespace Marketeer.Tests.Core.CompetitionTracking.Services;

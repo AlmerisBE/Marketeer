@@ -7,6 +7,7 @@ using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.UI.CompetitionTracking.Models;
 using Marketeer.UI.Localization.Contracts;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace Marketeer.Core.CompetitionTracking.Services;
 public class CompetitionMonitorService : ICompetitionMonitorService {
     private IRetainerStateService retainerState;
     private IMarketPriceCacheService priceProvider;
-    private ICompetitionStateService competitionState;
+    private ICompetitionStateMutator stateMutator;
     private IItemResolverService itemResolver;
     private IMarketListingTrackerService marketListingTracker;
     private IPriceCalculationService priceCalculationService;
@@ -31,11 +32,12 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
     private bool isMonitoring;
     private bool isChecking;
+    private IReadOnlyList<UndercutItem> undercuts = new List<UndercutItem>();
 
     public CompetitionMonitorService(
         IRetainerStateService retainerState,
         IMarketPriceCacheService priceProvider,
-        ICompetitionStateService competitionState,
+        ICompetitionStateMutator stateMutator,
         IItemResolverService itemResolver,
         IMarketListingTrackerService marketListingTracker,
         IPriceCalculationService priceCalculationService,
@@ -48,7 +50,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
         this.retainerState = retainerState;
         this.priceProvider = priceProvider;
-        this.competitionState = competitionState;
+        this.stateMutator = stateMutator;
         this.itemResolver = itemResolver;
         this.marketListingTracker = marketListingTracker;
         this.priceCalculationService = priceCalculationService;
@@ -106,7 +108,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     }
 
     private void OnLocalListingModified(uint itemId) {
-        this.competitionState.UpdateItemUndercuts(itemId, Enumerable.Empty<UndercutItem>());
+        this.stateMutator.UpdateItemUndercuts(itemId, Enumerable.Empty<UndercutItem>());
 
         Task.Run(async () => {
             var allCharacters = this.retainerState.GetAllCharactersListings();
@@ -121,13 +123,17 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
     public Task CheckUndercutForItemAsync(uint itemId) => Task.CompletedTask;
 
+    public IReadOnlyList<UndercutItem> GetInternalUndercutItems() {
+        return this.undercuts;
+    }
+
     public async Task CheckUndercutsAsync() {
         if (this.isChecking) return;
         this.isChecking = true;
 
         try {
             var initialCharacters = this.retainerState.GetAllCharactersListings();
-            var undercuts = new List<UndercutItem>();
+            var newUndercuts = new List<UndercutItem>();
             var config = this.configService.GetConfig();
 
             foreach (var character in initialCharacters) {
@@ -151,7 +157,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                         var marketLowest = itemPricing.Listings.OrderBy(p => p.Price).FirstOrDefault();
                         var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
-                        undercuts.Add(new UndercutItem {
+                        newUndercuts.Add(new UndercutItem {
                             SlotIndex = listing.SlotIndex,
                             ItemId = listing.ItemId,
                             ItemName = resolvedItemName,
@@ -169,10 +175,10 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 }
             }
 
-            this.competitionState.UpdateUndercuts(undercuts);
+            this.stateMutator.UpdateUndercuts(newUndercuts);
 
-            if (undercuts.Any() && config.EnableChatNotifications) {
-                var notificationMessage = this.localization.Translate("Undercuts_Notification", undercuts.Count);
+            if (newUndercuts.Any() && config.EnableChatNotifications) {
+                var notificationMessage = this.localization.Translate("Undercuts_Notification", newUndercuts.Count);
                 this.chatGui.Print(notificationMessage);
             }
         }

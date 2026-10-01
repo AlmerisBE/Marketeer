@@ -1,8 +1,8 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Plugin.Services;
-using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.UI.CompetitionTracking.Contracts;
 using Marketeer.UI.RetainerOverlays.Services;
 using NSubstitute;
 using Xunit;

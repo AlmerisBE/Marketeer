@@ -1,5 +1,4 @@
 ﻿using Marketeer.API.GameInterop.Contracts;
-using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
@@ -8,6 +7,7 @@ using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.RetainerAutomation.Models;
 using Marketeer.Core.SalesHistory.Contracts;
+using Marketeer.UI.CompetitionTracking.Contracts;
 using System;
 using System.Linq;
 
