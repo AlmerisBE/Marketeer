@@ -24,13 +24,14 @@ public class HybridAutomationServiceTests {
         var guidanceService = Substitute.For<IRetainerGuidanceService>();
         var priceCalculationService = Substitute.For<IPriceCalculationService>();
         var notificationService = Substitute.For<INotificationService>();
+        var delayProvider = Substitute.For<IAutomationDelayProvider>();
 
         localization.Translate(Arg.Any<string>()).Returns("Adjust Price");
         uiInteraction.GetContextMenuItemIndex("Adjust Price").Returns(2);
 
         using var service = new HybridAutomationService(
             framework, uiInteraction, priceProvider, objectTable, localization,
-            logger, listingTracker, guidanceService, priceCalculationService, notificationService);
+            logger, listingTracker, guidanceService, priceCalculationService, notificationService, delayProvider);
 
         var listing = new TrackedListing { ItemId = 100u, ItemName = "Test Item" };
 
@@ -66,10 +67,11 @@ public class HybridAutomationServiceTests {
         var guidanceService = Substitute.For<IRetainerGuidanceService>();
         var priceCalculationService = Substitute.For<IPriceCalculationService>();
         var notificationService = Substitute.For<INotificationService>();
+        var delayProvider = Substitute.For<IAutomationDelayProvider>();
 
         using var service = new HybridAutomationService(
             framework, uiInteraction, priceProvider, objectTable, localization,
-            logger, listingTracker, guidanceService, priceCalculationService, notificationService);
+            logger, listingTracker, guidanceService, priceCalculationService, notificationService, delayProvider);
 
         // Act - Start new sale automation (State 1 initialization)
         service.StartNewSale(100u, "Test Item");

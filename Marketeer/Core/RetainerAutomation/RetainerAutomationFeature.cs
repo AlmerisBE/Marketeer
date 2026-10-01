@@ -17,6 +17,7 @@ public class RetainerAutomationFeature : IFeatureModule {
         services.AddSingleton<ILocalizationProvider, RetainerAutomationLocalizationProvider>();
 
         services.AddSingleton<IClientRetainerService, ClientRetainerService>();
+        services.AddSingleton<IAutomationDelayProvider, AutomationDelayService>();
         services.AddSingleton<IRetainerUiInteractionService, RetainerUiInteractionService>();
         services.AddSingleton<IRetainerOrchestratorService, RetainerOrchestratorService>();
 

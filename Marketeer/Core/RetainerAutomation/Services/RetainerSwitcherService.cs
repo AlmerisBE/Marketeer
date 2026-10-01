@@ -10,6 +10,7 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
     private IFramework framework;
     private IRetainerUiInteractionService uiInteraction;
     private ILoggerService logger;
+    private IAutomationDelayProvider delayProvider;
 
     private string targetRetainer = string.Empty;
     private bool isSwitching;
@@ -19,10 +20,11 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
 
     private Dictionary<string, DateTime> throttles = new();
 
-    public RetainerSwitcherService(IFramework framework, IRetainerUiInteractionService uiInteraction, ILoggerService logger) {
+    public RetainerSwitcherService(IFramework framework, IRetainerUiInteractionService uiInteraction, ILoggerService logger, IAutomationDelayProvider delayProvider) {
         this.framework = framework;
         this.uiInteraction = uiInteraction;
         this.logger = logger;
+        this.delayProvider = delayProvider;
         this.framework.Update += this.OnFrameworkUpdate;
     }
 
@@ -62,7 +64,7 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
         this.uiInteraction.SkipDialogue();
 
         if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
-            if (this.Throttle("SelectYesNo", 500)) this.uiInteraction.ConfirmYesNo();
+            if (this.Throttle("SelectYesNo", this.delayProvider.GetDelayMs(500))) this.uiInteraction.ConfirmYesNo();
             return;
         }
 
@@ -73,7 +75,7 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
                 return;
             }
 
-            if (this.Throttle("CloseSubMenu", 500)) {
+            if (this.Throttle("CloseSubMenu", this.delayProvider.GetDelayMs(500))) {
                 if (this.uiInteraction.IsAddonReady("RetainerSellList")) this.uiInteraction.CloseRetainerMarket();
                 if (this.uiInteraction.IsAddonReady("RetainerHistory")) this.uiInteraction.CloseSalesHistory();
             }
@@ -84,7 +86,7 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
         if (this.uiInteraction.IsAddonReady("SelectString")) {
             if (this.uiInteraction.IsMenuReadyForRetainer(this.targetRetainer)) {
                 if (this.shouldOpenMarketList) {
-                    if (this.Throttle("OpenMarketList", 500)) {
+                    if (this.Throttle("OpenMarketList", this.delayProvider.GetDelayMs(500))) {
                         this.hasReachedTargetMenu = true;
                         this.uiInteraction.OpenRetainerMarket();
                         this.logger.Info($"[RetainerSwitcherService] Opened market for {this.targetRetainer}.");
@@ -96,7 +98,7 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
                 }
             }
             else {
-                if (this.Throttle("CloseSelectString", 500)) {
+                if (this.Throttle("CloseSelectString", this.delayProvider.GetDelayMs(500))) {
                     this.uiInteraction.CloseSelectString();
                 }
             }
@@ -105,7 +107,7 @@ public class RetainerSwitcherService : IRetainerSwitcherService, IDisposable {
 
         // 3. If RetainerList is open
         if (this.uiInteraction.IsAddonReady("RetainerList")) {
-            if (this.Throttle("SelectRetainer", 1000)) { // 1 second throttle to allow server to summon
+            if (this.Throttle("SelectRetainer", this.delayProvider.GetDelayMs(1000))) { // 1 second throttle to allow server to summon
                 this.uiInteraction.SelectRetainer(this.targetRetainer);
             }
             return;

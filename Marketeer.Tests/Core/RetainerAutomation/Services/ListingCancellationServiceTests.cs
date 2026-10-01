@@ -22,10 +22,11 @@ public class ListingCancellationServiceTests {
         var framework = Substitute.For<IFramework>();
         var logger = Substitute.For<ILoggerService>();
         var notificationService = Substitute.For<INotificationService>();
+        var delayProvider = Substitute.For<IAutomationDelayProvider>();
 
         using var service = new ListingCancellationService(
             uiInteraction, inventoryService, configService, itemResolver,
-            localization, framework, logger, notificationService);
+            localization, framework, logger, notificationService, delayProvider);
 
         // We assert that the new method signature and constructor are fully compatible
         var exception = Record.Exception(() => service.TriggerCancellation(100u));

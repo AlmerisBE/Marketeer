@@ -19,6 +19,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
     private IConfigurationService configService;
     private ILoggerService logger;
     private IWorldInteractionService worldInteraction;
+    private IAutomationDelayProvider delayProvider;
 
     private Queue<string> retainerQueue = new();
     private string currentRetainer = string.Empty;
@@ -38,7 +39,8 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         ILocalizationService localization,
         IConfigurationService configService,
         ILoggerService logger,
-        IWorldInteractionService worldInteraction) {
+        IWorldInteractionService worldInteraction,
+        IAutomationDelayProvider delayProvider) {
 
         this.framework = framework;
         this.uiInteraction = uiInteraction;
@@ -47,6 +49,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         this.configService = configService;
         this.logger = logger;
         this.worldInteraction = worldInteraction;
+        this.delayProvider = delayProvider;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
@@ -75,17 +78,6 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         this.logger.Info("Retainer orchestration aborted/concluded.");
     }
 
-    private int GetThrottleMs(int baseMs) {
-        var config = this.configService.GetConfig();
-        if (!config.EnableAutomationDelay) return baseMs;
-
-        var min = config.AutomationDelayMin * 1000;
-        var max = config.AutomationDelayMax * 1000;
-        if (min > max) min = max;
-
-        return baseMs + new Random().Next(min, max);
-    }
-
     private bool Throttle(string key, int baseCooldownMs = 500) {
         var now = DateTime.UtcNow;
         if (!this.throttles.TryGetValue(key, out var lastTime) || (now - lastTime).TotalMilliseconds > baseCooldownMs) {
@@ -108,7 +100,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
         }
 
         if (this.uiInteraction.IsAddonReady("SelectYesNo")) {
-            if (this.Throttle("SelectYesNo", this.GetThrottleMs(500))) this.uiInteraction.ConfirmYesNo();
+            if (this.Throttle("SelectYesNo", this.delayProvider.GetDelayMs(500))) this.uiInteraction.ConfirmYesNo();
             return;
         }
 
@@ -118,7 +110,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
             if (this.hasReachedTargetMenu && this.currentTask != null) {
                 if (this.Throttle("TickTask", 100)) {
                     if (this.currentTask.OnTick()) {
-                        if (this.Throttle("CloseTaskMenu", this.GetThrottleMs(500))) {
+                        if (this.Throttle("CloseTaskMenu", this.delayProvider.GetDelayMs(500))) {
                             if (this.currentTargetMenu == RetainerTargetMenu.MarketListings) this.uiInteraction.CloseRetainerMarket();
                             else this.uiInteraction.CloseSalesHistory();
 
@@ -131,7 +123,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
                 return;
             }
 
-            if (this.Throttle("CloseSubMenu", this.GetThrottleMs(500))) {
+            if (this.Throttle("CloseSubMenu", this.delayProvider.GetDelayMs(500))) {
                 if (this.uiInteraction.IsAddonReady("RetainerSellList")) this.uiInteraction.CloseRetainerMarket();
                 if (this.uiInteraction.IsAddonReady("RetainerHistory")) this.uiInteraction.CloseSalesHistory();
             }
@@ -145,7 +137,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
                     : this.localization.Translate("RetainerMenu_SalesHistory");
 
                 if (this.uiInteraction.IsMenuOptionAvailable(optionText)) {
-                    if (this.Throttle("OpenTargetMenu", this.GetThrottleMs(500))) {
+                    if (this.Throttle("OpenTargetMenu", this.delayProvider.GetDelayMs(500))) {
                         this.uiInteraction.SelectMenuOption(optionText);
                         this.hasReachedTargetMenu = true;
                         this.currentTask?.OnMenuOpened(this.currentRetainer);
@@ -153,7 +145,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
                     }
                 }
                 else {
-                    if (this.Throttle("CloseSelectString", this.GetThrottleMs(500))) {
+                    if (this.Throttle("CloseSelectString", this.delayProvider.GetDelayMs(500))) {
                         this.logger.Warning($"Option not available. Skipping {this.currentRetainer}.");
                         this.uiInteraction.CloseSelectString();
                         this.currentRetainer = string.Empty; // Force next retainer
@@ -161,7 +153,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
                 }
             }
             else {
-                if (this.Throttle("CloseSelectString", this.GetThrottleMs(500))) {
+                if (this.Throttle("CloseSelectString", this.delayProvider.GetDelayMs(500))) {
                     this.uiInteraction.CloseSelectString();
                 }
             }
@@ -170,7 +162,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
 
         if (this.uiInteraction.IsAddonReady("RetainerList")) {
             if (this.retainerQueue.Count == 0 && string.IsNullOrEmpty(this.currentRetainer)) {
-                if (this.Throttle("CloseRetainerList", this.GetThrottleMs(500))) {
+                if (this.Throttle("CloseRetainerList", this.delayProvider.GetDelayMs(500))) {
                     var window = this.windowService.GetWindow("RetainerList");
                     if (window != null && window.IsVisible) window.SendCallback(-1);
                     this.Abort();
@@ -183,7 +175,7 @@ public class RetainerOrchestratorService : IRetainerOrchestratorService, IDispos
                 }
 
                 if (this.uiInteraction.IsRetainerAvailable(this.currentRetainer)) {
-                    if (this.Throttle("SelectRetainer", this.GetThrottleMs(1000))) {
+                    if (this.Throttle("SelectRetainer", this.delayProvider.GetDelayMs(1000))) {
                         this.uiInteraction.SelectRetainer(this.currentRetainer);
                     }
                 }

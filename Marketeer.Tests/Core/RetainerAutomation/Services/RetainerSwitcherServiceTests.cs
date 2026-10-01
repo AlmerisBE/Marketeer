@@ -12,8 +12,8 @@ public class RetainerSwitcherServiceTests {
     private class TestableRetainerSwitcherService : RetainerSwitcherService {
         public DateTime CurrentTime { get; set; } = DateTime.UtcNow;
 
-        public TestableRetainerSwitcherService(IFramework framework, IRetainerUiInteractionService uiInteraction, ILoggerService logger)
-            : base(framework, uiInteraction, logger) { }
+        public TestableRetainerSwitcherService(IFramework framework, IRetainerUiInteractionService uiInteraction, ILoggerService logger, IAutomationDelayProvider delayProvider)
+            : base(framework, uiInteraction, logger, delayProvider) { }
 
         protected override DateTime GetNow() => this.CurrentTime;
     }
@@ -23,8 +23,9 @@ public class RetainerSwitcherServiceTests {
         var framework = Substitute.For<IFramework>();
         var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
         var logger = Substitute.For<ILoggerService>();
+        var delayProvider = Substitute.For<IAutomationDelayProvider>();
 
-        var service = new TestableRetainerSwitcherService(framework, uiInteraction, logger);
+        var service = new TestableRetainerSwitcherService(framework, uiInteraction, logger, delayProvider);
 
         service.SwitchTo("MyTargetRetainer", true);
 

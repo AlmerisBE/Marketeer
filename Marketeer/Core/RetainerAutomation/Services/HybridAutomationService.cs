@@ -24,6 +24,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private IRetainerGuidanceService guidanceService;
     private IPriceCalculationService priceCalculationService;
     private INotificationService notificationService;
+    private IAutomationDelayProvider delayProvider;
 
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
@@ -47,7 +48,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         IMarketListingTrackerService listingTracker,
         IRetainerGuidanceService guidanceService,
         IPriceCalculationService priceCalculationService,
-        INotificationService notificationService) {
+        INotificationService notificationService,
+        IAutomationDelayProvider delayProvider) {
 
         this.framework = framework;
         this.uiInteraction = uiInteraction;
@@ -59,6 +61,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.guidanceService = guidanceService;
         this.priceCalculationService = priceCalculationService;
         this.notificationService = notificationService;
+        this.delayProvider = delayProvider;
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.framework.Update += this.OnFrameworkUpdate;
@@ -71,7 +74,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.currentListing = listing;
         this.stateMachineIndex = 0;
         this.sequenceStartTime = DateTime.Now;
-        this.nextActionAt = DateTime.Now.AddSeconds(0.1);
+        this.nextActionAt = DateTime.Now.Add(this.delayProvider.GetDelay(100));
         this.searchResultOpenTime = DateTime.MinValue;
         this.priceFetchTask = null;
 
@@ -92,7 +95,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         this.stateMachineIndex = 1;
         this.sequenceStartTime = DateTime.Now;
-        this.nextActionAt = DateTime.Now.AddSeconds(0.2);
+        this.nextActionAt = DateTime.Now.Add(this.delayProvider.GetDelay(200));
         this.searchResultOpenTime = DateTime.MinValue;
         this.priceFetchTask = null;
 
@@ -133,7 +136,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                 var index = this.uiInteraction.GetContextMenuItemIndex(text ?? "Adjust Price");
                 this.uiInteraction.SelectContextMenuItem(index != -1 ? index : 0);
                 this.stateMachineIndex = 1;
-                this.nextActionAt = DateTime.Now.AddSeconds(0.2);
+                this.nextActionAt = DateTime.Now.Add(this.delayProvider.GetDelay(200));
                 break;
 
             case 1:
@@ -141,7 +144,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                     this.uiInteraction.OpenComparePrices();
                     this.stateMachineIndex = 2;
                     this.searchResultOpenTime = DateTime.MinValue;
-                    this.nextActionAt = DateTime.Now.AddSeconds(1.0);
+                    this.nextActionAt = DateTime.Now.Add(this.delayProvider.GetDelay(1000));
                 }
                 break;
 

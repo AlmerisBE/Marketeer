@@ -21,6 +21,7 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
     private IFramework framework;
     private ILoggerService logger;
     private INotificationService notificationService;
+    private IAutomationDelayProvider delayProvider;
 
     private bool isActive;
     private int stateMachineIndex;
@@ -38,7 +39,8 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
         ILocalizationService localization,
         IFramework framework,
         ILoggerService logger,
-        INotificationService notificationService) {
+        INotificationService notificationService,
+        IAutomationDelayProvider delayProvider) {
 
         this.uiInteraction = uiInteraction;
         this.inventoryService = inventoryService;
@@ -48,6 +50,7 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
         this.framework = framework;
         this.logger = logger;
         this.notificationService = notificationService;
+        this.delayProvider = delayProvider;
 
         this.framework.Update += this.OnFrameworkUpdate;
     }
@@ -74,7 +77,7 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
         this.currentItemId = itemId;
         this.isActive = true;
         this.stateMachineIndex = 0;
-        this.nextActionAt = DateTime.Now.AddSeconds(0.1);
+        this.nextActionAt = DateTime.Now.Add(this.delayProvider.GetDelay(100));
     }
 
     private void OnFrameworkUpdate(IFramework fw) {
@@ -84,13 +87,13 @@ public class ListingCancellationService : IListingCancellationService, IDisposab
             case 0:
                 if (this.uiInteraction.IsAddonReady("ContextMenu")) {
                     this.stateMachineIndex = 1;
-                    this.nextActionAt = DateTime.Now.AddSeconds(0.1);
+                    this.nextActionAt = DateTime.Now.Add(this.delayProvider.GetDelay(100));
                 }
                 else {
                     this.uiInteraction.CloseUnexpectedWindows(); // Ensure RetainerSell is closed
                     this.uiInteraction.OpenContextMenuForSellList(this.targetUiIndex);
                     this.stateMachineIndex = 1;
-                    this.nextActionAt = DateTime.Now.AddSeconds(0.3); // Wait for menu to open
+                    this.nextActionAt = DateTime.Now.Add(this.delayProvider.GetDelay(300)); // Wait for menu to open
                 }
                 break;
             case 1:
