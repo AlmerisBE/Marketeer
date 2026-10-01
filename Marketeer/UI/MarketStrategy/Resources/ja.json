@@ -1,0 +1,9 @@
+{
+  "Menu_MarketStrategy": "市場戦略",
+  "Config_EnableAnomalyProtection": "市場暴落保護を有効にする",
+  "Config_AnomalyCrashThreshold": "暴落とみなす下落率 (%)",
+  "Config_AnomalyStrategy": "防衛戦略",
+  "Config_AnomalyStrategy_Ignore": "市場に従う (無視)",
+  "Config_AnomalyStrategy_HoldPrice": "適正価格を維持",
+  "Config_AnomalyStrategy_AlertAndPause": "アラート (裁定取引) & 一時停止"
+}

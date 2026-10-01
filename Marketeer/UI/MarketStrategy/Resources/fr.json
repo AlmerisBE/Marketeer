@@ -1,0 +1,9 @@
+{
+  "Menu_MarketStrategy": "Stratégie de Marché",
+  "Config_EnableAnomalyProtection": "Activer la protection contre les krachs",
+  "Config_AnomalyCrashThreshold": "Seuil de chute considéré comme krach (%)",
+  "Config_AnomalyStrategy": "Stratégie de défense",
+  "Config_AnomalyStrategy_Ignore": "Suivre le marché (Ignorer)",
+  "Config_AnomalyStrategy_HoldPrice": "Maintenir la Vraie Valeur",
+  "Config_AnomalyStrategy_AlertAndPause": "Alerter (Opportunité) & Pauser"
+}

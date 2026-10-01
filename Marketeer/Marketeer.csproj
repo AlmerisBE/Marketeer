@@ -26,6 +26,7 @@
 	  <Content Include="UI\Universalis\Resources\ja.json" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Folder Include="UI\MarketStrategy\Resources\" />
 	  <Folder Include="UI\Universalis\Resources\" />
 	  <Folder Include="UI\CharacterManagement\Resources\" />
 	  <Folder Include="UI\CraftingProfit\Resources\" />
