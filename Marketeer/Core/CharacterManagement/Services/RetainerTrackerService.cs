@@ -1,5 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.InventoryTracking.Models;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.Configuration.Contracts;
@@ -18,6 +20,7 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
     private ICharacterTrackerService characterTrackerService;
     private IGameEventService gameEventService;
     private ILoggerService logger;
+    private IInventoryService inventoryService;
 
     public RetainerTrackerService(
         IObjectTable objectTable,
@@ -25,7 +28,8 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         IRetainerProvider retainerProvider,
         ICharacterTrackerService characterTrackerService,
         IGameEventService gameEventService,
-        ILoggerService logger) {
+        ILoggerService logger,
+        IInventoryService inventoryService) {
 
         this.objectTable = objectTable;
         this.configService = configService;
@@ -33,6 +37,7 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
         this.characterTrackerService = characterTrackerService;
         this.gameEventService = gameEventService;
         this.logger = logger;
+        this.inventoryService = inventoryService;
 
         this.gameEventService.RetainerBellOpened += this.RecordRetainers;
         this.gameEventService.RetainerSellListUpdated += this.RecordRetainers;
@@ -94,12 +99,60 @@ public class RetainerTrackerService : IRetainerTrackerService, IDisposable {
                         isModified = true;
                     }
                 }
+
+                if (this.UpdateRetainerCrystals(retainer.RetainerId)) {
+                    isModified = true;
+                }
             }
 
             if (isModified) {
                 this.configService.Save();
             }
         }
+    }
+
+    private bool UpdateRetainerCrystals(ulong retainerId) {
+        var config = this.configService.GetConfig();
+        if (!config.RetainerInventorySnapshots.TryGetValue(retainerId, out var snapshot)) {
+            snapshot = new InventorySnapshot { Timestamp = DateTime.UtcNow, Items = new List<TrackedItem>() };
+            config.RetainerInventorySnapshots[retainerId] = snapshot;
+        }
+
+        bool changed = false;
+        var existingCrystals = snapshot.Items.Where(i => i.ItemId is >= 2 and <= 19).ToList();
+
+        var crystalSlots = this.inventoryService.GetInventorySlots(InventoryType.RetainerCrystals);
+        var newCrystalItems = new List<TrackedItem>();
+
+        if (crystalSlots != null) {
+            foreach (var slot in crystalSlots.Where(s => s.IsOccupied && s.Quantity > 0)) {
+                newCrystalItems.Add(new TrackedItem {
+                    ContainerId = (int)InventoryType.RetainerCrystals,
+                    SlotIndex = (int)slot.SlotIndex,
+                    ItemId = slot.ItemId,
+                    Quantity = slot.Quantity
+                });
+            }
+        }
+
+        if (existingCrystals.Count != newCrystalItems.Count) changed = true;
+        else {
+            foreach (var newItem in newCrystalItems) {
+                var match = existingCrystals.FirstOrDefault(e => e.ItemId == newItem.ItemId && e.Quantity == newItem.Quantity);
+                if (match == null) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        if (changed) {
+            snapshot.Items.RemoveAll(i => i.ItemId is >= 2 and <= 19);
+            snapshot.Items.AddRange(newCrystalItems);
+            snapshot.Timestamp = DateTime.UtcNow;
+        }
+
+        return changed;
     }
 
     public void Dispose() {

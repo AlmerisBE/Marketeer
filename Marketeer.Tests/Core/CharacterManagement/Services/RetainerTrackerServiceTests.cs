@@ -23,6 +23,7 @@ public class RetainerTrackerServiceTests {
         var mockCharacterTracker = Substitute.For<ICharacterTrackerService>();
         var mockGameEventService = Substitute.For<IGameEventService>();
         var mockLogger = Substitute.For<ILoggerService>();
+        var mockInventoryService = Substitute.For<IInventoryService>();
 
         var mockPlayer = Substitute.For<IPlayerCharacter>();
         mockPlayer.Name.Returns(new Dalamud.Game.Text.SeStringHandling.SeString(
@@ -42,7 +43,7 @@ public class RetainerTrackerServiceTests {
         };
         mockRetainerProvider.GetActiveRetainers().Returns(gameRetainers);
 
-        var service = new RetainerTrackerService(mockObjectTable, mockConfigService, mockRetainerProvider, mockCharacterTracker, mockGameEventService, mockLogger);
+        var service = new RetainerTrackerService(mockObjectTable, mockConfigService, mockRetainerProvider, mockCharacterTracker, mockGameEventService, mockLogger, mockInventoryService);
 
         // Act
         mockGameEventService.RetainerBellOpened += Raise.Event<Action>();

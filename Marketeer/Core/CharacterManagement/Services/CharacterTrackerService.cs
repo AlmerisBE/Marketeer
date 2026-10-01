@@ -1,5 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.GameInterop.Contracts;
+using Marketeer.API.InventoryTracking.Models;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.Configuration.Contracts;
@@ -81,11 +83,38 @@ public class CharacterTrackerService : ICharacterTrackerService, IDisposable {
 
             charData.CharacterGil = (ulong)this.inventoryService.GetItemCountInInventory(1);
 
+            this.UpdatePlayerCrystals(storageKey);
+
             this.configService.Save();
         }
         catch (Exception ex) {
             this.logger?.Error(ex, "Failed to record current character safely.");
         }
+    }
+
+    private void UpdatePlayerCrystals(string storageKey) {
+        var config = this.configService.GetConfig();
+        if (!config.InventorySnapshots.TryGetValue(storageKey, out var snapshot)) {
+            snapshot = new InventorySnapshot { Timestamp = DateTime.UtcNow, Items = new List<TrackedItem>() };
+            config.InventorySnapshots[storageKey] = snapshot;
+        }
+
+        // Remove existing crystals (Item IDs 2 to 19 inclusive) to prevent duplication during partial updates
+        snapshot.Items.RemoveAll(i => i.ItemId is >= 2 and <= 19);
+
+        var crystalSlots = this.inventoryService.GetInventorySlots(InventoryType.Crystals);
+        if (crystalSlots != null) {
+            foreach (var slot in crystalSlots.Where(s => s.IsOccupied && s.Quantity > 0)) {
+                snapshot.Items.Add(new TrackedItem {
+                    ContainerId = (int)InventoryType.Crystals,
+                    SlotIndex = (int)slot.SlotIndex,
+                    ItemId = slot.ItemId,
+                    Quantity = slot.Quantity
+                });
+            }
+        }
+
+        snapshot.Timestamp = DateTime.UtcNow;
     }
 
     public bool IsActiveCharacter(string name, uint homeWorldId) {
