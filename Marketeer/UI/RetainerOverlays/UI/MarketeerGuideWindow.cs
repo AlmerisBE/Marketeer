@@ -121,6 +121,18 @@ public class MarketeerGuideWindow : Window {
             ImGui.TextUnformatted(this.localization.Translate("Guidance_ItemName", $"{instruction.ItemName} x{instruction.Quantity}"));
             if (instruction.ActionType == GuidanceActionType.UpdatePrice && instruction.TargetPrice.HasValue) {
                 ImGui.TextUnformatted(this.localization.Translate("Guidance_TargetPrice", instruction.TargetPrice.Value.ToString("N0")));
+
+                if (instruction.AverageMarketPrice > 0) {
+                    float difference = ((float)instruction.TargetPrice - instruction.AverageMarketPrice) / instruction.AverageMarketPrice * 100f;
+                    string sign = difference > 0 ? "+" : "";
+
+                    // Code couleur : Rouge si on s'apprête à valider un prix inférieur de 20% ou plus par rapport à la moyenne
+                    var color = difference <= -20f ? new System.Numerics.Vector4(1f, 0.4f, 0.4f, 1f) : new System.Numerics.Vector4(0.8f, 0.8f, 0.8f, 1f);
+
+                    ImGui.TextUnformatted(this.localization.Translate("Guide_AveragePrice") ?? "Average Price:");
+                    ImGui.SameLine();
+                    ImGui.TextColored(color, $"{instruction.AverageMarketPrice:N0} ({sign}{difference:F1}%)");
+                }
             }
         }
 

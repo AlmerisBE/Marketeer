@@ -5,6 +5,7 @@ public class GuidanceInstruction {
     public uint ItemId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public uint CurrentPrice { get; set; }
+    public uint AverageMarketPrice { get; set; }
     public uint Quantity { get; set; }
     public uint? TargetPrice { get; set; }
     public string RetainerName { get; set; } = string.Empty;

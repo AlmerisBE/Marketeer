@@ -19,5 +19,6 @@
   "Guidance_Legend_Yellow": "Preisanpassung erforderlich",
   "Guidance_Legend_Orange": "Stornierung & Preisanpassung",
   "Guidance_Btn_ExecuteAction": "Aktion ausführen",
-  "Command_Guide_Description": "Schaltet die Sichtbarkeit des Übersichtsfensters um."
+  "Command_Guide_Description": "Schaltet die Sichtbarkeit des Übersichtsfensters um.",
+  "Guide_AveragePrice": "Durchschnittspreis:"
 }

@@ -63,6 +63,7 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                     ItemId = currentUndercut.ItemId,
                     ItemName = currentUndercut.ItemName,
                     CurrentPrice = currentUndercut.Price,
+                    AverageMarketPrice = currentUndercut.AverageMarketPrice,
                     Quantity = currentUndercut.Quantity,
                     TargetPrice = currentUndercut.TargetPrice,
                     RetainerName = activeRetainerName,
