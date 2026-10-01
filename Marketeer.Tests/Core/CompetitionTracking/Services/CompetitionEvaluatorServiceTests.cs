@@ -126,4 +126,33 @@ public class CompetitionEvaluatorServiceTests {
         Assert.Equal(10000u, undercut.TargetPrice);
         Assert.NotNull(undercut.AnomalyData);
     }
+
+    [Fact]
+    public void TryEvaluateListing_WhenUndercutDetected_MapsAverageMarketPriceCorrectly() {
+        var configService = Substitute.For<IConfigurationService>();
+        var whitelistManager = Substitute.For<IWhitelistManagerService>();
+        var anomalyDetector = Substitute.For<IMarketAnomalyDetector>();
+
+        configService.GetConfig().Returns(new PluginConfiguration { CompetitorWhitelistBehavior = WhitelistBehavior.Ignore });
+        anomalyDetector.EvaluateMarket(Arg.Any<MarketItemPricing>(), Arg.Any<bool>()).Returns(new AnomalyReport());
+
+        var service = new CompetitionEvaluatorService(configService, whitelistManager, anomalyDetector);
+
+        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 10000, IsHq = false };
+        var pricing = new MarketItemPricing {
+            ItemId = 1,
+            AverageSalePrice = 8500, // Simulated True Market Value
+            Listings = new List<LowestPriceResult> {
+                new LowestPriceResult { Price = 9000, RetainerName = "Rival", IsHq = false }
+            }
+        };
+
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+
+        Assert.True(result);
+        Assert.NotNull(undercut);
+
+        // Assert that the UI model successfully received the TMV from the pricing entity
+        Assert.Equal(8500u, undercut.AverageMarketPrice);
+    }
 }

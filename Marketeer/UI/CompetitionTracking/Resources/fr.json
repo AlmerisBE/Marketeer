@@ -55,5 +55,9 @@
   "Config_Whitelist_ColActions": "Actions",
   "Menu_CompetitionWhitelist": "Liste Blanche",
   "Notification_Anomaly_Title": "Krach boursier détecté",
-  "Notification_Anomaly_Message": "Le prix de {0} s'effondre ! Coût d'achat du stock : {1:N0} gils. Bénéfice estimé : {2:N0} gils."
+  "Notification_Anomaly_Message": "Le prix de {0} s'effondre ! Coût d'achat du stock : {1:N0} gils. Bénéfice estimé : {2:N0} gils.",
+  "Competition_ColAveragePrice": "Prix Moyen (Écart)",
+  "Competition_ColActions": "Actions",
+  "Tooltip_AddWhitelist": "Ajouter le concurrent à la liste blanche",
+  "Tooltip_OpenChart": "Voir l'historique sur Universalis"
 }

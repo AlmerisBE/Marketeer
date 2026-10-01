@@ -13,6 +13,7 @@ public class UndercutItem {
     public uint OurPrice { get; set; }
     public uint ServerCheapestPrice { get; set; }
     public uint TargetPrice { get; set; }
+    public uint AverageMarketPrice { get; set; }
     public string CompetitorName { get; set; } = string.Empty;
     public string CharacterName { get; set; } = string.Empty;
     public PricingAction SuggestedAction { get; set; } = PricingAction.UpdatePrice;

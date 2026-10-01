@@ -55,5 +55,9 @@
   "Config_Whitelist_ColActions": "Actions",
   "Menu_CompetitionWhitelist": "Whitelist",
   "Notification_Anomaly_Title": "Market Crash Detected",
-  "Notification_Anomaly_Message": "Price for {0} is crashing! Buyout cost: {1:N0}g. Est. Profit: {2:N0}g."
+  "Notification_Anomaly_Message": "Price for {0} is crashing! Buyout cost: {1:N0}g. Est. Profit: {2:N0}g.",
+  "Competition_ColAveragePrice": "Average Price (Diff)",
+  "Competition_ColActions": "Actions",
+  "Tooltip_AddWhitelist": "Add competitor to whitelist",
+  "Tooltip_OpenChart": "View price history on Universalis"
 }

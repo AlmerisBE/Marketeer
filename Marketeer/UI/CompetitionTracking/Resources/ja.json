@@ -55,5 +55,9 @@
   "Config_Whitelist_ColActions": "操作",
   "Menu_CompetitionWhitelist": "ホワイトリスト",
   "Notification_Anomaly_Title": "市場の暴落を検知",
-  "Notification_Anomaly_Message": "{0}の価格が暴落しています！ 買い占め費用: {1:N0}ギル。 予想利益: {2:N0}ギル。"
+  "Notification_Anomaly_Message": "{0}の価格が暴落しています！ 買い占め費用: {1:N0}ギル。 予想利益: {2:N0}ギル。",
+  "Competition_ColAveragePrice": "平均価格 (差額)",
+  "Competition_ColActions": "操作",
+  "Tooltip_AddWhitelist": "競合他社をホワイトリストに追加",
+  "Tooltip_OpenChart": "Universalisで価格履歴を表示"
 }

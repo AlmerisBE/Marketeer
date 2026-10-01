@@ -55,5 +55,9 @@
   "Config_Whitelist_ColActions": "Aktionen",
   "Menu_CompetitionWhitelist": "Erlaubte Gehilfen",
   "Notification_Anomaly_Title": "Marktcrash erkannt",
-  "Notification_Anomaly_Message": "Der Preis für {0} stürzt ab! Aufkaufkosten: {1:N0} Gil. Geschätzter Gewinn: {2:N0} Gil."
+  "Notification_Anomaly_Message": "Der Preis für {0} stürzt ab! Aufkaufkosten: {1:N0} Gil. Geschätzter Gewinn: {2:N0} Gil.",
+  "Competition_ColAveragePrice": "Durchschnittspreis (Abweichung)",
+  "Competition_ColActions": "Aktionen",
+  "Tooltip_AddWhitelist": "Konkurrent zur Whitelist hinzufügen",
+  "Tooltip_OpenChart": "Preisverlauf auf Universalis ansehen"
 }

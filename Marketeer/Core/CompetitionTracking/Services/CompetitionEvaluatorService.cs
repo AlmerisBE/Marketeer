@@ -71,6 +71,7 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
             OurPrice = listing.CurrentPrice,
             ServerCheapestPrice = lowestCompetitor.Price,
             TargetPrice = targetPrice,
+            AverageMarketPrice = pricing.AverageSalePrice,
             CompetitorName = lowestCompetitor.RetainerName ?? "Unknown",
             CharacterName = characterName,
             SuggestedAction = suggestedAction,
