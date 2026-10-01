@@ -53,5 +53,7 @@
   "Button_Remove": "Retirer",
   "Config_Whitelist_ColRetainerName": "Nom du servant",
   "Config_Whitelist_ColActions": "Actions",
-  "Menu_CompetitionWhitelist": "Liste Blanche"
+  "Menu_CompetitionWhitelist": "Liste Blanche",
+  "Notification_Anomaly_Title": "Krach boursier détecté",
+  "Notification_Anomaly_Message": "Le prix de {0} s'effondre ! Coût d'achat du stock : {1:N0} gils. Bénéfice estimé : {2:N0} gils."
 }

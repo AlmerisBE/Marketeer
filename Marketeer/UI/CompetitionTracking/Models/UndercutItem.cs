@@ -1,4 +1,5 @@
 ﻿using Marketeer.Core.MarketPricing.Models;
+using Marketeer.Core.MarketStrategy.Models;
 
 namespace Marketeer.UI.CompetitionTracking.Models;
 
@@ -15,4 +16,5 @@ public class UndercutItem {
     public string CompetitorName { get; set; } = string.Empty;
     public string CharacterName { get; set; } = string.Empty;
     public PricingAction SuggestedAction { get; set; } = PricingAction.UpdatePrice;
+    public AnomalyReport? AnomalyData { get; set; }
 }

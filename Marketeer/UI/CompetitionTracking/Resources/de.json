@@ -53,5 +53,7 @@
   "Button_Remove": "Entfernen",
   "Config_Whitelist_ColRetainerName": "Gehilfenname",
   "Config_Whitelist_ColActions": "Aktionen",
-  "Menu_CompetitionWhitelist": "Erlaubte Gehilfen"
+  "Menu_CompetitionWhitelist": "Erlaubte Gehilfen",
+  "Notification_Anomaly_Title": "Marktcrash erkannt",
+  "Notification_Anomaly_Message": "Der Preis für {0} stürzt ab! Aufkaufkosten: {1:N0} Gil. Geschätzter Gewinn: {2:N0} Gil."
 }

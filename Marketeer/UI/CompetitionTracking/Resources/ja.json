@@ -53,5 +53,7 @@
   "Button_Remove": "削除",
   "Config_Whitelist_ColRetainerName": "リテイナー名",
   "Config_Whitelist_ColActions": "操作",
-  "Menu_CompetitionWhitelist": "ホワイトリスト"
+  "Menu_CompetitionWhitelist": "ホワイトリスト",
+  "Notification_Anomaly_Title": "市場の暴落を検知",
+  "Notification_Anomaly_Message": "{0}の価格が暴落しています！ 買い占め費用: {1:N0}ギル。 予想利益: {2:N0}ギル。"
 }

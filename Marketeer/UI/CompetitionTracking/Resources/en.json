@@ -53,5 +53,7 @@
   "Button_Remove": "Remove",
   "Config_Whitelist_ColRetainerName": "Retainer Name",
   "Config_Whitelist_ColActions": "Actions",
-  "Menu_CompetitionWhitelist": "Whitelist"
+  "Menu_CompetitionWhitelist": "Whitelist",
+  "Notification_Anomaly_Title": "Market Crash Detected",
+  "Notification_Anomaly_Message": "Price for {0} is crashing! Buyout cost: {1:N0}g. Est. Profit: {2:N0}g."
 }

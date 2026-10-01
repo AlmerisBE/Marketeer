@@ -8,6 +8,7 @@ using Marketeer.Core.RetainerAutomation.Models;
 using Marketeer.Core.RetainerAutomation.Services;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.CompetitionTracking.Contracts;
+using Marketeer.UI.Localization.Contracts;
 using NSubstitute;
 using Xunit;
 
@@ -23,6 +24,8 @@ public class ListingActionResolverServiceTests {
         var logger = Substitute.For<ILoggerService>();
         var hybridAutomation = Substitute.For<IHybridAutomationService>();
         var cancellationService = Substitute.For<IListingCancellationService>();
+        var notificationService = Substitute.For<INotificationService>();
+        var localization = Substitute.For<ILocalizationService>();
 
         var config = new PluginConfiguration { EnforceVendorPriceMinimum = true, LossBehavior = MinimumPriceBehavior.CancelToInventory };
         configService.GetConfig().Returns(config);
@@ -34,7 +37,7 @@ public class ListingActionResolverServiceTests {
 
         using var service = new ListingActionResolverService(
             configService, listingProvider, competitionState, itemResolver, logger,
-            hybridAutomation, cancellationService);
+            hybridAutomation, cancellationService, notificationService, localization);
 
         var result = service.ResolveAction(100u);
 
@@ -50,13 +53,15 @@ public class ListingActionResolverServiceTests {
         var logger = Substitute.For<ILoggerService>();
         var hybridAutomation = Substitute.For<IHybridAutomationService>();
         var cancellationService = Substitute.For<IListingCancellationService>();
+        var notificationService = Substitute.For<INotificationService>();
+        var localization = Substitute.For<ILocalizationService>();
 
         var config = new PluginConfiguration { EnforceVendorPriceMinimum = false };
         configService.GetConfig().Returns(config);
 
         using var service = new ListingActionResolverService(
             configService, listingProvider, competitionState, itemResolver, logger,
-            hybridAutomation, cancellationService);
+            hybridAutomation, cancellationService, notificationService, localization);
 
         var listing = new TrackedListing { ItemId = 200u, ItemName = "Test" };
 
