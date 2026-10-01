@@ -35,7 +35,9 @@ public class UniversalisClientService : IUniversalisClient, IDisposable {
 
         if (idsList.Count == 0) return results;
 
-        int batchSize = 50;
+        // Universalis API v2 allows up to 100 comma-separated IDs per request.
+        // Maximizing the batch size drastically reduces HTTP overhead and prevents rate limiting.
+        int batchSize = 100;
         int maxRetries = 3;
 
         try {
@@ -78,17 +80,17 @@ public class UniversalisClientService : IUniversalisClient, IDisposable {
                         await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
                     }
                     catch (ObjectDisposedException) {
-                        this.logger.Warning($"Universalis API request aborted due to service disposal (Plugin reloaded).");
-                        return results; // Abort entirely and silently
+                        return results; // Abort entirely and silently if plugin reloads
                     }
                     catch (Exception ex) {
-                        this.logger.Error(ex, $"Exception during Universalis API call for batch on world {worldId} (Attempt {attempt}/{maxRetries}).");
+                        // Downgraded to Warning: Transient network issues are not fatal plugin errors
+                        this.logger.Warning($"Exception during Universalis API call for batch on world {worldId} (Attempt {attempt}/{maxRetries}): {ex.Message}");
                         await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
                     }
                 }
 
                 if (!success) {
-                    this.logger.Error($"Failed to fetch data from Universalis for batch on world {worldId} after {attemptsUsed} attempts.");
+                    this.logger.Warning($"Failed to fetch data from Universalis for batch on world {worldId} after {attemptsUsed} attempts.");
                     continue;
                 }
 
@@ -111,7 +113,7 @@ public class UniversalisClientService : IUniversalisClient, IDisposable {
             }
         }
         catch (Exception ex) {
-            this.logger.Error(ex, $"Critical failure while processing Universalis API data for world {worldId}.");
+            this.logger.Warning($"Critical failure while processing Universalis API data for world {worldId}: {ex.Message}");
         }
 
         return results;

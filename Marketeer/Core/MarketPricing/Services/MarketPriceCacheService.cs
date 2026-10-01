@@ -9,11 +9,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marketeer.Core.MarketPricing.Services;
 
-public class MarketPriceCacheService : IMarketPriceCacheService {
+public class MarketPriceCacheService : IMarketPriceCacheService, IDisposable {
     private IUniversalisClient universalisClient;
     private IUniversalisUpdateMutator updateMutator;
     private IConfigurationService configService;
@@ -21,6 +22,7 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
     private ILoggerService logger;
 
     private ConcurrentDictionary<string, CachedPriceData> cache = new();
+    private SemaphoreSlim fetchSemaphore = new SemaphoreSlim(1, 1);
 
     public event Action<uint, IEnumerable<uint>>? PricesUpdated;
 
@@ -49,10 +51,12 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
 
     public async Task<IReadOnlyList<MarketItemPricing>> GetPricingsAsync(IEnumerable<uint> itemIds, uint worldId, bool bypassCache = false) {
         var results = new List<MarketItemPricing>();
+        var distinctIds = itemIds.Distinct().ToList();
         var idsToFetch = new List<uint>();
         var cacheDuration = TimeSpan.FromMinutes(this.configService.GetConfig().UniversalisCacheMinutes);
 
-        foreach (var id in itemIds.Distinct()) {
+        // Phase 1: Optimistic read (No locks, extremely fast)
+        foreach (var id in distinctIds) {
             var key = $"{worldId}_{id}";
             if (!bypassCache && this.cache.TryGetValue(key, out var cached) && (DateTime.UtcNow - cached.LastUpdated) < cacheDuration) {
                 results.Add(cached.Pricing);
@@ -61,58 +65,73 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
         }
 
         if (idsToFetch.Count > 0) {
+            await this.fetchSemaphore.WaitAsync();
             try {
-                this.updateMutator.SetUpdating(true);
-
-                // Strip HQ offset strictly for Universalis network queries
-                var baseItemIds = idsToFetch.Select(id => id > 1000000u ? id - 1000000u : id).Distinct().ToList();
-                var fetchedData = await this.universalisClient.FetchDataAsync(baseItemIds, worldId);
-
-                foreach (var data in fetchedData) {
-                    var nqId = data.BaseItemId;
-                    var hqId = data.BaseItemId + 1000000u;
-                    var nqKey = $"{worldId}_{nqId}";
-                    var hqKey = $"{worldId}_{hqId}";
-
-                    // Safely merge Universalis average prices with Live Scanner data if it exists and is fresh
-                    if (!this.cache.TryGetValue(nqKey, out var nqExisting) || nqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - nqExisting.LastUpdated).TotalMinutes >= 10) {
-                        var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.Where(l => !l.IsHq).ToList(), AverageSalePrice = data.AveragePriceNq, SalesPerDay = data.NqSaleVelocity };
-                        this.cache[nqKey] = new CachedPriceData { ItemId = nqId, Pricing = nqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
-                    }
-                    else {
-                        nqExisting.Pricing.AverageSalePrice = data.AveragePriceNq;
-                        nqExisting.Pricing.SalesPerDay = data.NqSaleVelocity;
-                    }
-
-                    if (!this.cache.TryGetValue(hqKey, out var hqExisting) || hqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - hqExisting.LastUpdated).TotalMinutes >= 10) {
-                        var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.Where(l => l.IsHq).ToList(), AverageSalePrice = data.AveragePriceHq, SalesPerDay = data.HqSaleVelocity };
-                        this.cache[hqKey] = new CachedPriceData { ItemId = hqId, Pricing = hqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
-                    }
-                    else {
-                        hqExisting.Pricing.AverageSalePrice = data.AveragePriceHq;
-                        hqExisting.Pricing.SalesPerDay = data.HqSaleVelocity;
-                    }
-                }
-
+                // Phase 2: Double-Checked Locking (Re-verify cache in case a concurrent task just fetched the data)
+                var missingIds = new List<uint>();
                 foreach (var id in idsToFetch) {
                     var key = $"{worldId}_{id}";
-                    if (this.cache.TryGetValue(key, out var cached)) results.Add(cached.Pricing);
-                    else {
-                        var emptyPricing = new MarketItemPricing { ItemId = id };
-                        this.cache[key] = new CachedPriceData { ItemId = id, Pricing = emptyPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
-                        results.Add(emptyPricing);
+                    if (!bypassCache && this.cache.TryGetValue(key, out var cached) && (DateTime.UtcNow - cached.LastUpdated) < cacheDuration) {
+                        results.Add(cached.Pricing); // Data was fetched while we were waiting for the lock!
                     }
+                    else missingIds.Add(id);
                 }
 
-                if (fetchedData.Count > 0) {
-                    _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, idsToFetch));
-                }
+                if (missingIds.Count > 0) {
+                    this.updateMutator.SetUpdating(true);
 
-                this.updateMutator.RecordSuccessfulUpdate();
+                    // Strip HQ offset strictly for Universalis network queries
+                    var baseItemIds = missingIds.Select(id => id > 1000000u ? id - 1000000u : id).Distinct().ToList();
+                    var fetchedData = await this.universalisClient.FetchDataAsync(baseItemIds, worldId);
+
+                    foreach (var data in fetchedData) {
+                        var nqId = data.BaseItemId;
+                        var hqId = data.BaseItemId + 1000000u;
+                        var nqKey = $"{worldId}_{nqId}";
+                        var hqKey = $"{worldId}_{hqId}";
+
+                        if (!this.cache.TryGetValue(nqKey, out var nqExisting) || nqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - nqExisting.LastUpdated).TotalMinutes >= 10) {
+                            var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.Where(l => !l.IsHq).ToList(), AverageSalePrice = data.AveragePriceNq, SalesPerDay = data.NqSaleVelocity };
+                            this.cache[nqKey] = new CachedPriceData { ItemId = nqId, Pricing = nqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
+                        }
+                        else {
+                            nqExisting.Pricing.AverageSalePrice = data.AveragePriceNq;
+                            nqExisting.Pricing.SalesPerDay = data.NqSaleVelocity;
+                        }
+
+                        if (!this.cache.TryGetValue(hqKey, out var hqExisting) || hqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - hqExisting.LastUpdated).TotalMinutes >= 10) {
+                            var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.Where(l => l.IsHq).ToList(), AverageSalePrice = data.AveragePriceHq, SalesPerDay = data.HqSaleVelocity };
+                            this.cache[hqKey] = new CachedPriceData { ItemId = hqId, Pricing = hqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
+                        }
+                        else {
+                            hqExisting.Pricing.AverageSalePrice = data.AveragePriceHq;
+                            hqExisting.Pricing.SalesPerDay = data.HqSaleVelocity;
+                        }
+                    }
+
+                    foreach (var id in missingIds) {
+                        var key = $"{worldId}_{id}";
+                        if (this.cache.TryGetValue(key, out var cached)) results.Add(cached.Pricing);
+                        else {
+                            var emptyPricing = new MarketItemPricing { ItemId = id };
+                            this.cache[key] = new CachedPriceData { ItemId = id, Pricing = emptyPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
+                            results.Add(emptyPricing);
+                        }
+                    }
+
+                    if (fetchedData.Count > 0) {
+                        _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, missingIds));
+                    }
+
+                    this.updateMutator.RecordSuccessfulUpdate();
+                }
             }
             catch (Exception ex) {
-                this.logger.Error(ex, $"Failed to fetch fallback API prices for world {worldId}.");
+                this.logger.Warning($"Failed to fetch fallback API prices for world {worldId}. Reason: {ex.Message}");
                 this.updateMutator.SetUpdating(false);
+            }
+            finally {
+                this.fetchSemaphore.Release();
             }
         }
 
@@ -135,5 +154,9 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
         _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, new[] { itemId }));
 
         this.logger.Debug($"[MarketPriceCache] Local cache updated instantly for item {itemId} with {prices.Count} live entries.");
+    }
+
+    public void Dispose() {
+        this.fetchSemaphore.Dispose();
     }
 }
