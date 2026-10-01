@@ -6,4 +6,5 @@ public class RetainerListing {
     public uint Quantity { get; set; }
     public string RetainerName { get; set; } = string.Empty;
     public uint CurrentPrice { get; set; }
+    public bool IsHq { get; set; }
 }

@@ -5,7 +5,6 @@ using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketPricing.Contracts;
-using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.CompetitionTracking.Models;
 using Marketeer.UI.Localization.Contracts;
@@ -20,6 +19,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
     private IRetainerStateService retainerState;
     private IMarketPriceCacheService priceProvider;
     private ICompetitionStateMutator stateMutator;
+    private ICompetitionEvaluatorService evaluatorService;
     private IItemResolverService itemResolver;
     private IMarketListingTrackerService marketListingTracker;
     private IPriceCalculationService priceCalculationService;
@@ -38,6 +38,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         IRetainerStateService retainerState,
         IMarketPriceCacheService priceProvider,
         ICompetitionStateMutator stateMutator,
+        ICompetitionEvaluatorService evaluatorService,
         IItemResolverService itemResolver,
         IMarketListingTrackerService marketListingTracker,
         IPriceCalculationService priceCalculationService,
@@ -51,6 +52,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.retainerState = retainerState;
         this.priceProvider = priceProvider;
         this.stateMutator = stateMutator;
+        this.evaluatorService = evaluatorService;
         this.itemResolver = itemResolver;
         this.marketListingTracker = marketListingTracker;
         this.priceCalculationService = priceCalculationService;
@@ -147,30 +149,14 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
                 if (liveCharacter == null) continue;
 
                 foreach (var listing in liveCharacter.Listings) {
-                    var itemPricing = pricings.FirstOrDefault(p => p.ItemId == listing.ItemId) ?? new MarketItemPricing { ItemId = listing.ItemId };
-                    var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.CurrentPrice, itemPricing);
+                    var itemPricing = pricings.FirstOrDefault(p => p.ItemId == listing.ItemId);
+                    if (itemPricing == null) continue;
 
-                    bool shouldProcess = calcResult.Action == PricingAction.CancelListing ||
-                                         (calcResult.Action == PricingAction.UpdatePrice && calcResult.CalculatedPrice != listing.CurrentPrice);
+                    var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
-                    if (shouldProcess) {
-                        var marketLowest = itemPricing.Listings.OrderBy(p => p.Price).FirstOrDefault();
-                        var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
-
-                        newUndercuts.Add(new UndercutItem {
-                            SlotIndex = listing.SlotIndex,
-                            ItemId = listing.ItemId,
-                            ItemName = resolvedItemName,
-                            Quantity = listing.Quantity,
-                            RetainerName = listing.RetainerName,
-                            Price = listing.CurrentPrice,
-                            OurPrice = listing.CurrentPrice,
-                            ServerCheapestPrice = marketLowest?.Price ?? 0,
-                            TargetPrice = calcResult.CalculatedPrice,
-                            CompetitorName = marketLowest?.RetainerName ?? "None",
-                            CharacterName = character.CharacterName,
-                            SuggestedAction = calcResult.Action
-                        });
+                    // Delegate the mathematical decision strictly to the evaluator
+                    if (this.evaluatorService.TryEvaluateListing(listing, itemPricing, character.CharacterName, resolvedItemName, out var undercutResult) && undercutResult != null) {
+                        newUndercuts.Add(undercutResult);
                     }
                 }
             }

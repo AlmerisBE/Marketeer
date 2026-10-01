@@ -22,6 +22,7 @@ public class CompetitionTrackingFeature : IFeatureModule {
         services.AddSingleton<ICompetitionStateService>(provider => provider.GetRequiredService<CompetitionStateService>());
         services.AddSingleton<ICompetitionStateMutator>(provider => provider.GetRequiredService<CompetitionStateService>());
         services.AddSingleton<ICompetitionMonitorService, CompetitionMonitorService>();
+        services.AddSingleton<ICompetitionEvaluatorService, CompetitionEvaluatorService>();
 
         services.AddSingleton<CompetitionMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<CompetitionMenu>());

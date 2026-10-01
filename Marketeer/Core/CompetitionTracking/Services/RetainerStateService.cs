@@ -26,18 +26,14 @@ public class RetainerStateService : IRetainerStateService {
         }
 
         var localPlayer = this.objectTable.LocalPlayer;
-        if (localPlayer == null || localPlayer.HomeWorld.RowId == 0) {
-            return new List<RetainerListing>();
-        }
+        if (localPlayer == null || localPlayer.HomeWorld.RowId == 0) return new List<RetainerListing>();
 
         var playerName = localPlayer.Name.TextValue;
         var worldId = localPlayer.HomeWorld.RowId;
         var characterKey = $"{playerName}_{worldId}";
 
         var config = this.configurationService.GetConfig();
-        if (!config.FinancialRecords.TryGetValue(characterKey, out var characterData)) {
-            return new List<RetainerListing>();
-        }
+        if (!config.FinancialRecords.TryGetValue(characterKey, out var characterData)) return new List<RetainerListing>();
 
         var extractedListings = new List<RetainerListing>();
 
@@ -48,7 +44,8 @@ public class RetainerStateService : IRetainerStateService {
                     ItemId = listingKvp.Value.ItemId,
                     Quantity = listingKvp.Value.Quantity,
                     RetainerName = retainer.Name,
-                    CurrentPrice = listingKvp.Value.PricePerUnit
+                    CurrentPrice = listingKvp.Value.PricePerUnit,
+                    IsHq = listingKvp.Value.ItemId > 1000000u
                 });
             }
         }
@@ -77,7 +74,8 @@ public class RetainerStateService : IRetainerStateService {
                         ItemId = listingKvp.Value.ItemId,
                         Quantity = listingKvp.Value.Quantity,
                         RetainerName = retainer.Name,
-                        CurrentPrice = listingKvp.Value.PricePerUnit
+                        CurrentPrice = listingKvp.Value.PricePerUnit,
+                        IsHq = listingKvp.Value.ItemId > 1000000u
                     });
                 }
             }
