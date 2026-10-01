@@ -3,4 +3,5 @@
 public interface IStatusBarProvider {
     int Priority { get; }
     void Draw();
+    bool IsRightAligned => false;
 }

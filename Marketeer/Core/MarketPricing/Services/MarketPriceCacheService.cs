@@ -15,6 +15,7 @@ namespace Marketeer.Core.MarketPricing.Services;
 
 public class MarketPriceCacheService : IMarketPriceCacheService {
     private IUniversalisClient universalisClient;
+    private IUniversalisUpdateMutator updateMutator;
     private IConfigurationService configService;
     private IFramework framework;
     private ILoggerService logger;
@@ -25,11 +26,13 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
 
     public MarketPriceCacheService(
         IUniversalisClient universalisClient,
+        IUniversalisUpdateMutator updateMutator,
         IConfigurationService configService,
         IFramework framework,
         ILoggerService logger) {
 
         this.universalisClient = universalisClient;
+        this.updateMutator = updateMutator;
         this.configService = configService;
         this.framework = framework;
         this.logger = logger;
@@ -59,6 +62,8 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
 
         if (idsToFetch.Count > 0) {
             try {
+                this.updateMutator.SetUpdating(true);
+
                 // Strip HQ offset strictly for Universalis network queries
                 var baseItemIds = idsToFetch.Select(id => id > 1000000u ? id - 1000000u : id).Distinct().ToList();
                 var fetchedData = await this.universalisClient.FetchDataAsync(baseItemIds, worldId);
@@ -99,10 +104,15 @@ public class MarketPriceCacheService : IMarketPriceCacheService {
                     }
                 }
 
-                if (fetchedData.Count > 0) _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, idsToFetch));
+                if (fetchedData.Count > 0) {
+                    _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, idsToFetch));
+                }
+
+                this.updateMutator.RecordSuccessfulUpdate();
             }
             catch (Exception ex) {
                 this.logger.Error(ex, $"Failed to fetch fallback API prices for world {worldId}.");
+                this.updateMutator.SetUpdating(false);
             }
         }
 

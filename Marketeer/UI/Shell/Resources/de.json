@@ -51,5 +51,9 @@
   "Welcome_Sec_Crafting_Title": "Profit-Auswerter (Handwerk)",
   "Welcome_Sec_Crafting_Desc": "Berechne vorausschauend die Rentabilität deiner Handwerkssitzungen. Das Tool analysiert deine aktuellen Materialbestände und zeigt dir den Nettogewinn durch Simulation des gesamten Rezeptbaums.",
   "Welcome_Sec_Config_Title": "Konfiguration (Wichtig)",
-  "Welcome_Sec_Config_Desc": "Passe deine Handelsstrategie an: Definiere Unterbietungsregeln (absolut in Gil oder relativ in %), richte deine Whitelist ein, passe das Verhalten zur Verlustvermeidung an und aktiviere menschliche Verzögerungen für die Automatisierung."
+  "Welcome_Sec_Config_Desc": "Passe deine Handelsstrategie an: Definiere Unterbietungsregeln (absolut in Gil oder relativ in %), richte deine Whitelist ein, passe das Verhalten zur Verlustvermeidung an und aktiviere menschliche Verzögerungen für die Automatisierung.",
+  "StatusBar_Universalis_Updating": "Universalis: Aktualisiere...",
+  "StatusBar_Universalis_LastUpdate": "Universalis: Vor {0}",
+  "StatusBar_Universalis_Pending": "Universalis: Warten...",
+  "Time_JustNow": "Gerade eben"
 }

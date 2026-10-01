@@ -30,6 +30,8 @@ public class ShellFeature : IFeatureModule {
         services.AddSingleton<AboutMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<AboutMenu>());
 
+        services.AddSingleton<IStatusBarProvider, UniversalisStatusBarItem>();
+
         // Configurations Globales (Shell)
         services.AddSingleton<HotkeyConfigMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<HotkeyConfigMenu>());

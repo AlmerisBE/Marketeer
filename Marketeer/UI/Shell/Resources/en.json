@@ -51,5 +51,9 @@
   "Welcome_Sec_Crafting_Title": "Profit Evaluator (Crafting)",
   "Welcome_Sec_Crafting_Desc": "Predictively calculate the profitability of your crafting sessions. The tool analyzes your current component stocks and shows net profit by simulating the entire recipe tree.",
   "Welcome_Sec_Config_Title": "Configuration (Important)",
-  "Welcome_Sec_Config_Desc": "Customize your trading strategy: define undercutting rules (absolute Gil or relative %), configure your whitelist to avoid undercutting friends, adjust loss-prevention behavior, and enable humanized delays for automation."
+  "Welcome_Sec_Config_Desc": "Customize your trading strategy: define undercutting rules (absolute Gil or relative %), configure your whitelist to avoid undercutting friends, adjust loss-prevention behavior, and enable humanized delays for automation.",
+  "StatusBar_Universalis_Updating": "Universalis: Updating...",
+  "StatusBar_Universalis_LastUpdate": "Universalis: {0} ago",
+  "StatusBar_Universalis_Pending": "Universalis: Waiting...",
+  "Time_JustNow": "Just now"
 }

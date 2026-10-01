@@ -51,5 +51,9 @@
   "Welcome_Sec_Crafting_Title": "Évaluateur de Profit (Artisanat)",
   "Welcome_Sec_Crafting_Desc": "Calculez la rentabilité de vos sessions d'artisanat de manière prédictive. L'outil analyse vos stocks actuels et vous indique le profit net en simulant l'arborescence complète des recettes.",
   "Welcome_Sec_Config_Title": "Configuration (Important)",
-  "Welcome_Sec_Config_Desc": "Personnalisez votre stratégie commerciale : définissez vos règles de sous-cotation (absolue en Gils ou relative en %), configurez votre liste blanche pour ne pas attaquer vos amis, ajustez votre comportement face aux pertes, et activez les délais humains pour l'automatisation."
+  "Welcome_Sec_Config_Desc": "Personnalisez votre stratégie commerciale : définissez vos règles de sous-cotation (absolue en Gils ou relative en %), configurez votre liste blanche pour ne pas attaquer vos amis, ajustez votre comportement face aux pertes, et activez les délais humains pour l'automatisation.",
+  "StatusBar_Universalis_Updating": "Universalis : Mise à jour...",
+  "StatusBar_Universalis_LastUpdate": "Universalis : Il y a {0}",
+  "StatusBar_Universalis_Pending": "Universalis : En attente...",
+  "Time_JustNow": "À l'instant"
 }

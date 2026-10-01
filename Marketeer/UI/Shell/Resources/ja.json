@@ -51,5 +51,9 @@
   "Welcome_Sec_Crafting_Title": "利益評価 (製作)",
   "Welcome_Sec_Crafting_Desc": "製作セッションの収益性を予測計算します。現在の素材在庫を分析し、レシピツリー全体をシミュレートすることで純利益を表示します。",
   "Welcome_Sec_Config_Title": "設定 (重要)",
-  "Welcome_Sec_Config_Desc": "取引戦略をカスタマイズします。値下げルール（ギル指定または％指定）を定義し、フレンドを値下げしないためのホワイトリストを設定し、損失防止アクションを調整し、自動化のためのランダム遅延を有効にします。"
+  "Welcome_Sec_Config_Desc": "取引戦略をカスタマイズします。値下げルール（ギル指定または％指定）を定義し、フレンドを値下げしないためのホワイトリストを設定し、損失防止アクションを調整し、自動化のためのランダム遅延を有効にします。",
+  "StatusBar_Universalis_Updating": "Universalis: 更新中...",
+  "StatusBar_Universalis_LastUpdate": "Universalis: {0}前",
+  "StatusBar_Universalis_Pending": "Universalis: 待機中...",
+  "Time_JustNow": "たった今"
 }

@@ -47,13 +47,9 @@ public class MainWindow : Window {
         this.DrawToolbar();
         ImGui.Separator();
 
-        // Calculate the footer height including spacing, similar to the reference layout implementation.
         float footerHeight = ImGui.GetFrameHeight() + (ImGui.GetStyle().ItemSpacing.Y * 2f);
 
-        // Wrap the entire main content area in a BeginChild with a negative Y dimension 
-        // to robustly reserve space for the footer without clipping it.
         if (ImGui.BeginChild("MainContent", new Vector2(0f, -footerHeight), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
-            // The table can now safely consume all available space within this managed child wrapper.
             if (ImGui.BeginTable("MainLayout", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.Resizable)) {
                 ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, 200f);
                 ImGui.TableSetupColumn("Content", ImGuiTableColumnFlags.WidthStretch);
@@ -165,13 +161,23 @@ public class MainWindow : Window {
         var height = ImGui.GetFrameHeight();
 
         if (ImGui.BeginChild("StatusBar", new Vector2(0f, height), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
+
+            // Mathematically center the text vertically within the fixed-height child container
+            var textHeight = ImGui.GetTextLineHeight();
+            ImGui.SetCursorPosY((height - textHeight) * 0.5f);
+
             bool isFirst = true;
             foreach (var provider in this.statusBarProviders) {
                 if (!isFirst) {
                     ImGui.SameLine();
-                    ImGui.TextDisabled("|");
-                    ImGui.SameLine();
+
+                    // Prevent drawing the separator if the upcoming element pushes itself to the right
+                    if (!provider.IsRightAligned) {
+                        ImGui.TextDisabled("|");
+                        ImGui.SameLine();
+                    }
                 }
+
                 provider.Draw();
                 isFirst = false;
             }
