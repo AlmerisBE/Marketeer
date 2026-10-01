@@ -27,5 +27,10 @@
   "MarketWatch_ActionBuy": "Acheter",
   "MarketWatch_ActionSell": "Vendre (Concurrence)",
   "MarketWatch_ColNotify": "Notif.",
-  "MarketWatch_TooltipNotify": "Activer/désactiver les notifications dans le chat pour cet objet"
+  "MarketWatch_TooltipNotify": "Activer/désactiver les notifications dans le chat pour cet objet",
+  "MarketWatch_Notification_Summary": "{0} opportunité(s) de marché active(s) ({1} nouvelle(s)) !",
+  "MarketWatch_Action_Buy": "Cible d'achat atteinte",
+  "MarketWatch_Action_Sell": "Cible de vente atteinte",
+  "MarketWatch_Action_Price": "({0:N0} gils)",
+  "MarketWatch_Action_By": "par {0}."
 }

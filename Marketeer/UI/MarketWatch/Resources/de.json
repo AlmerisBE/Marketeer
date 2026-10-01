@@ -27,5 +27,10 @@
   "MarketWatch_ActionBuy": "Kaufen",
   "MarketWatch_ActionSell": "Verkaufen (Konkurrenz)",
   "MarketWatch_ColNotify": "Benachr.",
-  "MarketWatch_TooltipNotify": "Chat-Benachrichtigungen für diesen Gegenstand umschalten"
+  "MarketWatch_TooltipNotify": "Chat-Benachrichtigungen für diesen Gegenstand umschalten",
+  "MarketWatch_Notification_Summary": "{0} aktive Marktchance(n) ({1} neue)!",
+  "MarketWatch_Action_Buy": "Kaufziel erreicht",
+  "MarketWatch_Action_Sell": "Verkaufsziel erreicht",
+  "MarketWatch_Action_Price": "({0:N0} Gil)",
+  "MarketWatch_Action_By": "von {0}."
 }

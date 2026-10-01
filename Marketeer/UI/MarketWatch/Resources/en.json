@@ -27,5 +27,10 @@
   "MarketWatch_ActionBuy": "Buy",
   "MarketWatch_ActionSell": "Sell (Competition)",
   "MarketWatch_ColNotify": "Notify",
-  "MarketWatch_TooltipNotify": "Toggle chat notifications for this item"
+  "MarketWatch_TooltipNotify": "Toggle chat notifications for this item",
+  "MarketWatch_Notification_Summary": "{0} active market opportunity(ies) ({1} new)!",
+  "MarketWatch_Action_Buy": "Buy target reached",
+  "MarketWatch_Action_Sell": "Sell target reached",
+  "MarketWatch_Action_Price": "({0:N0}g)",
+  "MarketWatch_Action_By": "by {0}."
 }

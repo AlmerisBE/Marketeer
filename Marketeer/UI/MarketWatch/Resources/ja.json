@@ -27,5 +27,10 @@
   "MarketWatch_ActionBuy": "購入",
   "MarketWatch_ActionSell": "販売 (競合)",
   "MarketWatch_ColNotify": "通知",
-  "MarketWatch_TooltipNotify": "このアイテムのチャット通知を切り替える"
+  "MarketWatch_TooltipNotify": "このアイテムのチャット通知を切り替える",
+  "MarketWatch_Notification_Summary": "アクティブな市場機会が{0}件あります（新規{1}件）！",
+  "MarketWatch_Action_Buy": "購入目標到達",
+  "MarketWatch_Action_Sell": "販売目標到達",
+  "MarketWatch_Action_Price": "({0:N0}ギル)",
+  "MarketWatch_Action_By": "出品者: {0}."
 }
