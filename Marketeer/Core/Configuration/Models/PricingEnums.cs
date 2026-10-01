@@ -27,3 +27,9 @@ public enum FallbackPricingMode {
     VendorSellMultiple,
     VendorBuyMultiple
 }
+
+public enum AnomalyDefenseStrategy {
+    Ignore,
+    HoldPrice,
+    AlertAndPause
+}

@@ -67,12 +67,12 @@ public class MarketPriceCacheService : IMarketPriceCacheService, IDisposable {
         if (idsToFetch.Count > 0) {
             await this.fetchSemaphore.WaitAsync();
             try {
-                // Phase 2: Double-Checked Locking (Re-verify cache in case a concurrent task just fetched the data)
+                // Phase 2: Double-Checked Locking
                 var missingIds = new List<uint>();
                 foreach (var id in idsToFetch) {
                     var key = $"{worldId}_{id}";
                     if (!bypassCache && this.cache.TryGetValue(key, out var cached) && (DateTime.UtcNow - cached.LastUpdated) < cacheDuration) {
-                        results.Add(cached.Pricing); // Data was fetched while we were waiting for the lock!
+                        results.Add(cached.Pricing);
                     }
                     else missingIds.Add(id);
                 }
@@ -80,55 +80,57 @@ public class MarketPriceCacheService : IMarketPriceCacheService, IDisposable {
                 if (missingIds.Count > 0) {
                     this.updateMutator.SetUpdating(true);
 
-                    // Strip HQ offset strictly for Universalis network queries
-                    var baseItemIds = missingIds.Select(id => id > 1000000u ? id - 1000000u : id).Distinct().ToList();
-                    var fetchedData = await this.universalisClient.FetchDataAsync(baseItemIds, worldId);
+                    try {
+                        var baseItemIds = missingIds.Select(id => id > 1000000u ? id - 1000000u : id).Distinct().ToList();
+                        var fetchedData = await this.universalisClient.FetchDataAsync(baseItemIds, worldId);
 
-                    foreach (var data in fetchedData) {
-                        var nqId = data.BaseItemId;
-                        var hqId = data.BaseItemId + 1000000u;
-                        var nqKey = $"{worldId}_{nqId}";
-                        var hqKey = $"{worldId}_{hqId}";
+                        foreach (var data in fetchedData) {
+                            var nqId = data.BaseItemId;
+                            var hqId = data.BaseItemId + 1000000u;
+                            var nqKey = $"{worldId}_{nqId}";
+                            var hqKey = $"{worldId}_{hqId}";
 
-                        if (!this.cache.TryGetValue(nqKey, out var nqExisting) || nqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - nqExisting.LastUpdated).TotalMinutes >= 10) {
-                            var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.Where(l => !l.IsHq).ToList(), AverageSalePrice = data.AveragePriceNq, SalesPerDay = data.NqSaleVelocity };
-                            this.cache[nqKey] = new CachedPriceData { ItemId = nqId, Pricing = nqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
-                        }
-                        else {
-                            nqExisting.Pricing.AverageSalePrice = data.AveragePriceNq;
-                            nqExisting.Pricing.SalesPerDay = data.NqSaleVelocity;
+                            if (!this.cache.TryGetValue(nqKey, out var nqExisting) || nqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - nqExisting.LastUpdated).TotalMinutes >= 10) {
+                                var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.Where(l => !l.IsHq).ToList(), AverageSalePrice = data.AveragePriceNq, SalesPerDay = data.NqSaleVelocity };
+                                this.cache[nqKey] = new CachedPriceData { ItemId = nqId, Pricing = nqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
+                            }
+                            else {
+                                nqExisting.Pricing.AverageSalePrice = data.AveragePriceNq;
+                                nqExisting.Pricing.SalesPerDay = data.NqSaleVelocity;
+                            }
+
+                            if (!this.cache.TryGetValue(hqKey, out var hqExisting) || hqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - hqExisting.LastUpdated).TotalMinutes >= 10) {
+                                var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.Where(l => l.IsHq).ToList(), AverageSalePrice = data.AveragePriceHq, SalesPerDay = data.HqSaleVelocity };
+                                this.cache[hqKey] = new CachedPriceData { ItemId = hqId, Pricing = hqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
+                            }
+                            else {
+                                hqExisting.Pricing.AverageSalePrice = data.AveragePriceHq;
+                                hqExisting.Pricing.SalesPerDay = data.HqSaleVelocity;
+                            }
                         }
 
-                        if (!this.cache.TryGetValue(hqKey, out var hqExisting) || hqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - hqExisting.LastUpdated).TotalMinutes >= 10) {
-                            var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.Where(l => l.IsHq).ToList(), AverageSalePrice = data.AveragePriceHq, SalesPerDay = data.HqSaleVelocity };
-                            this.cache[hqKey] = new CachedPriceData { ItemId = hqId, Pricing = hqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
+                        foreach (var id in missingIds) {
+                            var key = $"{worldId}_{id}";
+                            if (this.cache.TryGetValue(key, out var cached)) results.Add(cached.Pricing);
+                            else {
+                                var emptyPricing = new MarketItemPricing { ItemId = id };
+                                this.cache[key] = new CachedPriceData { ItemId = id, Pricing = emptyPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
+                                results.Add(emptyPricing);
+                            }
                         }
-                        else {
-                            hqExisting.Pricing.AverageSalePrice = data.AveragePriceHq;
-                            hqExisting.Pricing.SalesPerDay = data.HqSaleVelocity;
-                        }
+
+                        if (fetchedData.Count > 0) _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, missingIds));
+
+                        this.updateMutator.RecordSuccessfulUpdate();
                     }
+                    catch (Exception ex) {
+                        this.logger.Warning($"Failed to fetch fallback API prices for world {worldId}. Reason: {ex.Message}");
+                        this.updateMutator.SetUpdating(false);
 
-                    foreach (var id in missingIds) {
-                        var key = $"{worldId}_{id}";
-                        if (this.cache.TryGetValue(key, out var cached)) results.Add(cached.Pricing);
-                        else {
-                            var emptyPricing = new MarketItemPricing { ItemId = id };
-                            this.cache[key] = new CachedPriceData { ItemId = id, Pricing = emptyPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
-                            results.Add(emptyPricing);
-                        }
+                        // Fallback: Populate missing IDs with empty pricing objects so caller receives a valid collection
+                        foreach (var id in missingIds) results.Add(new MarketItemPricing { ItemId = id });
                     }
-
-                    if (fetchedData.Count > 0) {
-                        _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, missingIds));
-                    }
-
-                    this.updateMutator.RecordSuccessfulUpdate();
                 }
-            }
-            catch (Exception ex) {
-                this.logger.Warning($"Failed to fetch fallback API prices for world {worldId}. Reason: {ex.Message}");
-                this.updateMutator.SetUpdating(false);
             }
             finally {
                 this.fetchSemaphore.Release();

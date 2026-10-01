@@ -58,4 +58,9 @@ public class PluginConfiguration : IPluginConfiguration {
     public Dictionary<uint, CraftingItemConfig> CraftingItems { get; set; } = [];
 
     public ModifierKey AutoSellModifierKey { get; set; } = ModifierKey.Shift;
+
+    // Market Anomaly Protection
+    public bool EnableAnomalyProtection { get; set; } = true;
+    public double AnomalyCrashThreshold { get; set; } = 0.5; // 50% drop from Average Sale Price is considered a crash
+    public AnomalyDefenseStrategy AnomalyStrategy { get; set; } = AnomalyDefenseStrategy.AlertAndPause;
 }
