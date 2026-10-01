@@ -1,4 +1,4 @@
 {
-  "Config_Tab_Universalis": "Cache Universalis",
-  "Config_CacheLabel": "Durée du cache Universalis (Minutes)"
+  "Menu_UniversalisCache": "Cache Universalis",
+  "Config_UniversalisCacheMinutes": "Durée du cache Universalis (Minutes)"
 }

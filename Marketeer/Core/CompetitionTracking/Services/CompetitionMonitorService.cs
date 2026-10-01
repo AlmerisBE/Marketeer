@@ -32,6 +32,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
     private bool isMonitoring;
     private bool isChecking;
+    private DateTime lastBackgroundCheck = DateTime.UtcNow;
     private IReadOnlyList<UndercutItem> undercuts = new List<UndercutItem>();
 
     public CompetitionMonitorService(
@@ -75,11 +76,14 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.clientState.Login += this.OnLogin;
 
+        this.framework.Update += this.OnFrameworkUpdate;
+
         this.isMonitoring = true;
-        this.logger.Info("Undercut monitor service started (Event-Driven).");
+        this.logger.Info("Undercut monitor service started (Event-Driven & Polling).");
 
         this.framework.RunOnFrameworkThread(() => {
             if (this.clientState.IsLoggedIn) {
+                this.lastBackgroundCheck = DateTime.UtcNow;
                 Task.Run(async () => await this.CheckUndercutsAsync());
             }
         });
@@ -92,9 +96,22 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.marketListingTracker.LocalListingModified -= this.OnLocalListingModified;
         this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
         this.clientState.Login -= this.OnLogin;
+        this.framework.Update -= this.OnFrameworkUpdate;
 
         this.isMonitoring = false;
         this.logger.Info("Undercut monitor service stopped.");
+    }
+
+    private void OnFrameworkUpdate(IFramework fw) {
+        if (!this.isMonitoring || !this.clientState.IsLoggedIn) return;
+
+        var config = this.configService.GetConfig();
+        var cacheDuration = TimeSpan.FromMinutes(config.UniversalisCacheMinutes);
+
+        if (DateTime.UtcNow - this.lastBackgroundCheck >= cacheDuration) {
+            this.lastBackgroundCheck = DateTime.UtcNow;
+            Task.Run(async () => await this.CheckUndercutsAsync());
+        }
     }
 
     private void OnLogin() {

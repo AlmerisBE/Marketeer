@@ -24,6 +24,7 @@ public class MarketWatchPoller : IDisposable {
     private IConfigurationService configService;
 
     private bool isProcessing;
+    private DateTime lastBackgroundCheck = DateTime.UtcNow;
 
     public MarketWatchPoller(
         IChatGui chatGui,
@@ -48,9 +49,11 @@ public class MarketWatchPoller : IDisposable {
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.clientState.Login += this.OnLogin;
+        this.framework.Update += this.OnFrameworkUpdate;
 
         this.framework.RunOnFrameworkThread(() => {
             if (this.clientState.IsLoggedIn) {
+                this.lastBackgroundCheck = DateTime.UtcNow;
                 _ = this.ProcessMarketAnalysisAsync(bypassCache: false);
             }
         });
@@ -59,6 +62,19 @@ public class MarketWatchPoller : IDisposable {
     public void Dispose() {
         this.priceProvider.PricesUpdated -= this.OnPricesUpdated;
         this.clientState.Login -= this.OnLogin;
+        this.framework.Update -= this.OnFrameworkUpdate;
+    }
+
+    private void OnFrameworkUpdate(IFramework fw) {
+        if (!this.clientState.IsLoggedIn) return;
+
+        var config = this.configService.GetConfig();
+        var cacheDuration = TimeSpan.FromMinutes(config.UniversalisCacheMinutes);
+
+        if (DateTime.UtcNow - this.lastBackgroundCheck >= cacheDuration) {
+            this.lastBackgroundCheck = DateTime.UtcNow;
+            _ = this.ProcessMarketAnalysisAsync(bypassCache: false);
+        }
     }
 
     private void OnLogin() {

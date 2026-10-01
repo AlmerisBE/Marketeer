@@ -7,37 +7,32 @@ using System.Collections.Generic;
 namespace Marketeer.UI.Universalis.UI;
 
 public class UniversalisConfigMenu : INavigationNode {
-    private IConfigurationService configurationService;
-    private ILocalizationService localizationService;
+    private IConfigurationService configService;
+    private ILocalizationService localization;
 
-    public string GroupName => this.localizationService.Translate("Group_Configuration");
-    public string Name => this.localizationService.Translate("Config_Tab_Universalis");
+    public string GroupName => this.localization.Translate("Group_Configuration");
+    public string Name => this.localization.Translate("Menu_UniversalisCache");
     public int Priority => 101;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
-
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public UniversalisConfigMenu(IConfigurationService configurationService, ILocalizationService localizationService) {
-        this.configurationService = configurationService;
-        this.localizationService = localizationService;
+    public UniversalisConfigMenu(IConfigurationService configService, ILocalizationService localization) {
+        this.configService = configService;
+        this.localization = localization;
     }
 
     public void DrawContent() {
-        var config = this.configurationService.GetConfig();
-        bool isChanged = false;
+        var config = this.configService.GetConfig();
+        bool changed = false;
 
-        ImGui.TextUnformatted(this.Name);
-        ImGui.Separator();
-        ImGui.Spacing();
+        int cacheMinutes = config.UniversalisCacheMinutes;
 
-        int cache = config.UniversalisCacheMinutes;
-        if (ImGui.InputInt(this.localizationService.Translate("Config_CacheLabel"), ref cache)) {
-            if (cache < 0) cache = 0;
-            config.UniversalisCacheMinutes = cache;
-            isChanged = true;
+        if (ImGui.SliderInt(this.localization.Translate("Config_UniversalisCacheMinutes") ?? "Universalis Cache Duration (Minutes)", ref cacheMinutes, 10, 60)) {
+            config.UniversalisCacheMinutes = cacheMinutes;
+            changed = true;
         }
 
-        if (isChanged) this.configurationService.Save();
+        if (changed) this.configService.Save();
     }
 }
