@@ -14,7 +14,7 @@ public class ThemeConfigMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Configuration");
     public string Name => this.localizationService.Translate("Config_Tab_Theme");
-    public int Priority => 103;
+    public int Priority => 105;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
@@ -35,6 +35,7 @@ public class ThemeConfigMenu : INavigationNode {
         ImGui.Spacing();
 
         ImGui.TextUnformatted(this.localizationService.Translate("Config_ThemeLabel"));
+        ImGui.SetNextItemWidth(250f);
 
         string currentDisplayName = config.SelectedTheme == "Default" ? this.localizationService.Translate("Theme_Default") : config.SelectedTheme;
 
@@ -50,6 +51,7 @@ public class ThemeConfigMenu : INavigationNode {
             }
             ImGui.EndCombo();
         }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_Theme_Tooltip"));
 
         if (isChanged) this.configurationService.Save();
     }

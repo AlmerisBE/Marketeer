@@ -12,7 +12,7 @@ public class OtherConfigMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Configuration");
     public string Name => this.localizationService.Translate("Config_Tab_Other");
-    public int Priority => 105;
+    public int Priority => 106;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
@@ -36,22 +36,29 @@ public class OtherConfigMenu : INavigationNode {
             config.EnableAutomationDelay = enableDelay;
             isChanged = true;
         }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_AutomationDelay_Tooltip"));
 
         if (enableDelay) {
             ImGui.Indent();
+
+            ImGui.TextUnformatted(this.localizationService.Translate("Config_AutomationDelayMin"));
+            ImGui.SetNextItemWidth(150f);
+
             int min = config.AutomationDelayMin;
             int max = config.AutomationDelayMax;
 
-            ImGui.SetNextItemWidth(100f);
-            if (ImGui.InputInt(this.localizationService.Translate("Config_AutomationDelayMin"), ref min)) {
+            if (ImGui.InputInt("##AutomationDelayMin", ref min)) {
                 if (min < 0) min = 0;
                 config.AutomationDelayMin = min;
                 if (min > config.AutomationDelayMax) config.AutomationDelayMax = min;
                 isChanged = true;
             }
 
-            ImGui.SetNextItemWidth(100f);
-            if (ImGui.InputInt(this.localizationService.Translate("Config_AutomationDelayMax"), ref max)) {
+            ImGui.Spacing();
+
+            ImGui.TextUnformatted(this.localizationService.Translate("Config_AutomationDelayMax"));
+            ImGui.SetNextItemWidth(150f);
+            if (ImGui.InputInt("##AutomationDelayMax", ref max)) {
                 if (max < config.AutomationDelayMin) max = config.AutomationDelayMin;
                 config.AutomationDelayMax = max;
                 isChanged = true;
@@ -60,12 +67,15 @@ public class OtherConfigMenu : INavigationNode {
         }
 
         ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
 
         bool enableChatNotifications = config.EnableChatNotifications;
         if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableChatNotifications"), ref enableChatNotifications)) {
             config.EnableChatNotifications = enableChatNotifications;
             isChanged = true;
         }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_EnableChatNotifications_Tooltip"));
 
         ImGui.Spacing();
 
@@ -74,6 +84,7 @@ public class OtherConfigMenu : INavigationNode {
             config.EnableDebugMode = enableDebugMode;
             isChanged = true;
         }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_EnableDebugMode_Tooltip"));
 
         if (isChanged) this.configurationService.Save();
     }

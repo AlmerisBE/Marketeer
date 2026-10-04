@@ -8,30 +8,33 @@ namespace Marketeer.UI.Universalis.UI;
 
 public class UniversalisConfigMenu : INavigationNode {
     private IConfigurationService configService;
-    private ILocalizationService localization;
+    private ILocalizationService localizationService;
 
-    public string GroupName => this.localization.Translate("Group_Configuration");
-    public string Name => this.localization.Translate("Menu_UniversalisCache");
-    public int Priority => 101;
+    public string GroupName => this.localizationService.Translate("Group_Configuration");
+    public string Name => this.localizationService.Translate("Menu_UniversalisCache");
+    public int Priority => 103;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public UniversalisConfigMenu(IConfigurationService configService, ILocalizationService localization) {
+    public UniversalisConfigMenu(IConfigurationService configService, ILocalizationService localizationService) {
         this.configService = configService;
-        this.localization = localization;
+        this.localizationService = localizationService;
     }
 
     public void DrawContent() {
         var config = this.configService.GetConfig();
         bool changed = false;
 
-        int cacheMinutes = config.UniversalisCacheMinutes;
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_UniversalisCacheMinutes") ?? "Universalis Cache Duration (Minutes)");
+        ImGui.SetNextItemWidth(250f);
 
-        if (ImGui.SliderInt(this.localization.Translate("Config_UniversalisCacheMinutes") ?? "Universalis Cache Duration (Minutes)", ref cacheMinutes, 10, 60)) {
+        int cacheMinutes = config.UniversalisCacheMinutes;
+        if (ImGui.SliderInt("##UniversalisCacheMinutes", ref cacheMinutes, 10, 60)) {
             config.UniversalisCacheMinutes = cacheMinutes;
             changed = true;
         }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_UniversalisCacheMinutes_Tooltip"));
 
         if (changed) this.configService.Save();
     }

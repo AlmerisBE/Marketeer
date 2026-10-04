@@ -2,6 +2,7 @@
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.Configuration.Models;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ public class HotkeyConfigMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Configuration");
     public string Name => this.localizationService.Translate("Config_Tab_Hotkeys");
-    public int Priority => 104;
+    public int Priority => 104; // Priorité 5 : Raccourcis
     public bool HasContent => true;
     public bool DefaultExpanded => false;
 
@@ -38,8 +39,8 @@ public class HotkeyConfigMenu : INavigationNode {
         ImGui.Separator();
         ImGui.Spacing();
 
+        // --- Dashboard Hotkey ---
         ImGui.TextUnformatted(this.localizationService.Translate("Config_HotkeyLabel"));
-        ImGui.SameLine();
 
         string keyName = config.DashboardHotkey == VirtualKey.NO_KEY ? this.localizationService.Translate("Config_HotkeyNone") : config.DashboardHotkey.ToString();
 
@@ -86,7 +87,43 @@ public class HotkeyConfigMenu : INavigationNode {
             if (ImGui.Button($"{modifierStr}{keyName}##hotkeyBtn", new Vector2(250f, 0))) {
                 this.isCapturingHotkey = true;
             }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_Hotkey_Tooltip"));
         }
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        // --- Auto-Sell Modifier Keys ---
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_AutoSellModifierKeyLabel") ?? "Auto-adjust modifier key(s):");
+
+        ImGui.BeginGroup();
+        bool hasCtrl = config.AutoSellModifierKey.HasFlag(ModifierKey.Ctrl);
+        bool hasAlt = config.AutoSellModifierKey.HasFlag(ModifierKey.Alt);
+        bool hasShift = config.AutoSellModifierKey.HasFlag(ModifierKey.Shift);
+
+        if (ImGui.Checkbox(this.localizationService.Translate("ModifierKey_Ctrl") ?? "Ctrl", ref hasCtrl)) {
+            if (hasCtrl) config.AutoSellModifierKey |= ModifierKey.Ctrl;
+            else config.AutoSellModifierKey &= ~ModifierKey.Ctrl;
+            isChanged = true;
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Checkbox(this.localizationService.Translate("ModifierKey_Alt") ?? "Alt", ref hasAlt)) {
+            if (hasAlt) config.AutoSellModifierKey |= ModifierKey.Alt;
+            else config.AutoSellModifierKey &= ~ModifierKey.Alt;
+            isChanged = true;
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Checkbox(this.localizationService.Translate("ModifierKey_Shift") ?? "Shift", ref hasShift)) {
+            if (hasShift) config.AutoSellModifierKey |= ModifierKey.Shift;
+            else config.AutoSellModifierKey &= ~ModifierKey.Shift;
+            isChanged = true;
+        }
+        ImGui.EndGroup();
+
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_AutoSellModifierKey_Tooltip"));
 
         if (isChanged) this.configurationService.Save();
     }
