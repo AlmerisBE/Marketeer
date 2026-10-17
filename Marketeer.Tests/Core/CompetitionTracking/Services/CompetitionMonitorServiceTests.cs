@@ -54,7 +54,7 @@ public class CompetitionMonitorServiceTests {
         priceProvider.GetPricingsAsync(Arg.Any<IEnumerable<uint>>(), 33, false).Returns(pricing);
 
         var undercutItem = new UndercutItem { ItemId = 123 };
-        evaluatorService.TryEvaluateListing(Arg.Any<RetainerListing>(), Arg.Any<MarketItemPricing>(), Arg.Any<string>(), Arg.Any<string>(), out Arg.Any<UndercutItem?>())
+        evaluatorService.TryEvaluateListing(Arg.Any<RetainerListing>(), Arg.Any<MarketItemPricing>(), Arg.Any<string>(), Arg.Any<uint>(), Arg.Any<string>(), out Arg.Any<UndercutItem?>())
             .Returns(x => {
                 x[4] = undercutItem;
                 return true;

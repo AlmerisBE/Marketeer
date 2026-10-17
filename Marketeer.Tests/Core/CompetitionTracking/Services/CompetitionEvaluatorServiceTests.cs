@@ -34,7 +34,7 @@ public class CompetitionEvaluatorServiceTests {
             }
         };
 
-        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 33u, "Test Item", out var undercut);
 
         Assert.False(result);
         Assert.Null(undercut);
@@ -61,7 +61,7 @@ public class CompetitionEvaluatorServiceTests {
             }
         };
 
-        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 33u, "Test Item", out var undercut);
 
         Assert.False(result);
         Assert.Null(undercut);
@@ -87,7 +87,7 @@ public class CompetitionEvaluatorServiceTests {
             }
         };
 
-        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 33u, "Test Item", out var undercut);
 
         Assert.True(result);
         Assert.NotNull(undercut);
@@ -118,7 +118,7 @@ public class CompetitionEvaluatorServiceTests {
             }
         };
 
-        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 33u, "Test Item", out var undercut);
 
         Assert.True(result);
         Assert.NotNull(undercut);
@@ -147,7 +147,7 @@ public class CompetitionEvaluatorServiceTests {
             }
         };
 
-        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 33u, "Test Item", out var undercut);
 
         Assert.True(result);
         Assert.NotNull(undercut);
@@ -188,7 +188,7 @@ public class CompetitionEvaluatorServiceTests {
             }
         };
 
-        bool result = service.TryEvaluateListing(listing, pricing, "Player", "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 33u, "Test Item", out var undercut);
 
         Assert.True(result);
         Assert.NotNull(undercut);
