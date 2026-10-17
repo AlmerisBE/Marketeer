@@ -65,6 +65,7 @@ public class NativeListingHighlighterService : IDisposable {
             if (localPlayer == null) return;
 
             var currentCharacterName = localPlayer.Name.TextValue;
+            var currentWorldId = localPlayer.HomeWorld.RowId;
             var activeId = this.listingProvider.GetActiveRetainerId();
             if (!activeId.HasValue) return;
 
@@ -84,94 +85,87 @@ public class NativeListingHighlighterService : IDisposable {
 
             if (allItemNames.Count > 0) {
                 undercuts = this.competitionState.GetUndercutItems()
-                    .Where(u => u.CharacterName == currentCharacterName && u.RetainerName == activeRetainerName)
+                    .Where(u => u.CharacterName == currentCharacterName && u.HomeWorldId == currentWorldId && u.RetainerName == activeRetainerName)
                     .Select(u => (ItemName: u.ItemName, Price: u.Price, Quantity: u.Quantity))
                     .ToHashSet();
 
                 suboptimals = this.optimizationService.GetVendorPricedListings()
-                    .Where(s => s.CharacterName == currentCharacterName && s.RetainerName == activeRetainerName)
+                    .Where(s => s.CharacterName == currentCharacterName && s.HomeWorldId == currentWorldId && s.RetainerName == activeRetainerName)
                     .Select(s => (ItemName: s.ItemName, Price: s.Price, Quantity: s.Quantity))
                     .ToHashSet();
             }
 
-            this.TraverseAndColor(&addon->UldManager, allItemNames, undercuts, suboptimals);
+            // Node 11 is natively the AtkComponentList containing the sale rows
+            var listNode = addon->UldManager.SearchNodeById(11);
+            if (listNode == null || listNode->Type != NodeType.Component) return;
+
+            var listComponent = (AtkComponentList*)((AtkComponentNode*)listNode)->Component;
+            if (listComponent == null) return;
+
+            this.ProcessListRows(listComponent, allItemNames, undercuts, suboptimals);
         }
         catch (Exception ex) {
             this.logger.Error(ex, "Failed to apply native colors to RetainerSellList.");
         }
     }
 
-    private unsafe void TraverseAndColor(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity)> undercuts, HashSet<(string ItemName, uint Price, uint Quantity)> suboptimals) {
-        if (uldManager == null) return;
+    private unsafe void ProcessListRows(AtkComponentList* listComponent, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity)> undercuts, HashSet<(string ItemName, uint Price, uint Quantity)> suboptimals) {
+        for (int i = 0; i < listComponent->ListLength; i++) {
+            var renderer = listComponent->ItemRendererList[i].AtkComponentListItemRenderer;
+            if (renderer == null) continue;
 
-        for (int i = 0; i < uldManager->NodeListCount; i++) {
-            var node = uldManager->NodeList[i];
-            if (node == null || !node->IsVisible()) continue;
+            var textNodes = new List<nint>();
+            this.CollectVisibleTextNodes(&renderer->AtkComponentButton.AtkComponentBase.UldManager, textNodes);
 
-            if ((ushort)node->Type >= 1000) {
-                var compNode = (AtkComponentNode*)node;
-                var comp = compNode->Component;
-                if (comp != null) {
-                    var textNodes = new List<nint>();
-                    this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
+            string? matchedItem = null;
+            var rowNumbers = new List<uint>();
 
-                    string? matchedItem = null;
-                    var rowNumbers = new List<uint>();
+            foreach (var textNodePtr in textNodes) {
+                var textNode = (AtkTextNode*)textNodePtr;
+                var stringPtr = (byte*)textNode->NodeText.StringPtr;
+                var text = this.ExtractString((nint)stringPtr);
 
-                    foreach (var textNodePtr in textNodes) {
-                        var textNode = (AtkTextNode*)textNodePtr;
-                        var stringPtr = (byte*)textNode->NodeText.StringPtr;
-                        var text = this.ExtractString((nint)stringPtr);
+                if (!string.IsNullOrWhiteSpace(text)) {
+                    if (matchedItem == null) matchedItem = this.GetMatchingItemName(text, allItems);
 
-                        if (!string.IsNullOrWhiteSpace(text)) {
-                            if (matchedItem == null) matchedItem = this.GetMatchingItemName(text, allItems);
-
-                            var digits = new string(text.Where(char.IsDigit).ToArray());
-                            if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedNum)) {
-                                rowNumbers.Add(parsedNum);
-                            }
-                        }
+                    var digits = new string(text.Where(char.IsDigit).ToArray());
+                    if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedNum)) {
+                        rowNumbers.Add(parsedNum);
                     }
+                }
+            }
 
-                    if (rowNumbers.Count >= 2 && rowNumbers.Count <= 12) {
-                        bool isSuboptimal = false;
-                        bool isUndercut = false;
+            bool isSuboptimal = false;
+            bool isUndercut = false;
 
-                        if (matchedItem != null) {
-                            foreach (var sub in suboptimals) {
-                                if (sub.ItemName == matchedItem && rowNumbers.Contains(sub.Price) && rowNumbers.Contains(sub.Quantity)) {
-                                    isSuboptimal = true;
-                                    break;
-                                }
-                            }
-
-                            foreach (var und in undercuts) {
-                                if (und.ItemName == matchedItem && rowNumbers.Contains(und.Price) && rowNumbers.Contains(und.Quantity)) {
-                                    isUndercut = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        ByteColor targetTextColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
-
-                        if (isSuboptimal) targetTextColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
-                        else if (isUndercut) targetTextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
-
-                        foreach (var textNodePtr in textNodes) {
-                            var textNode = (AtkTextNode*)textNodePtr;
-                            textNode->TextColor = targetTextColor;
-                            textNode->AtkResNode.Color = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
-
-                            if (isSuboptimal || isUndercut) {
-                                this.StripColorPayloadsInPlace(textNode);
-                            }
-                        }
-
-                        continue;
+            if (matchedItem != null) {
+                foreach (var sub in suboptimals) {
+                    if (sub.ItemName == matchedItem && rowNumbers.Contains(sub.Price) && rowNumbers.Contains(sub.Quantity)) {
+                        isSuboptimal = true;
+                        break;
                     }
+                }
 
-                    this.TraverseAndColor(&comp->UldManager, allItems, undercuts, suboptimals);
+                foreach (var und in undercuts) {
+                    if (und.ItemName == matchedItem && rowNumbers.Contains(und.Price) && rowNumbers.Contains(und.Quantity)) {
+                        isUndercut = true;
+                        break;
+                    }
+                }
+            }
+
+            ByteColor targetTextColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
+
+            if (isSuboptimal) targetTextColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
+            else if (isUndercut) targetTextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+
+            foreach (var textNodePtr in textNodes) {
+                var textNode = (AtkTextNode*)textNodePtr;
+                textNode->TextColor = targetTextColor;
+                textNode->AtkResNode.Color = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
+
+                if (isSuboptimal || isUndercut) {
+                    this.StripColorPayloadsInPlace(textNode);
                 }
             }
         }

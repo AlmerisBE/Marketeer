@@ -16,6 +16,7 @@ public class UndercutItem {
     public uint AverageMarketPrice { get; set; }
     public string CompetitorName { get; set; } = string.Empty;
     public string CharacterName { get; set; } = string.Empty;
+    public uint HomeWorldId { get; set; }
     public PricingAction SuggestedAction { get; set; } = PricingAction.UpdatePrice;
     public AnomalyReport? AnomalyData { get; set; }
 }

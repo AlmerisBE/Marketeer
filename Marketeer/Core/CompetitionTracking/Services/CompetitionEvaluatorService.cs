@@ -24,7 +24,7 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
         this.anomalyDetector = anomalyDetector;
     }
 
-    public bool TryEvaluateListing(RetainerListing listing, MarketItemPricing pricing, string characterName, string resolvedItemName, out UndercutItem? undercutResult) {
+    public bool TryEvaluateListing(RetainerListing listing, MarketItemPricing pricing, string characterName, uint homeWorldId, string resolvedItemName, out UndercutItem? undercutResult) {
         undercutResult = null;
 
         if (pricing.Listings == null || !pricing.Listings.Any()) return false;
@@ -38,13 +38,10 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
             .OrderBy(l => l.Price)
             .ToList();
 
-        // New Logic: Filter out dumped listings if the specific defense strategy is selected
         if (anomalyReport != null && anomalyReport.IsAnomalyDetected && config.AnomalyStrategy == AnomalyDefenseStrategy.UndercutNormalMarket) {
             validCompetitors = validCompetitors.Where(l => l.Price > anomalyReport.CrashThresholdPrice).ToList();
         }
 
-        // If there are no normal competitors left, we have no one to undercut normally. 
-        // Returning false implicitly holds the price, which is the safest fallback.
         if (validCompetitors.Count == 0) return false;
 
         var lowestCompetitor = validCompetitors.First();
@@ -79,6 +76,7 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
             AverageMarketPrice = pricing.AverageSalePrice,
             CompetitorName = lowestCompetitor.RetainerName ?? "Unknown",
             CharacterName = characterName,
+            HomeWorldId = homeWorldId,
             SuggestedAction = suggestedAction,
             AnomalyData = anomalyReport
         };

@@ -53,10 +53,11 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
 
         var localPlayer = this.objectTable.LocalPlayer;
         string currentCharacterName = localPlayer?.Name.TextValue ?? string.Empty;
+        uint currentWorldId = localPlayer?.HomeWorld.RowId ?? 0;
 
         // 1. Evaluate instructions for the CURRENT active retainer first (ONLY if we are not looking at the global list)
         if (!isAtRetainerList && !string.IsNullOrEmpty(activeRetainerName)) {
-            var currentUndercut = allUndercuts.FirstOrDefault(u => u.RetainerName == activeRetainerName && u.CharacterName == currentCharacterName);
+            var currentUndercut = allUndercuts.FirstOrDefault(u => u.RetainerName == activeRetainerName && u.CharacterName == currentCharacterName && u.HomeWorldId == currentWorldId);
             if (currentUndercut != null) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.UpdatePrice,
@@ -67,11 +68,12 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                     Quantity = currentUndercut.Quantity,
                     TargetPrice = currentUndercut.TargetPrice,
                     RetainerName = activeRetainerName,
-                    CharacterName = currentCharacterName
+                    CharacterName = currentCharacterName,
+                    HomeWorldId = currentWorldId
                 };
             }
 
-            var currentSuboptimal = allSuboptimal.FirstOrDefault(s => s.RetainerName == activeRetainerName && s.CharacterName == currentCharacterName);
+            var currentSuboptimal = allSuboptimal.FirstOrDefault(s => s.RetainerName == activeRetainerName && s.CharacterName == currentCharacterName && s.HomeWorldId == currentWorldId);
             if (currentSuboptimal != null) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.CancelListing,
@@ -80,14 +82,15 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                     CurrentPrice = currentSuboptimal.Price,
                     Quantity = currentSuboptimal.Quantity,
                     RetainerName = activeRetainerName,
-                    CharacterName = currentCharacterName
+                    CharacterName = currentCharacterName,
+                    HomeWorldId = currentWorldId
                 };
             }
         }
 
-        // 2. Find the next target globally, prioritizing the currently logged-in character
-        UndercutItem? targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == currentCharacterName);
-        SuboptimalListing? targetSuboptimal = allSuboptimal.FirstOrDefault(s => s.CharacterName == currentCharacterName);
+        // 2. Find the next target globally, prioritizing the currently logged-in character ON the current world
+        UndercutItem? targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == currentCharacterName && u.HomeWorldId == currentWorldId);
+        SuboptimalListing? targetSuboptimal = allSuboptimal.FirstOrDefault(s => s.CharacterName == currentCharacterName && s.HomeWorldId == currentWorldId);
 
         if (targetUndercut == null && targetSuboptimal == null) {
             targetUndercut = allUndercuts.FirstOrDefault();
@@ -96,12 +99,14 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
 
         string? targetRetainer = targetUndercut?.RetainerName ?? targetSuboptimal?.RetainerName;
         string? targetCharacter = targetUndercut?.CharacterName ?? targetSuboptimal?.CharacterName;
+        uint targetWorldId = targetUndercut?.HomeWorldId ?? targetSuboptimal?.HomeWorldId ?? 0;
 
         if (targetRetainer != null && targetCharacter != null) {
-            if (targetCharacter != currentCharacterName) {
+            if (targetCharacter != currentCharacterName || targetWorldId != currentWorldId) {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.SwitchCharacter,
-                    CharacterName = targetCharacter
+                    CharacterName = targetCharacter,
+                    HomeWorldId = targetWorldId
                 };
             }
 
@@ -109,18 +114,19 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                 return new GuidanceInstruction {
                     ActionType = GuidanceActionType.SummonRetainer,
                     RetainerName = targetRetainer,
-                    CharacterName = targetCharacter
+                    CharacterName = targetCharacter,
+                    HomeWorldId = targetWorldId
                 };
             }
 
             return new GuidanceInstruction {
                 ActionType = GuidanceActionType.SwitchRetainer,
                 RetainerName = targetRetainer,
-                CharacterName = targetCharacter
+                CharacterName = targetCharacter,
+                HomeWorldId = targetWorldId
             };
         }
 
-        // 3. No target means everything is perfectly optimized across all tracked characters
         return null;
     }
 }

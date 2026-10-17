@@ -172,7 +172,7 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
 
                     var resolvedItemName = this.itemResolver.ResolveItemName(listing.ItemId) ?? "Unknown Item";
 
-                    if (this.evaluatorService.TryEvaluateListing(listing, itemPricing, character.CharacterName, resolvedItemName, out var undercutResult) && undercutResult != null) {
+                    if (this.evaluatorService.TryEvaluateListing(listing, itemPricing, character.CharacterName, character.HomeWorldId, resolvedItemName, out var undercutResult) && undercutResult != null) {
                         newUndercuts.Add(undercutResult);
                     }
                 }

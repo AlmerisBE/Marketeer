@@ -19,7 +19,8 @@ public class CharacterNode : INavigationNode {
     private IMarketListingTrackerService marketListingTrackerService;
 
     public string GroupName => string.Empty;
-    public string Name => this.Character.Name;
+    // Appending the world name ensures ImGui generates a unique Hash ID even if character names are identical across DCs
+    public string Name => $"{this.Character.Name} ({this.worldDataPresenter.GetWorldName(this.Character.HomeWorldId)})";
     public int Priority => 0;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

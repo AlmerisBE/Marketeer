@@ -5,5 +5,5 @@ using Marketeer.UI.CompetitionTracking.Models;
 namespace Marketeer.Core.CompetitionTracking.Contracts;
 
 public interface ICompetitionEvaluatorService {
-    bool TryEvaluateListing(RetainerListing listing, MarketItemPricing pricing, string characterName, string resolvedItemName, out UndercutItem? undercutResult);
+    bool TryEvaluateListing(RetainerListing listing, MarketItemPricing pricing, string characterName, uint homeWorldId, string resolvedItemName, out UndercutItem? undercutResult);
 }

@@ -33,6 +33,7 @@ public class ListingOptimizationService : IListingOptimizationService {
                             ItemId = listing.ItemId,
                             ItemName = this.itemResolver.ResolveItemName(listing.ItemId),
                             CharacterName = charData.CharacterName,
+                            HomeWorldId = charData.HomeWorldId,
                             RetainerName = retainer.Name,
                             Price = listing.PricePerUnit,
                             Quantity = listing.Quantity,

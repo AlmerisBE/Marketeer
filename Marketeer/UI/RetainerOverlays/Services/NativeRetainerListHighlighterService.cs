@@ -46,9 +46,11 @@ public class NativeRetainerListHighlighterService : IDisposable {
             if (localPlayer == null) return;
 
             var playerName = localPlayer.Name.TextValue;
+            var worldId = localPlayer.HomeWorld.RowId;
 
-            var undercuts = this.competitionState.GetUndercutItems().Where(u => u.CharacterName == playerName);
-            var suboptimals = this.optimizationService.GetVendorPricedListings().Where(s => s.CharacterName == playerName);
+            // Strict matching to the current Data Center to prevent cross-world character naming collisions
+            var undercuts = this.competitionState.GetUndercutItems().Where(u => u.CharacterName == playerName && u.HomeWorldId == worldId);
+            var suboptimals = this.optimizationService.GetVendorPricedListings().Where(s => s.CharacterName == playerName && s.HomeWorldId == worldId);
 
             var retainerActions = new Dictionary<string, (int Undercuts, int Suboptimals)>();
 
