@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -14,7 +13,6 @@ using Marketeer.UI.CompetitionTracking.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace Marketeer.UI.RetainerOverlays.Services;
 
@@ -95,103 +93,117 @@ public class NativeListingHighlighterService : IDisposable {
                     .ToHashSet();
             }
 
-            // Node 11 is natively the AtkComponentList containing the sale rows
-            var listNode = addon->UldManager.SearchNodeById(11);
-            if (listNode == null || listNode->Type != NodeType.Component) return;
-
-            var listComponent = (AtkComponentList*)((AtkComponentNode*)listNode)->Component;
-            if (listComponent == null) return;
-
-            this.ProcessListRows(listComponent, allItemNames, undercuts, suboptimals);
+            // Démarrage de la traversée récursive à la racine de l'Addon, indépendante de la structure interne
+            this.TraverseAndHighlight(&addon->UldManager, allItemNames, undercuts, suboptimals);
         }
         catch (Exception ex) {
             this.logger.Error(ex, "Failed to apply native colors to RetainerSellList.");
         }
     }
 
-    private unsafe void ProcessListRows(AtkComponentList* listComponent, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity)> undercuts, HashSet<(string ItemName, uint Price, uint Quantity)> suboptimals) {
-        for (int i = 0; i < listComponent->ListLength; i++) {
-            var renderer = listComponent->ItemRendererList[i].AtkComponentListItemRenderer;
-            if (renderer == null) continue;
+    private unsafe void TraverseAndHighlight(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity)> undercuts, HashSet<(string ItemName, uint Price, uint Quantity)> suboptimals) {
+        if (uldManager == null) return;
 
-            var textNodes = new List<nint>();
-            this.CollectVisibleTextNodes(&renderer->AtkComponentButton.AtkComponentBase.UldManager, textNodes);
+        for (int i = 0; i < uldManager->NodeListCount; i++) {
+            var node = uldManager->NodeList[i];
+            if (node == null || !node->IsVisible()) continue;
 
-            string? matchedItem = null;
-            var rowNumbers = new List<uint>();
+            if ((ushort)node->Type >= 1000) {
+                var compNode = (AtkComponentNode*)node;
+                var comp = compNode->Component;
 
-            foreach (var textNodePtr in textNodes) {
-                var textNode = (AtkTextNode*)textNodePtr;
-                var stringPtr = (byte*)textNode->NodeText.StringPtr;
-                var text = this.ExtractString((nint)stringPtr);
+                if (comp != null) {
+                    var textNodes = new List<nint>();
+                    this.CollectVisibleTextNodes(&comp->UldManager, textNodes);
 
-                if (!string.IsNullOrWhiteSpace(text)) {
-                    if (matchedItem == null) matchedItem = this.GetMatchingItemName(text, allItems);
+                    string? matchedItem = null;
+                    var rowNumbers = new List<uint>();
 
-                    var digits = new string(text.Where(char.IsDigit).ToArray());
-                    if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedNum)) {
-                        rowNumbers.Add(parsedNum);
+                    foreach (var textNodePtr in textNodes) {
+                        var textNode = (AtkTextNode*)textNodePtr;
+                        var stringPtr = (byte*)textNode->NodeText.StringPtr;
+                        if (stringPtr == null) continue;
+
+                        var text = this.ExtractString((nint)stringPtr);
+
+                        if (!string.IsNullOrWhiteSpace(text)) {
+                            if (matchedItem == null) matchedItem = this.GetMatchingItemName(text, allItems);
+
+                            var digits = new string(text.Where(char.IsDigit).ToArray());
+                            if (!string.IsNullOrEmpty(digits) && uint.TryParse(digits, out var parsedNum)) {
+                                rowNumbers.Add(parsedNum);
+                            }
+                        }
                     }
-                }
-            }
 
-            bool isSuboptimal = false;
-            bool isUndercut = false;
+                    // On applique la logique uniquement si le composant graphique contient le nom d'un objet en vente (c'est donc bien une ligne !)
+                    if (matchedItem != null) {
+                        bool isSuboptimal = false;
+                        bool isUndercut = false;
 
-            if (matchedItem != null) {
-                foreach (var sub in suboptimals) {
-                    if (sub.ItemName == matchedItem && rowNumbers.Contains(sub.Price) && rowNumbers.Contains(sub.Quantity)) {
-                        isSuboptimal = true;
-                        break;
+                        foreach (var sub in suboptimals) {
+                            if (sub.ItemName == matchedItem && rowNumbers.Contains(sub.Price) && rowNumbers.Contains(sub.Quantity)) {
+                                isSuboptimal = true;
+                                break;
+                            }
+                        }
+
+                        if (!isSuboptimal) {
+                            foreach (var und in undercuts) {
+                                if (und.ItemName == matchedItem && rowNumbers.Contains(und.Price) && rowNumbers.Contains(und.Quantity)) {
+                                    isUndercut = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (isSuboptimal || isUndercut) {
+                            ByteColor targetTextColor = isSuboptimal ? new ByteColor { A = 255, R = 255, G = 60, B = 60 } : new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+
+                            foreach (var textNodePtr in textNodes) {
+                                var textNode = (AtkTextNode*)textNodePtr;
+                                textNode->TextColor = targetTextColor;
+                                textNode->AtkResNode.Color = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
+
+                                this.StripColorPayloadsSafe(textNode);
+                            }
+                        }
+                        else {
+                            // C'est ici que l'on corrige le bug des lignes fantômes !
+                            this.ResetTextColor(textNodes);
+                        }
                     }
-                }
 
-                foreach (var und in undercuts) {
-                    if (und.ItemName == matchedItem && rowNumbers.Contains(und.Price) && rowNumbers.Contains(und.Quantity)) {
-                        isUndercut = true;
-                        break;
-                    }
-                }
-            }
-
-            ByteColor targetTextColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
-
-            if (isSuboptimal) targetTextColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
-            else if (isUndercut) targetTextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
-
-            foreach (var textNodePtr in textNodes) {
-                var textNode = (AtkTextNode*)textNodePtr;
-                textNode->TextColor = targetTextColor;
-                textNode->AtkResNode.Color = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
-
-                if (isSuboptimal || isUndercut) {
-                    this.StripColorPayloadsInPlace(textNode);
+                    // On continue l'exploration en profondeur
+                    this.TraverseAndHighlight(&comp->UldManager, allItems, undercuts, suboptimals);
                 }
             }
         }
     }
 
-    private unsafe void StripColorPayloadsInPlace(AtkTextNode* textNode) {
-        if (textNode == null || (byte*)textNode->NodeText.StringPtr == null) return;
+    private unsafe void ResetTextColor(List<nint> textNodes) {
+        foreach (var textNodePtr in textNodes) {
+            var textNode = (AtkTextNode*)textNodePtr;
+            textNode->TextColor = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
+            textNode->AtkResNode.Color = new ByteColor { A = 255, R = 255, G = 255, B = 255 };
+        }
+    }
 
-        var stringPtr = (nint)(byte*)textNode->NodeText.StringPtr;
-        var seString = MemoryHelper.ReadSeStringNullTerminated(stringPtr);
+    private unsafe void StripColorPayloadsSafe(AtkTextNode* textNode) {
+        if (textNode == null) return;
 
-        bool hasColor = seString.Payloads.Any(p => p.Type == PayloadType.UIForeground || p.Type == PayloadType.UIGlow);
+        var stringPtr = (byte*)textNode->NodeText.StringPtr;
+        if (stringPtr == null) return;
+
+        var seString = MemoryHelper.ReadSeStringNullTerminated((nint)stringPtr);
+        bool hasColor = seString.Payloads.Any(p => p.Type == Dalamud.Game.Text.SeStringHandling.PayloadType.UIForeground || p.Type == Dalamud.Game.Text.SeStringHandling.PayloadType.UIGlow);
+
         if (hasColor) {
-            seString.Payloads.RemoveAll(p => p.Type == PayloadType.UIForeground || p.Type == PayloadType.UIGlow);
-            var encoded = seString.Encode();
+            seString.Payloads.RemoveAll(p => p.Type == Dalamud.Game.Text.SeStringHandling.PayloadType.UIForeground || p.Type == Dalamud.Game.Text.SeStringHandling.PayloadType.UIGlow);
+            var encoded = seString.Encode().Concat(new byte[] { 0 }).ToArray();
 
-            int bufferLength = 0;
-            while (Marshal.ReadByte(stringPtr, bufferLength) != 0) {
-                bufferLength++;
-            }
-
-            // In-place rewrite: immune to AtkTextNode.SetText race conditions.
-            // We overwrite FFXIV's native buffer directly since the payload is strictly shorter.
-            if (encoded.Length <= bufferLength) {
-                Marshal.Copy(encoded, 0, stringPtr, encoded.Length);
-                Marshal.WriteByte(stringPtr, encoded.Length, 0);
+            fixed (byte* ptr = encoded) {
+                textNode->SetText(ptr);
             }
         }
     }
@@ -214,7 +226,7 @@ public class NativeListingHighlighterService : IDisposable {
     }
 
     protected virtual string? GetMatchingItemName(string uiText, HashSet<string> allItems) {
-        var cleanText = uiText.Replace("\uE03C", "").Trim();
+        var cleanText = uiText.Replace("\uE03C", "").Replace("", "").Trim();
         if (string.IsNullOrEmpty(cleanText)) return null;
 
         bool isTruncated = cleanText.EndsWith("...") || cleanText.EndsWith("…");
@@ -237,7 +249,7 @@ public class NativeListingHighlighterService : IDisposable {
             return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
         }
         catch (Exception) {
-            return MemoryHelper.ReadStringNullTerminated(stringPtr);
+            return string.Empty;
         }
     }
 

@@ -48,7 +48,6 @@ public class NativeRetainerListHighlighterService : IDisposable {
             var playerName = localPlayer.Name.TextValue;
             var worldId = localPlayer.HomeWorld.RowId;
 
-            // Strict matching to the current Data Center to prevent cross-world character naming collisions
             var undercuts = this.competitionState.GetUndercutItems().Where(u => u.CharacterName == playerName && u.HomeWorldId == worldId);
             var suboptimals = this.optimizationService.GetVendorPricedListings().Where(s => s.CharacterName == playerName && s.HomeWorldId == worldId);
 
@@ -89,7 +88,7 @@ public class NativeRetainerListHighlighterService : IDisposable {
                         textNodes = textNodes.OrderBy(this.GetAbsoluteX).ToList();
 
                         var nameNode = (AtkTextNode*)textNodes[0];
-                        // Fix for Dawntrail CStringPointer
+                        // Explicit extraction logic ensuring CStringPointer resolves down to a byte pointer smoothly
                         var rawNameText = this.ExtractString((nint)(byte*)nameNode->NodeText.StringPtr);
 
                         var cleanNameText = rawNameText.Split('(')[0].Replace("=", "").Trim();
@@ -197,7 +196,7 @@ public class NativeRetainerListHighlighterService : IDisposable {
             return MemoryHelper.ReadSeStringNullTerminated(stringPtr).TextValue ?? string.Empty;
         }
         catch (Exception) {
-            return MemoryHelper.ReadStringNullTerminated(stringPtr);
+            return string.Empty;
         }
     }
 
