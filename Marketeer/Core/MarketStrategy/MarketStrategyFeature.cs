@@ -1,4 +1,6 @@
-﻿using Marketeer.Core.Framework;
+﻿using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.Core.Framework;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketStrategy.Contracts;
 using Marketeer.Core.MarketStrategy.Services;
 using Marketeer.UI.Localization.Contracts;
@@ -13,6 +15,9 @@ public class MarketStrategyFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         // Core Business Logic
         services.AddSingleton<IMarketAnomalyDetector, MarketAnomalyDetectorService>();
+        services.AddSingleton<PricingRuleResolver>();
+        services.AddSingleton<ICompetitionRuleProvider>(provider => provider.GetRequiredService<PricingRuleResolver>());
+        services.AddSingleton<IPriceRuleProvider>(provider => provider.GetRequiredService<PricingRuleResolver>());
 
         // UI Nodes
         services.AddSingleton<MarketStrategyConfigMenu>();

@@ -1,6 +1,7 @@
 ﻿using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.MarketPricing.Services;
 using Marketeer.Core.SalesHistory.Contracts;
@@ -10,105 +11,89 @@ using Xunit;
 namespace Marketeer.Tests.Core.MarketPricing.Services;
 
 public class PriceCalculationServiceTests {
-    [Fact]
-    public void CalculateTargetPrice_WhenUndercutAbsolute_ReturnsCorrectPrice() {
-        var configService = Substitute.For<IConfigurationService>();
-        var itemResolver = Substitute.For<IItemResolverService>();
+    private IConfigurationService configService;
+    private IItemResolverService itemResolver;
+    private IPriceRuleProvider ruleProvider;
 
-        var config = new PluginConfiguration {
-            UndercutMode = UndercutMode.Absolute,
-            UndercutAmount = 2
-        };
-        configService.GetConfig().Returns(config);
-
-        var service = new PriceCalculationService(configService, itemResolver);
-        var pricing = new MarketItemPricing {
-            ItemId = 123u,
-            Listings = new List<LowestPriceResult> {
-                new LowestPriceResult { Price = 1000, RetainerName = "Rival" }
-            }
-        };
-
-        var result = service.CalculateTargetPrice(123u, 1500u, pricing);
-
-        Assert.Equal(PricingAction.UpdatePrice, result.Action);
-        Assert.Equal(998u, result.CalculatedPrice);
+    public PriceCalculationServiceTests() {
+        this.configService = Substitute.For<IConfigurationService>();
+        this.itemResolver = Substitute.For<IItemResolverService>();
+        this.ruleProvider = Substitute.For<IPriceRuleProvider>();
     }
 
     [Fact]
-    public void CalculateTargetPrice_WhenUndercutRelative_ReturnsCorrectPrice() {
-        var configService = Substitute.For<IConfigurationService>();
-        var itemResolver = Substitute.For<IItemResolverService>();
+    public void CalculateTargetPrice_WithEmptyMarket_UsesFallback() {
+        this.configService.GetConfig().Returns(new PluginConfiguration {
+            EmptyMarketFallbackMode = FallbackPricingMode.VendorSellMultiple,
+            EmptyMarketFallbackMultiplier = 2.0
+        });
+        this.ruleProvider.GetRuleForItem(Arg.Any<uint>()).Returns(new PricingRule());
+        this.itemResolver.ResolveVendorPrice(1).Returns(1000u);
 
-        var config = new PluginConfiguration {
-            UndercutMode = UndercutMode.Relative,
-            UndercutRelativePercentage = 5.0
-        };
-        configService.GetConfig().Returns(config);
+        var service = new PriceCalculationService(this.configService, this.itemResolver, this.ruleProvider);
+        var pricing = new MarketItemPricing { ItemId = 1, Listings = new List<LowestPriceResult>() };
 
-        var service = new PriceCalculationService(configService, itemResolver);
-        var pricing = new MarketItemPricing {
-            ItemId = 123u,
-            Listings = new List<LowestPriceResult> {
-                new LowestPriceResult { Price = 1000, RetainerName = "Rival" }
-            }
-        };
-
-        var result = service.CalculateTargetPrice(123u, 1500u, pricing);
+        var result = service.CalculateTargetPrice(1, 0, pricing, false);
 
         Assert.Equal(PricingAction.UpdatePrice, result.Action);
-        Assert.Equal(950u, result.CalculatedPrice); // 1000 - 5%
+        Assert.Equal(2000u, result.CalculatedPrice);
     }
 
     [Fact]
-    public void CalculateTargetPrice_WhenRivalIsWhitelisted_ReturnsMatchedPrice() {
-        var configService = Substitute.For<IConfigurationService>();
-        var itemResolver = Substitute.For<IItemResolverService>();
+    public void CalculateTargetPrice_WithCompetitors_UndercutsAbsolute() {
+        this.configService.GetConfig().Returns(new PluginConfiguration());
+        this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { UndercutMode = UndercutMode.Absolute, UndercutAmount = 1 });
 
-        var config = new PluginConfiguration {
-            CompetitorWhitelist = new List<string> { "FriendRetainer" },
-            CompetitorWhitelistBehavior = WhitelistBehavior.MatchPrice
-        };
-        configService.GetConfig().Returns(config);
-
-        var service = new PriceCalculationService(configService, itemResolver);
+        var service = new PriceCalculationService(this.configService, this.itemResolver, this.ruleProvider);
         var pricing = new MarketItemPricing {
-            ItemId = 123u,
+            ItemId = 1,
             Listings = new List<LowestPriceResult> {
-                new LowestPriceResult { Price = 1000, RetainerName = "FriendRetainer" }
+                new LowestPriceResult { Price = 5000, RetainerName = "Competitor", IsHq = false }
             }
         };
 
-        var result = service.CalculateTargetPrice(123u, 1500u, pricing);
+        var result = service.CalculateTargetPrice(1, 6000, pricing, false);
 
         Assert.Equal(PricingAction.UpdatePrice, result.Action);
-        Assert.Equal(1000u, result.CalculatedPrice);
+        Assert.Equal(4999u, result.CalculatedPrice);
     }
 
     [Fact]
-    public void CalculateTargetPrice_WhenMarketEmpty_ShouldReturnFallbackAverage() {
-        var configService = Substitute.For<IConfigurationService>();
-        var itemResolver = Substitute.For<IItemResolverService>();
+    public void CalculateTargetPrice_WithHqPremium_AppliesPremium() {
+        this.configService.GetConfig().Returns(new PluginConfiguration());
+        this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { HqPremiumPercentage = 10.0, UndercutMode = UndercutMode.Absolute, UndercutAmount = 1 });
 
-        var config = new PluginConfiguration {
-            EmptyMarketFallbackMode = FallbackPricingMode.AverageListingPrice,
-            EmptyMarketFallbackMultiplier = 1.5
-        };
-        configService.GetConfig().Returns(config);
-
-        itemResolver.ResolveVendorPrice(123u).Returns(1000u);
-
-        var service = new PriceCalculationService(configService, itemResolver);
-
+        var service = new PriceCalculationService(this.configService, this.itemResolver, this.ruleProvider);
         var pricing = new MarketItemPricing {
-            ItemId = 123u,
-            Listings = new List<LowestPriceResult>(),
-            AverageSalePrice = 2500u
+            ItemId = 1,
+            Listings = new List<LowestPriceResult> {
+                new LowestPriceResult { Price = 1000, RetainerName = "CheapNQ", IsHq = false }
+            }
         };
 
-        var result = service.CalculateTargetPrice(123u, 0u, pricing);
+        var result = service.CalculateTargetPrice(1, 5000, pricing, true);
 
         Assert.Equal(PricingAction.UpdatePrice, result.Action);
-        Assert.Equal(2500u, result.CalculatedPrice);
+        Assert.Equal(1100u, result.CalculatedPrice); // 1000 + 10%
+    }
+
+    [Fact]
+    public void CalculateTargetPrice_WithIgnoreHq_UndercutsLowestRegardlessOfQuality() {
+        this.configService.GetConfig().Returns(new PluginConfiguration());
+        this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { IgnoreHq = true, UndercutMode = UndercutMode.Absolute, UndercutAmount = 5 });
+
+        var service = new PriceCalculationService(this.configService, this.itemResolver, this.ruleProvider);
+        var pricing = new MarketItemPricing {
+            ItemId = 1,
+            Listings = new List<LowestPriceResult> {
+                new LowestPriceResult { Price = 2000, RetainerName = "CheapNQ", IsHq = false },
+                new LowestPriceResult { Price = 4000, RetainerName = "ExpensiveHQ", IsHq = true }
+            }
+        };
+
+        var result = service.CalculateTargetPrice(1, 5000, pricing, true);
+
+        Assert.Equal(PricingAction.UpdatePrice, result.Action);
+        Assert.Equal(1995u, result.CalculatedPrice);
     }
 }

@@ -66,7 +66,8 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
                 Quantity = slot.Quantity,
                 PricePerUnit = slot.PricePerUnit,
                 TotalPrice = totalPrice,
-                Tax = tax
+                Tax = tax,
+                IsHq = slot.ItemId > 1000000u
             });
         }
 

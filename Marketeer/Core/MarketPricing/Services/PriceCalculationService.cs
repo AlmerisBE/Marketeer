@@ -1,4 +1,5 @@
-﻿using Marketeer.Core.Configuration.Contracts;
+﻿using Marketeer.API.Universalis.Models;
+using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
@@ -12,23 +13,32 @@ namespace Marketeer.Core.MarketPricing.Services;
 public class PriceCalculationService : IPriceCalculationService {
     private IConfigurationService configService;
     private IItemResolverService itemResolver;
+    private IPriceRuleProvider ruleProvider;
 
-    public PriceCalculationService(IConfigurationService configService, IItemResolverService itemResolver) {
+    public PriceCalculationService(IConfigurationService configService, IItemResolverService itemResolver, IPriceRuleProvider ruleProvider) {
         this.configService = configService;
         this.itemResolver = itemResolver;
+        this.ruleProvider = ruleProvider;
     }
 
-    public PriceCalculationResult CalculateTargetPrice(uint itemId, uint currentPrice, MarketItemPricing pricing) {
+    public PriceCalculationResult CalculateTargetPrice(uint itemId, uint currentPrice, MarketItemPricing pricing, bool isHq) {
         var config = this.configService.GetConfig();
+        var rule = this.ruleProvider.GetRuleForItem(itemId);
         var result = new PriceCalculationResult { Action = PricingAction.UpdatePrice, CalculatedPrice = currentPrice };
 
         var vendorSellPrice = this.itemResolver.ResolveVendorPrice(itemId);
         var vendorBuyPrice = this.itemResolver.ResolveVendorBuyPrice(itemId);
 
         var ownRetainers = this.GetOwnRetainers(config);
-        var competitors = pricing.Listings.Where(l => !ownRetainers.Contains(l.RetainerName)).OrderBy(l => l.Price).ToList();
+        var whitelist = config.CompetitorWhitelist ?? new List<string>();
 
-        if (competitors.Count == 0) {
+        var validCompetitors = pricing.Listings
+            .Where(l => !ownRetainers.Contains(l.RetainerName))
+            .Where(l => !(config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore && this.IsWhitelisted(l.RetainerName, whitelist, ownRetainers, config)))
+            .OrderBy(l => l.Price)
+            .ToList();
+
+        if (validCompetitors.Count == 0) {
             if (currentPrice > 0) {
                 result.CalculatedPrice = currentPrice;
                 result.Action = PricingAction.KeepPrice;
@@ -46,39 +56,62 @@ public class PriceCalculationService : IPriceCalculationService {
             return result;
         }
 
-        uint targetPrice = currentPrice;
-        bool priceFound = false;
-        var whitelist = config.CompetitorWhitelist ?? new List<string>();
+        bool ignoreHq = rule.IgnoreHq ?? false;
+        double premium = rule.HqPremiumPercentage ?? 0.0;
+        var undercutMode = rule.UndercutMode ?? UndercutMode.Absolute;
+        uint undercutAmount = rule.UndercutAmount ?? 1;
+        double undercutPct = rule.UndercutRelativePercentage ?? 1.0;
 
-        foreach (var comp in competitors) {
-            bool isWhitelisted = whitelist.Contains(comp.RetainerName, StringComparer.InvariantCultureIgnoreCase) ||
-                                 (config.AutoWhitelistOwnRetainers && ownRetainers.Contains(comp.RetainerName));
+        LowestPriceResult? bestCompetitor = null;
 
-            if (isWhitelisted) {
-                if (config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore) continue;
-                targetPrice = comp.Price;
-                priceFound = true;
-                break;
+        if (ignoreHq) {
+            bestCompetitor = validCompetitors.FirstOrDefault();
+        }
+        else {
+            if (isHq) {
+                bestCompetitor = validCompetitors.FirstOrDefault(l => l.IsHq);
+                if (bestCompetitor == null) {
+                    bestCompetitor = validCompetitors.FirstOrDefault(l => !l.IsHq);
+                }
             }
-
-            targetPrice = config.UndercutMode == UndercutMode.Absolute
-                ? (uint)Math.Max(1, (int)comp.Price - (int)config.UndercutAmount)
-                : (uint)Math.Max(1, comp.Price - (comp.Price * (config.UndercutRelativePercentage / 100.0)));
-
-            priceFound = true;
-            break;
+            else {
+                bestCompetitor = validCompetitors.FirstOrDefault();
+            }
         }
 
-        if (!priceFound) {
-            result.CalculatedPrice = currentPrice;
-            result.Action = PricingAction.KeepPrice;
+        if (bestCompetitor == null) {
+            result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+            if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
+                result.Action = lossAction;
+                if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
+            }
             return result;
         }
 
+        uint targetPrice = currentPrice;
+        bool isWhitelistedCompetitor = this.IsWhitelisted(bestCompetitor.RetainerName, whitelist, ownRetainers, config);
+
+        if (!ignoreHq && isHq && !bestCompetitor.IsHq) {
+            targetPrice = (uint)Math.Floor(bestCompetitor.Price * (1.0 + (premium / 100.0)));
+        }
+        else {
+            if (isWhitelistedCompetitor && config.CompetitorWhitelistBehavior == WhitelistBehavior.MatchPrice) {
+                targetPrice = bestCompetitor.Price;
+            }
+            else {
+                if (undercutMode == UndercutMode.Absolute) {
+                    targetPrice = (uint)Math.Max(1, (int)bestCompetitor.Price - (int)undercutAmount);
+                }
+                else {
+                    targetPrice = (uint)Math.Max(1, bestCompetitor.Price - (bestCompetitor.Price * (undercutPct / 100.0)));
+                }
+            }
+        }
+
         result.CalculatedPrice = targetPrice;
-        if (this.EvaluateLoss(targetPrice, vendorSellPrice, currentPrice, config, out var action)) {
-            result.Action = action;
-            if (action == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
+        if (this.EvaluateLoss(targetPrice, vendorSellPrice, currentPrice, config, out var evaluatedAction)) {
+            result.Action = evaluatedAction;
+            if (evaluatedAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
         }
 
         return result;
@@ -90,6 +123,11 @@ public class PriceCalculationService : IPriceCalculationService {
             foreach (var rData in cData.Retainers.Values) retainers.Add(rData.Name);
         }
         return retainers;
+    }
+
+    private bool IsWhitelisted(string retainerName, List<string> whitelist, HashSet<string> ownRetainers, PluginConfiguration config) {
+        return whitelist.Contains(retainerName, StringComparer.InvariantCultureIgnoreCase) ||
+               (config.AutoWhitelistOwnRetainers && ownRetainers.Contains(retainerName));
     }
 
     private bool EvaluateLoss(uint targetPrice, uint vendorSellPrice, uint currentPrice, PluginConfiguration config, out PricingAction action) {
@@ -106,7 +144,6 @@ public class PriceCalculationService : IPriceCalculationService {
 
     private uint CalculateFallbackPrice(MarketItemPricing pricing, uint vendorSell, uint vendorBuy, PluginConfiguration config) {
         return config.EmptyMarketFallbackMode switch {
-            // Apply the actual Universalis average sale price as the priority fallback when the market is empty
             FallbackPricingMode.AverageListingPrice => pricing.AverageSalePrice > 0 ? pricing.AverageSalePrice : (uint)(vendorSell * config.EmptyMarketFallbackMultiplier),
             FallbackPricingMode.MaxListingPrice => pricing.Listings.Count > 0 ? pricing.Listings.Max(l => l.Price) : (pricing.AverageSalePrice > 0 ? pricing.AverageSalePrice : (uint)(vendorSell * config.EmptyMarketFallbackMultiplier)),
             FallbackPricingMode.VendorBuyMultiple => (uint)(vendorBuy * config.EmptyMarketFallbackMultiplier),

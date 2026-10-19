@@ -31,6 +31,13 @@ public class PluginConfiguration : IPluginConfiguration {
     public uint UndercutAmount { get; set; } = 1;
     public double UndercutRelativePercentage { get; set; } = 1.0;
 
+    public double GlobalHqPremiumPercentage { get; set; } = 0.0;
+    public bool GlobalIgnoreHq { get; set; } = false;
+
+    public Dictionary<string, PricingProfile> PricingProfiles { get; set; } = [];
+    public Dictionary<uint, string> ItemProfileMappings { get; set; } = [];
+    public Dictionary<uint, string> CategoryProfileMappings { get; set; } = [];
+
     // Minimum Price (Loss) Settings
     public bool EnforceVendorPriceMinimum { get; set; } = true;
     public MinimumPriceBehavior LossBehavior { get; set; } = MinimumPriceBehavior.KeepCurrentPrice;

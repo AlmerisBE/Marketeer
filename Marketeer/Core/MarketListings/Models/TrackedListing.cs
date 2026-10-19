@@ -12,6 +12,7 @@ public class TrackedListing {
     public uint PricePerUnit { get; set; }
     public uint TotalPrice { get; set; }
     public uint Tax { get; set; }
+    public bool IsHq { get; set; }
 
     public override bool Equals(object? obj) {
         if (obj is TrackedListing other) {

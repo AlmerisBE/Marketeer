@@ -90,7 +90,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
             ItemName = itemName,
             PricePerUnit = 0,
             Quantity = 1,
-            AssociatedRetainerId = 0
+            AssociatedRetainerId = 0,
+            IsHq = itemId > 1000000u
         };
 
         this.stateMachineIndex = 1;
@@ -185,7 +186,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         if (listing == null || fetchTask == null) return;
 
         var pricing = fetchTask.Result.FirstOrDefault(p => p.ItemId == listing.ItemId) ?? new MarketItemPricing { ItemId = listing.ItemId };
-        var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.PricePerUnit, pricing);
+        var calcResult = this.priceCalculationService.CalculateTargetPrice(listing.ItemId, listing.PricePerUnit, pricing, listing.IsHq);
 
         this.uiInteraction.CloseItemSearchResult();
 
