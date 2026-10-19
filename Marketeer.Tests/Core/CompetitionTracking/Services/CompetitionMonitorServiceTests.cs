@@ -18,15 +18,14 @@ namespace Marketeer.Tests.Core.CompetitionTracking.Services;
 
 public class CompetitionMonitorServiceTests {
     [Fact]
-    public async Task CheckUndercutsAsync_WhenSameUndercutsPersist_DoesNotSpamChat() {
-        // Arrange
+    public async Task CheckUndercutsAsync_ValidatesListingsAndMutatesState() {
         var retainerState = Substitute.For<IRetainerStateService>();
         var priceProvider = Substitute.For<IMarketPriceCacheService>();
         var stateMutator = Substitute.For<ICompetitionStateMutator>();
-        var evaluatorService = Substitute.For<ICompetitionEvaluatorService>();
+        var evaluator = Substitute.For<ICompetitionEvaluatorService>();
         var itemResolver = Substitute.For<IItemResolverService>();
-        var marketListingTracker = Substitute.For<IMarketListingTrackerService>();
-        var priceCalcService = Substitute.For<IPriceCalculationService>();
+        var listingTracker = Substitute.For<IMarketListingTrackerService>();
+        var priceCalc = Substitute.For<IPriceCalculationService>();
         var chatGui = Substitute.For<IChatGui>();
         var localization = Substitute.For<ILocalizationService>();
         var logger = Substitute.For<ILoggerService>();
@@ -34,38 +33,108 @@ public class CompetitionMonitorServiceTests {
         var clientState = Substitute.For<IClientState>();
         var framework = Substitute.For<IFramework>();
 
-        configService.GetConfig().Returns(new PluginConfiguration { EnableChatNotifications = true });
-        localization.Translate("Undercuts_Notification", Arg.Any<int>()).Returns("Items undercut!");
+        configService.GetConfig().Returns(new PluginConfiguration { EnableChatNotifications = false });
+
+        var charData = new CharacterMarketData {
+            CharacterName = "TestPlayer",
+            HomeWorldId = 33u,
+            Listings = new List<RetainerListing> {
+                new RetainerListing { ItemId = 1, CurrentPrice = 5000 }
+            }
+        };
+
+        retainerState.GetAllCharactersListings().Returns(new List<CharacterMarketData> { charData });
+
+        var pricing = new MarketItemPricing { ItemId = 1 };
+        priceProvider.GetPricingsAsync(Arg.Any<IEnumerable<uint>>(), Arg.Any<uint>(), false)
+            .Returns(Task.FromResult<IReadOnlyList<MarketItemPricing>>(new List<MarketItemPricing> { pricing }));
+
+        itemResolver.ResolveItemName(1).Returns("Test Item");
+
+        var mockUndercut = new UndercutItem { ItemId = 1, ItemName = "Test Item" };
+
+        evaluator.TryEvaluateListing(
+            Arg.Any<RetainerListing>(),
+            Arg.Any<MarketItemPricing>(),
+            Arg.Any<string>(),
+            Arg.Any<uint>(),
+            Arg.Any<string>(),
+            out Arg.Any<UndercutItem?>()
+        ).Returns(x => {
+            x[5] = mockUndercut;
+            return true;
+        });
 
         var service = new CompetitionMonitorService(
-            retainerState, priceProvider, stateMutator, evaluatorService, itemResolver,
-            marketListingTracker, priceCalcService, chatGui, localization, logger,
-            configService, clientState, framework);
+            retainerState, priceProvider, stateMutator, evaluator, itemResolver,
+            listingTracker, priceCalc, chatGui, localization, logger, configService, clientState, framework);
 
-        // Mock state: 1 item listed, and it is undercut
-        var charMarketData = new CharacterMarketData {
-            CharacterName = "Player",
-            HomeWorldId = 33,
-            Listings = new List<RetainerListing> { new RetainerListing { ItemId = 123 } }
+        await service.CheckUndercutsAsync();
+
+        stateMutator.Received(1).UpdateUndercuts(Arg.Is<IEnumerable<UndercutItem>>(list => list.Contains(mockUndercut)));
+    }
+
+    [Fact]
+    public async Task CheckUndercutsAsync_WhenSameUndercutsPersist_DoesNotSpamChat() {
+        var retainerState = Substitute.For<IRetainerStateService>();
+        var priceProvider = Substitute.For<IMarketPriceCacheService>();
+        var stateMutator = Substitute.For<ICompetitionStateMutator>();
+        var evaluator = Substitute.For<ICompetitionEvaluatorService>();
+        var itemResolver = Substitute.For<IItemResolverService>();
+        var listingTracker = Substitute.For<IMarketListingTrackerService>();
+        var priceCalc = Substitute.For<IPriceCalculationService>();
+        var chatGui = Substitute.For<IChatGui>();
+        var localization = Substitute.For<ILocalizationService>();
+        var logger = Substitute.For<ILoggerService>();
+        var configService = Substitute.For<IConfigurationService>();
+        var clientState = Substitute.For<IClientState>();
+        var framework = Substitute.For<IFramework>();
+
+        // Ensure notifications are explicitly enabled for this specific test
+        configService.GetConfig().Returns(new PluginConfiguration { EnableChatNotifications = true });
+
+        var charData = new CharacterMarketData {
+            CharacterName = "TestPlayer",
+            HomeWorldId = 33u,
+            Listings = new List<RetainerListing> {
+                new RetainerListing { ItemId = 1, CurrentPrice = 5000 }
+            }
         };
-        retainerState.GetAllCharactersListings().Returns(new List<CharacterMarketData> { charMarketData });
 
-        var pricing = new List<MarketItemPricing> { new MarketItemPricing { ItemId = 123 } };
-        priceProvider.GetPricingsAsync(Arg.Any<IEnumerable<uint>>(), 33, false).Returns(pricing);
+        retainerState.GetAllCharactersListings().Returns(new List<CharacterMarketData> { charData });
 
-        var undercutItem = new UndercutItem { ItemId = 123 };
-        evaluatorService.TryEvaluateListing(Arg.Any<RetainerListing>(), Arg.Any<MarketItemPricing>(), Arg.Any<string>(), Arg.Any<uint>(), Arg.Any<string>(), out Arg.Any<UndercutItem?>())
-            .Returns(x => {
-                x[4] = undercutItem;
-                return true;
-            });
+        var pricing = new MarketItemPricing { ItemId = 1 };
+        priceProvider.GetPricingsAsync(Arg.Any<IEnumerable<uint>>(), Arg.Any<uint>(), false)
+            .Returns(Task.FromResult<IReadOnlyList<MarketItemPricing>>(new List<MarketItemPricing> { pricing }));
 
-        // Act - Trigger multiple evaluations sequentially (simulating multiple API batches loading)
+        itemResolver.ResolveItemName(1).Returns("Test Item");
+
+        var mockUndercut = new UndercutItem { ItemId = 1, ItemName = "Test Item" };
+
+        evaluator.TryEvaluateListing(
+            Arg.Any<RetainerListing>(),
+            Arg.Any<MarketItemPricing>(),
+            Arg.Any<string>(),
+            Arg.Any<uint>(),
+            Arg.Any<string>(),
+            out Arg.Any<UndercutItem?>()
+        ).Returns(x => {
+            x[5] = mockUndercut;
+            return true;
+        });
+
+        localization.Translate(Arg.Any<string>(), Arg.Any<object[]>()).Returns("[Marketeer] Items undercut!");
+
+        var service = new CompetitionMonitorService(
+            retainerState, priceProvider, stateMutator, evaluator, itemResolver,
+            listingTracker, priceCalc, chatGui, localization, logger, configService, clientState, framework);
+
+        // First pass: a new undercut is detected, so it MUST print to the chat.
         await service.CheckUndercutsAsync();
-        await service.CheckUndercutsAsync();
-        await service.CheckUndercutsAsync();
-
-        // Assert - The chat message should only trigger once, because the set of undercuts { 123 } never changed
         chatGui.Received(1).Print(Arg.Any<string>());
+
+        // Second pass: the exact same undercut is detected, it must NOT print again to prevent spam.
+        await service.CheckUndercutsAsync();
+        chatGui.Received(1).Print(Arg.Any<string>()); // Assertion remains at 1
     }
 }
