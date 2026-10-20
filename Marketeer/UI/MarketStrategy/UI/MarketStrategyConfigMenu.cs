@@ -111,6 +111,37 @@ public class MarketStrategyConfigMenu : INavigationNode {
             ImGui.Unindent();
         }
 
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        ImGui.TextUnformatted(this.localizationService.Translate("Label_StorageProtection") ?? "Storage & Outlier Protection");
+
+        bool enableStorage = config.EnableStorageProtection;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableStorageProtection") ?? "Ignore Storage Listings", ref enableStorage)) {
+            config.EnableStorageProtection = enableStorage;
+            changed = true;
+        }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_EnableStorageProtection_Tooltip"));
+
+        if (enableStorage) {
+            ImGui.Indent();
+            ImGui.Spacing();
+
+            ImGui.TextUnformatted(this.localizationService.Translate("Config_StorageProtectionThreshold") ?? "Threshold (Gil)");
+            ImGui.SetNextItemWidth(150f);
+
+            int threshold = (int)config.StorageProtectionThreshold;
+            if (ImGui.InputInt("##StorageThreshold", ref threshold, 1000000, 5000000)) {
+                if (threshold < 100000) threshold = 100000;
+                config.StorageProtectionThreshold = (uint)threshold;
+                changed = true;
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_StorageProtectionThreshold_Tooltip"));
+
+            ImGui.Unindent();
+        }
+
         return changed;
     }
 

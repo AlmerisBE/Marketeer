@@ -31,5 +31,10 @@
   "Label_CategoryMappings": "Assigned Categories",
   "OverrideValue_IgnoreHq": "Ignore HQ",
   "OverrideValue_HqPremium": "Premium (%)",
-  "OverrideValue_UndercutAmount": "Amount"
+  "OverrideValue_UndercutAmount": "Amount",
+  "Label_StorageProtection": "Storage & Outlier Protection",
+  "Config_EnableStorageProtection": "Ignore Storage / Outlier Listings",
+  "Config_EnableStorageProtection_Tooltip": "Prevents Marketeer from automating your own storage items and ignores competitors with absurdly high prices.",
+  "Config_StorageProtectionThreshold": "Storage Price Threshold (Gil)",
+  "Config_StorageProtectionThreshold_Tooltip": "Any listing (yours or competitors) at or above this price will be completely ignored by the pricing algorithms."
 }

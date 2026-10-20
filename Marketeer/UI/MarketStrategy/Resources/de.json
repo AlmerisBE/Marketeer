@@ -31,5 +31,10 @@
   "Label_CategoryMappings": "Zugewiesene Kategorien",
   "OverrideValue_IgnoreHq": "HQ ignorieren",
   "OverrideValue_HqPremium": "Aufschlag (%)",
-  "OverrideValue_UndercutAmount": "Betrag"
+  "OverrideValue_UndercutAmount": "Betrag",
+  "Label_StorageProtection": "Lager- & Ausreißerschutz",
+  "Config_EnableStorageProtection": "Lagergegenstände ignorieren",
+  "Config_EnableStorageProtection_Tooltip": "Verhindert die Automatisierung der eigenen Lagergegenstände und ignoriert Konkurrenten mit absurd hohen Preisen.",
+  "Config_StorageProtectionThreshold": "Lagerpreis-Schwellenwert (Gil)",
+  "Config_StorageProtectionThreshold_Tooltip": "Jedes Angebot (Ihr eigenes oder das der Konkurrenz) ab diesem Preis wird vom Algorithmus vollständig ignoriert."
 }

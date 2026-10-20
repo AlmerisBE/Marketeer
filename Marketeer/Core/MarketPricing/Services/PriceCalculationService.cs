@@ -33,6 +33,12 @@ public class PriceCalculationService : IPriceCalculationService {
         var rule = this.ruleProvider.GetRuleForItem(itemId);
         var result = new PriceCalculationResult { Action = PricingAction.DecreasePrice, CalculatedPrice = currentPrice };
 
+        if (config.EnableStorageProtection && currentPrice >= config.StorageProtectionThreshold) {
+            result.CalculatedPrice = currentPrice;
+            result.Action = PricingAction.KeepPrice;
+            return result;
+        }
+
         var vendorSellPrice = this.itemResolver.ResolveVendorPrice(itemId);
         var vendorBuyPrice = this.itemResolver.ResolveVendorBuyPrice(itemId);
 
@@ -42,10 +48,10 @@ public class PriceCalculationService : IPriceCalculationService {
         var validCompetitors = pricing.Listings
             .Where(l => !ownRetainers.Contains(l.RetainerName))
             .Where(l => !(config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore && this.IsWhitelisted(l.RetainerName, whitelist, ownRetainers, config)))
+            .Where(l => !config.EnableStorageProtection || l.Price < config.StorageProtectionThreshold)
             .OrderBy(l => l.Price)
             .ToList();
 
-        // Application de la protection via le contrat agnostique
         this.crashProtector.ApplyProtection(pricing, isHq, validCompetitors, out bool holdPrice);
 
         if (holdPrice) {
@@ -59,11 +65,14 @@ public class PriceCalculationService : IPriceCalculationService {
                 result.CalculatedPrice = currentPrice;
                 result.Action = PricingAction.KeepPrice;
             }
-            else if (pricing.Listings.Count > 0) {
-                result.CalculatedPrice = pricing.Listings.Min(l => l.Price);
-            }
             else {
-                result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+                if (pricing.Listings.Count > 0) result.CalculatedPrice = pricing.Listings.Min(l => l.Price);
+                else result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+
+                if (result.CalculatedPrice == currentPrice) result.Action = PricingAction.KeepPrice;
+                else if (result.CalculatedPrice > currentPrice) result.Action = PricingAction.IncreasePrice;
+                else result.Action = PricingAction.DecreasePrice;
+
                 if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
                     result.Action = lossAction;
                     if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
@@ -95,6 +104,11 @@ public class PriceCalculationService : IPriceCalculationService {
 
         if (bestCompetitor == null) {
             result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+
+            if (result.CalculatedPrice == currentPrice) result.Action = PricingAction.KeepPrice;
+            else if (result.CalculatedPrice > currentPrice) result.Action = PricingAction.IncreasePrice;
+            else result.Action = PricingAction.DecreasePrice;
+
             if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
                 result.Action = lossAction;
                 if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;

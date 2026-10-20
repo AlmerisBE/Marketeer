@@ -31,5 +31,10 @@
   "Label_CategoryMappings": "Catégories assignées",
   "OverrideValue_IgnoreHq": "Ignorer HQ",
   "OverrideValue_HqPremium": "Premium (%)",
-  "OverrideValue_UndercutAmount": "Montant"
+  "OverrideValue_UndercutAmount": "Montant",
+  "Label_StorageProtection": "Protection de Stockage & Prix Aberrants",
+  "Config_EnableStorageProtection": "Ignorer les objets de stockage",
+  "Config_EnableStorageProtection_Tooltip": "Empêche l'automatisation de vos propres objets de stockage et ignore les concurrents aux prix absurdement élevés.",
+  "Config_StorageProtectionThreshold": "Seuil de prix de stockage (Gils)",
+  "Config_StorageProtectionThreshold_Tooltip": "Toute vente (la vôtre ou concurrente) atteignant ou dépassant ce prix sera totalement ignorée par l'algorithme."
 }

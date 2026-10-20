@@ -94,9 +94,17 @@ public class ListingActionResolverService : IListingActionResolverService, IDisp
         var config = this.configService.GetConfig();
         bool isRedLine = false;
 
+        var activeListings = this.listingProvider.GetActiveRetainerListings();
+        var clickedListing = activeListings.FirstOrDefault(l => l.ItemId == itemId);
+
+        // Protection de stockage : empêche les clics manuels ou automatisés de déclencher une mise à jour sur des objets hors-normes
+        if (config.EnableStorageProtection && clickedListing != null && clickedListing.PricePerUnit >= config.StorageProtectionThreshold) {
+            this.logger.Info($"[ListingActionResolver] Item {itemId} is marked as a storage/outlier listing. Automation aborted.");
+            return ListingClickAction.None;
+        }
+
         var undercut = this.competitionState.GetUndercutItems().FirstOrDefault(u => u.ItemId == itemId);
 
-        // Intercept anomalies immediately to prevent dropping prices
         if (undercut != null && undercut.AnomalyData != null && undercut.AnomalyData.IsAnomalyDetected) {
             if (config.AnomalyStrategy == AnomalyDefenseStrategy.AlertAndPause || config.AnomalyStrategy == AnomalyDefenseStrategy.HoldPrice) {
                 return ListingClickAction.None;
@@ -108,8 +116,6 @@ public class ListingActionResolverService : IListingActionResolverService, IDisp
         }
         else {
             uint vendorSellPrice = this.itemResolver.ResolveVendorPrice(itemId);
-            var activeListings = this.listingProvider.GetActiveRetainerListings();
-            var clickedListing = activeListings.FirstOrDefault(l => l.ItemId == itemId);
 
             if (config.EnforceVendorPriceMinimum && vendorSellPrice > 0 && clickedListing != null && clickedListing.PricePerUnit <= vendorSellPrice) {
                 isRedLine = true;

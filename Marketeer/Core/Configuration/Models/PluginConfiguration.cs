@@ -68,6 +68,10 @@ public class PluginConfiguration : IPluginConfiguration {
 
     // Market Anomaly Protection
     public bool EnableAnomalyProtection { get; set; } = true;
-    public double AnomalyCrashThreshold { get; set; } = 0.5; // 50% drop from Average Sale Price is considered a crash
+    public double AnomalyCrashThreshold { get; set; } = 0.5;
     public AnomalyDefenseStrategy AnomalyStrategy { get; set; } = AnomalyDefenseStrategy.AlertAndPause;
+
+    // Storage & Outlier Protection
+    public bool EnableStorageProtection { get; set; } = true;
+    public uint StorageProtectionThreshold { get; set; } = 10000000;
 }

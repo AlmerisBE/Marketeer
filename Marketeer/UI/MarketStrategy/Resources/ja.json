@@ -31,5 +31,10 @@
   "Label_CategoryMappings": "割り当てられたカテゴリ",
   "OverrideValue_IgnoreHq": "HQを無視",
   "OverrideValue_HqPremium": "プレミアム (%)",
-  "OverrideValue_UndercutAmount": "額"
+  "OverrideValue_UndercutAmount": "額",
+  "Label_StorageProtection": "保管・異常価格保護",
+  "Config_EnableStorageProtection": "保管用アイテムを無視する",
+  "Config_EnableStorageProtection_Tooltip": "自身の保管用アイテムの自動化を防ぎ、異常に高額な価格を設定している競合他社を無視します。",
+  "Config_StorageProtectionThreshold": "保管価格のしきい値 (ギル)",
+  "Config_StorageProtectionThreshold_Tooltip": "この価格以上の出品（自身または競合）は、アルゴリズムによって完全に無視されます。"
 }
