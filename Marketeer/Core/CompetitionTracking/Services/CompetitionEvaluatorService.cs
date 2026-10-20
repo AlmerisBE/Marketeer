@@ -35,11 +35,16 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
         if (pricing.Listings == null || !pricing.Listings.Any()) return false;
 
         var config = this.configService.GetConfig();
+
+        // 1. Protection de Stockage : On ignore purement et simplement nos propres objets listés comme "stockage"
+        if (config.EnableStorageProtection && listing.CurrentPrice >= config.StorageProtectionThreshold) return false;
+
         var rule = this.ruleProvider.GetRuleForItem(listing.ItemId);
         var anomalyReport = this.anomalyDetector.EvaluateMarket(pricing, listing.IsHq);
 
         var validCompetitors = pricing.Listings
             .Where(l => !(this.whitelistManager.IsWhitelisted(l.RetainerName) && config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore))
+            .Where(l => !config.EnableStorageProtection || l.Price < config.StorageProtectionThreshold) // 2. Filtre des concurrents aberrants
             .OrderBy(l => l.Price)
             .ToList();
 
@@ -47,6 +52,7 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
             validCompetitors = validCompetitors.Where(l => l.Price > anomalyReport.CrashThresholdPrice).ToList();
         }
 
+        // S'il n'y a plus aucun concurrent valide (par exemple, le seul concurrent était à 99M), on arrête l'évaluation.
         if (validCompetitors.Count == 0) return false;
 
         bool ignoreHq = rule.IgnoreHq ?? false;
@@ -63,9 +69,7 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
         else {
             if (listing.IsHq) {
                 lowestCompetitor = validCompetitors.FirstOrDefault(l => l.IsHq);
-                if (lowestCompetitor == null) {
-                    lowestCompetitor = validCompetitors.FirstOrDefault(l => !l.IsHq);
-                }
+                if (lowestCompetitor == null) lowestCompetitor = validCompetitors.FirstOrDefault(l => !l.IsHq);
             }
             else {
                 lowestCompetitor = validCompetitors.FirstOrDefault();
