@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketPricing.Models;
 using Marketeer.UI.CompetitionTracking.Contracts;
 using System;
 using System.Collections.Generic;
@@ -51,16 +52,24 @@ public class NativeRetainerListHighlighterService : IDisposable {
             var undercuts = this.competitionState.GetUndercutItems().Where(u => u.CharacterName == playerName && u.HomeWorldId == worldId);
             var suboptimals = this.optimizationService.GetVendorPricedListings().Where(s => s.CharacterName == playerName && s.HomeWorldId == worldId);
 
-            var retainerActions = new Dictionary<string, (int Undercuts, int Suboptimals)>();
+            var retainerActions = new Dictionary<string, (int Decreases, int Increases, int Cancels)>();
 
             foreach (var u in undercuts) {
-                if (!retainerActions.ContainsKey(u.RetainerName)) retainerActions[u.RetainerName] = (0, 0);
-                retainerActions[u.RetainerName] = (retainerActions[u.RetainerName].Undercuts + 1, retainerActions[u.RetainerName].Suboptimals);
+                if (!retainerActions.ContainsKey(u.RetainerName)) retainerActions[u.RetainerName] = (0, 0, 0);
+                var current = retainerActions[u.RetainerName];
+
+                if (u.SuggestedAction == PricingAction.CancelListing) current.Cancels++;
+                else if (u.SuggestedAction == PricingAction.IncreasePrice) current.Increases++;
+                else current.Decreases++;
+
+                retainerActions[u.RetainerName] = current;
             }
 
             foreach (var s in suboptimals) {
-                if (!retainerActions.ContainsKey(s.RetainerName)) retainerActions[s.RetainerName] = (0, 0);
-                retainerActions[s.RetainerName] = (retainerActions[s.RetainerName].Undercuts, retainerActions[s.RetainerName].Suboptimals + 1);
+                if (!retainerActions.ContainsKey(s.RetainerName)) retainerActions[s.RetainerName] = (0, 0, 0);
+                var current = retainerActions[s.RetainerName];
+                current.Cancels++;
+                retainerActions[s.RetainerName] = current;
             }
 
             this.TraverseAndHighlight(&addon->UldManager, retainerActions);
@@ -70,7 +79,7 @@ public class NativeRetainerListHighlighterService : IDisposable {
         }
     }
 
-    private unsafe void TraverseAndHighlight(AtkUldManager* uldManager, Dictionary<string, (int Undercuts, int Suboptimals)> actions) {
+    private unsafe void TraverseAndHighlight(AtkUldManager* uldManager, Dictionary<string, (int Decreases, int Increases, int Cancels)> actions) {
         if (uldManager == null) return;
 
         for (int i = 0; i < uldManager->NodeListCount; i++) {
@@ -88,16 +97,12 @@ public class NativeRetainerListHighlighterService : IDisposable {
                         textNodes = textNodes.OrderBy(this.GetAbsoluteX).ToList();
 
                         var nameNode = (AtkTextNode*)textNodes[0];
-                        // Explicit extraction logic ensuring CStringPointer resolves down to a byte pointer smoothly
                         var rawNameText = this.ExtractString((nint)(byte*)nameNode->NodeText.StringPtr);
-
                         var cleanNameText = rawNameText.Split('(')[0].Replace("=", "").Trim();
 
                         if (rawNameText != cleanNameText) {
                             var encodedName = Encoding.UTF8.GetBytes(cleanNameText).Concat(new byte[] { 0 }).ToArray();
-                            fixed (byte* ptr = encodedName) {
-                                nameNode->SetText(ptr);
-                            }
+                            fixed (byte* ptr = encodedName) nameNode->SetText(ptr);
                         }
 
                         string? matchedRetainer = null;
@@ -114,11 +119,13 @@ public class NativeRetainerListHighlighterService : IDisposable {
 
                         if (matchedRetainer != null) {
                             var counts = actions[matchedRetainer];
-                            totalActions = counts.Undercuts + counts.Suboptimals;
+                            totalActions = counts.Decreases + counts.Increases + counts.Cancels;
 
                             if (totalActions > 0) {
                                 hasActions = true;
-                                if (counts.Suboptimals > 0) targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
+                                if (counts.Cancels > 0) targetColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
+                                else if (counts.Decreases > 0) targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+                                else if (counts.Increases > 0) targetColor = new ByteColor { A = 255, R = 100, G = 200, B = 255 };
                                 else targetColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
                             }
                         }
@@ -146,9 +153,7 @@ public class NativeRetainerListHighlighterService : IDisposable {
                         }
 
                         if (needsUpdate) {
-                            fixed (byte* ptr = encoded) {
-                                marketItemsNode->SetText(ptr);
-                            }
+                            fixed (byte* ptr = encoded) marketItemsNode->SetText(ptr);
                         }
                     }
 

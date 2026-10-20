@@ -8,6 +8,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
+using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.CompetitionTracking.Contracts;
 using System;
@@ -78,30 +79,32 @@ public class NativeListingHighlighterService : IDisposable {
                 allItemNames.Add(this.itemResolver.ResolveItemName(slot.ItemId));
             }
 
-            var undercuts = new HashSet<(string ItemName, uint Price, uint Quantity)>();
-            var suboptimals = new HashSet<(string ItemName, uint Price, uint Quantity)>();
+            var actionItems = new HashSet<(string ItemName, uint Price, uint Quantity, PricingAction Action)>();
 
             if (allItemNames.Count > 0) {
-                undercuts = this.competitionState.GetUndercutItems()
-                    .Where(u => u.CharacterName == currentCharacterName && u.HomeWorldId == currentWorldId && u.RetainerName == activeRetainerName)
-                    .Select(u => (ItemName: u.ItemName, Price: u.Price, Quantity: u.Quantity))
-                    .ToHashSet();
+                var undercuts = this.competitionState.GetUndercutItems()
+                    .Where(u => u.CharacterName == currentCharacterName && u.HomeWorldId == currentWorldId && u.RetainerName == activeRetainerName);
 
-                suboptimals = this.optimizationService.GetVendorPricedListings()
-                    .Where(s => s.CharacterName == currentCharacterName && s.HomeWorldId == currentWorldId && s.RetainerName == activeRetainerName)
-                    .Select(s => (ItemName: s.ItemName, Price: s.Price, Quantity: s.Quantity))
-                    .ToHashSet();
+                foreach (var u in undercuts) {
+                    actionItems.Add((u.ItemName, u.Price, u.Quantity, u.SuggestedAction));
+                }
+
+                var suboptimals = this.optimizationService.GetVendorPricedListings()
+                    .Where(s => s.CharacterName == currentCharacterName && s.HomeWorldId == currentWorldId && s.RetainerName == activeRetainerName);
+
+                foreach (var s in suboptimals) {
+                    actionItems.Add((s.ItemName, s.Price, s.Quantity, PricingAction.CancelListing));
+                }
             }
 
-            // Démarrage de la traversée récursive à la racine de l'Addon, indépendante de la structure interne
-            this.TraverseAndHighlight(&addon->UldManager, allItemNames, undercuts, suboptimals);
+            this.TraverseAndHighlight(&addon->UldManager, allItemNames, actionItems);
         }
         catch (Exception ex) {
             this.logger.Error(ex, "Failed to apply native colors to RetainerSellList.");
         }
     }
 
-    private unsafe void TraverseAndHighlight(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity)> undercuts, HashSet<(string ItemName, uint Price, uint Quantity)> suboptimals) {
+    private unsafe void TraverseAndHighlight(AtkUldManager* uldManager, HashSet<string> allItems, HashSet<(string ItemName, uint Price, uint Quantity, PricingAction Action)> actionItems) {
         if (uldManager == null) return;
 
         for (int i = 0; i < uldManager->NodeListCount; i++) {
@@ -136,29 +139,21 @@ public class NativeListingHighlighterService : IDisposable {
                         }
                     }
 
-                    // On applique la logique uniquement si le composant graphique contient le nom d'un objet en vente (c'est donc bien une ligne !)
                     if (matchedItem != null) {
-                        bool isSuboptimal = false;
-                        bool isUndercut = false;
+                        PricingAction? matchedAction = null;
 
-                        foreach (var sub in suboptimals) {
-                            if (sub.ItemName == matchedItem && rowNumbers.Contains(sub.Price) && rowNumbers.Contains(sub.Quantity)) {
-                                isSuboptimal = true;
+                        foreach (var item in actionItems) {
+                            if (item.ItemName == matchedItem && rowNumbers.Contains(item.Price) && rowNumbers.Contains(item.Quantity)) {
+                                matchedAction = item.Action;
                                 break;
                             }
                         }
 
-                        if (!isSuboptimal) {
-                            foreach (var und in undercuts) {
-                                if (und.ItemName == matchedItem && rowNumbers.Contains(und.Price) && rowNumbers.Contains(und.Quantity)) {
-                                    isUndercut = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (isSuboptimal || isUndercut) {
-                            ByteColor targetTextColor = isSuboptimal ? new ByteColor { A = 255, R = 255, G = 60, B = 60 } : new ByteColor { A = 255, R = 255, G = 230, B = 90 };
+                        if (matchedAction.HasValue) {
+                            ByteColor targetTextColor;
+                            if (matchedAction.Value == PricingAction.CancelListing) targetTextColor = new ByteColor { A = 255, R = 255, G = 60, B = 60 };
+                            else if (matchedAction.Value == PricingAction.IncreasePrice) targetTextColor = new ByteColor { A = 255, R = 100, G = 200, B = 255 };
+                            else targetTextColor = new ByteColor { A = 255, R = 255, G = 230, B = 90 };
 
                             foreach (var textNodePtr in textNodes) {
                                 var textNode = (AtkTextNode*)textNodePtr;
@@ -168,14 +163,10 @@ public class NativeListingHighlighterService : IDisposable {
                                 this.StripColorPayloadsSafe(textNode);
                             }
                         }
-                        else {
-                            // C'est ici que l'on corrige le bug des lignes fantômes !
-                            this.ResetTextColor(textNodes);
-                        }
+                        else this.ResetTextColor(textNodes);
                     }
 
-                    // On continue l'exploration en profondeur
-                    this.TraverseAndHighlight(&comp->UldManager, allItems, undercuts, suboptimals);
+                    this.TraverseAndHighlight(&comp->UldManager, allItems, actionItems);
                 }
             }
         }
@@ -202,9 +193,7 @@ public class NativeListingHighlighterService : IDisposable {
             seString.Payloads.RemoveAll(p => p.Type == Dalamud.Game.Text.SeStringHandling.PayloadType.UIForeground || p.Type == Dalamud.Game.Text.SeStringHandling.PayloadType.UIGlow);
             var encoded = seString.Encode().Concat(new byte[] { 0 }).ToArray();
 
-            fixed (byte* ptr = encoded) {
-                textNode->SetText(ptr);
-            }
+            fixed (byte* ptr = encoded) textNode->SetText(ptr);
         }
     }
 

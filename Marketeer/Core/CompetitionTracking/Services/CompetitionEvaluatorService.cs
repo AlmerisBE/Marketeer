@@ -95,7 +95,7 @@ public class CompetitionEvaluatorService : ICompetitionEvaluatorService {
 
         if (targetPrice == listing.CurrentPrice) return false;
 
-        var suggestedAction = PricingAction.UpdatePrice;
+        var suggestedAction = targetPrice > listing.CurrentPrice ? PricingAction.IncreasePrice : PricingAction.DecreasePrice;
 
         if (anomalyReport != null && anomalyReport.IsAnomalyDetected) {
             if (config.AnomalyStrategy == AnomalyDefenseStrategy.HoldPrice || config.AnomalyStrategy == AnomalyDefenseStrategy.AlertAndPause) {

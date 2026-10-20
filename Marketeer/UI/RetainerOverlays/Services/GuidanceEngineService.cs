@@ -55,7 +55,6 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
         string currentCharacterName = localPlayer?.Name.TextValue ?? string.Empty;
         uint currentWorldId = localPlayer?.HomeWorld.RowId ?? 0;
 
-        // 1. Evaluate instructions for the CURRENT active retainer first (ONLY if we are not looking at the global list)
         if (!isAtRetainerList && !string.IsNullOrEmpty(activeRetainerName)) {
             var currentUndercut = allUndercuts.FirstOrDefault(u => u.RetainerName == activeRetainerName && u.CharacterName == currentCharacterName && u.HomeWorldId == currentWorldId);
             if (currentUndercut != null) {
@@ -69,7 +68,8 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                     TargetPrice = currentUndercut.TargetPrice,
                     RetainerName = activeRetainerName,
                     CharacterName = currentCharacterName,
-                    HomeWorldId = currentWorldId
+                    HomeWorldId = currentWorldId,
+                    IsCrashProtected = currentUndercut.AnomalyData?.IsAnomalyDetected ?? false // <-- Ajout du mapping ici
                 };
             }
 
@@ -83,12 +83,12 @@ public class GuidanceEngineService : IGuidanceInstructionProvider {
                     Quantity = currentSuboptimal.Quantity,
                     RetainerName = activeRetainerName,
                     CharacterName = currentCharacterName,
-                    HomeWorldId = currentWorldId
+                    HomeWorldId = currentWorldId,
+                    IsCrashProtected = false
                 };
             }
         }
 
-        // 2. Find the next target globally, prioritizing the currently logged-in character ON the current world
         UndercutItem? targetUndercut = allUndercuts.FirstOrDefault(u => u.CharacterName == currentCharacterName && u.HomeWorldId == currentWorldId);
         SuboptimalListing? targetSuboptimal = allSuboptimal.FirstOrDefault(s => s.CharacterName == currentCharacterName && s.HomeWorldId == currentWorldId);
 

@@ -7,6 +7,9 @@ using System.Collections.Generic;
 namespace Marketeer.Core.Configuration.Services;
 
 public class ConfigurationService : IConfigurationService {
+
+    public event System.Action? ConfigurationSaved;
+
     private IDalamudPluginInterface pluginInterface;
     private PluginConfiguration config;
 
@@ -33,5 +36,6 @@ public class ConfigurationService : IConfigurationService {
 
     public void Save() {
         this.pluginInterface.SavePluginConfig(this.config);
+        this.ConfigurationSaved?.Invoke();
     }
 }

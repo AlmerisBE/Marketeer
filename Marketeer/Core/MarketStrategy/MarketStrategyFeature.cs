@@ -14,7 +14,9 @@ namespace Marketeer.Core.MarketStrategy;
 public class MarketStrategyFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         // Core Business Logic
-        services.AddSingleton<IMarketAnomalyDetector, MarketAnomalyDetectorService>();
+        services.AddSingleton<MarketAnomalyDetectorService>();
+        services.AddSingleton<IMarketAnomalyDetector>(provider => provider.GetRequiredService<MarketAnomalyDetectorService>());
+        services.AddSingleton<IPriceCrashProtector>(provider => provider.GetRequiredService<MarketAnomalyDetectorService>());
         services.AddSingleton<PricingRuleResolver>();
         services.AddSingleton<ICompetitionRuleProvider>(provider => provider.GetRequiredService<PricingRuleResolver>());
         services.AddSingleton<IPriceRuleProvider>(provider => provider.GetRequiredService<PricingRuleResolver>());

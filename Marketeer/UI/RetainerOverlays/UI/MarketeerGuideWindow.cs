@@ -98,7 +98,9 @@ public class MarketeerGuideWindow : Window {
         }
 
         string title = instruction.ActionType switch {
-            GuidanceActionType.UpdatePrice => this.localization.Translate("Guidance_Action_UpdatePrice"),
+            GuidanceActionType.UpdatePrice => instruction.TargetPrice.HasValue && instruction.TargetPrice.Value > instruction.CurrentPrice
+                ? this.localization.Translate("Guidance_Action_IncreasePrice") ?? "Increase Price"
+                : this.localization.Translate("Guidance_Action_DecreasePrice") ?? "Decrease Price",
             GuidanceActionType.CancelListing => this.localization.Translate("Guidance_Action_CancelListing"),
             GuidanceActionType.SwitchRetainer => this.localization.Translate("Guidance_Action_SwitchRetainer"),
             GuidanceActionType.SummonRetainer => this.localization.Translate("Guidance_Action_SummonRetainer"),
@@ -126,12 +128,17 @@ public class MarketeerGuideWindow : Window {
                     float difference = ((float)instruction.TargetPrice - instruction.AverageMarketPrice) / instruction.AverageMarketPrice * 100f;
                     string sign = difference > 0 ? "+" : "";
 
-                    // Code couleur : Rouge si on s'apprête à valider un prix inférieur de 20% ou plus par rapport à la moyenne
                     var color = difference <= -20f ? new System.Numerics.Vector4(1f, 0.4f, 0.4f, 1f) : new System.Numerics.Vector4(0.8f, 0.8f, 0.8f, 1f);
 
                     ImGui.TextUnformatted(this.localization.Translate("Guide_AveragePrice") ?? "Average Price:");
                     ImGui.SameLine();
                     ImGui.TextColored(color, $"{instruction.AverageMarketPrice:N0} ({sign}{difference:F1}%)");
+                }
+
+                // Affichage explicite de la protection contre les krachs
+                if (instruction.IsCrashProtected) {
+                    ImGui.Spacing();
+                    ImGui.TextColored(new Vector4(1.0f, 0.4f, 0.4f, 1.0f), this.localization.Translate("Guidance_CrashProtection_Active") ?? "Market crash detected! Protection active.");
                 }
             }
         }
@@ -160,8 +167,8 @@ public class MarketeerGuideWindow : Window {
         ImGui.Spacing();
 
         ImGui.TextDisabled(this.localization.Translate("Guidance_Legend_Title"));
-        ImGui.TextColored(new Vector4(1.0f, 0.23f, 0.23f, 1.0f), this.localization.Translate("Guidance_Legend_Red"));
-        ImGui.TextColored(new Vector4(0.9f, 0.9f, 0.35f, 1.0f), this.localization.Translate("Guidance_Legend_Yellow"));
-        ImGui.TextColored(new Vector4(1.0f, 0.59f, 0.2f, 1.0f), this.localization.Translate("Guidance_Legend_Orange"));
+        ImGui.TextColored(new Vector4(1.0f, 0.23f, 0.23f, 1.0f), this.localization.Translate("Guidance_Legend_Red") ?? "Cancellation required");
+        ImGui.TextColored(new Vector4(0.9f, 0.9f, 0.35f, 1.0f), this.localization.Translate("Legend_DecreasePrice") ?? "Price decrease required");
+        ImGui.TextColored(new Vector4(0.4f, 0.8f, 1.0f, 1.0f), this.localization.Translate("Legend_IncreasePrice") ?? "Price increase required");
     }
 }

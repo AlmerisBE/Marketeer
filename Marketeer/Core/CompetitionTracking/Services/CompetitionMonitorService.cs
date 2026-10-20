@@ -80,6 +80,9 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.clientState.Login += this.OnLogin;
         this.framework.Update += this.OnFrameworkUpdate;
 
+        // Souscription à la sauvegarde de configuration
+        this.configService.ConfigurationSaved += this.OnConfigurationSaved;
+
         this.isMonitoring = true;
         this.logger.Info("Undercut monitor service started (Event-Driven & Polling).");
 
@@ -100,8 +103,15 @@ public class CompetitionMonitorService : ICompetitionMonitorService {
         this.clientState.Login -= this.OnLogin;
         this.framework.Update -= this.OnFrameworkUpdate;
 
+        this.configService.ConfigurationSaved -= this.OnConfigurationSaved;
+
         this.isMonitoring = false;
         this.logger.Info("Undercut monitor service stopped.");
+    }
+
+    private void OnConfigurationSaved() {
+        // Relance immédiatement le processus d'évaluation lorsque les règles de stratégie changent
+        Task.Run(async () => await this.CheckUndercutsAsync());
     }
 
     private void OnFrameworkUpdate(IFramework fw) {

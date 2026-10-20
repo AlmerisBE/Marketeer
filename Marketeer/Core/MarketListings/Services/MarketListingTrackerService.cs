@@ -182,7 +182,8 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
                     ItemId = fetched.ItemId,
                     Quantity = fetched.Quantity,
                     PricePerUnit = finalPrice,
-                    ListingDate = listingDate
+                    ListingDate = listingDate,
+                    IsHq = fetched.IsHq
                 };
             }
 

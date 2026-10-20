@@ -46,7 +46,8 @@ public class InventoryService : IInventoryService {
                     IsOccupied = false,
                     ItemId = 0u,
                     Quantity = 0u,
-                    PricePerUnit = 0u
+                    PricePerUnit = 0u,
+                    IsHq = false
                 });
             }
             else {
@@ -58,7 +59,8 @@ public class InventoryService : IInventoryService {
                     IsOccupied = true,
                     ItemId = item->ItemId,
                     Quantity = (uint)item->Quantity,
-                    PricePerUnit = price
+                    PricePerUnit = price,
+                    IsHq = ((byte)item->Flags & 1) == 1
                 });
             }
         }

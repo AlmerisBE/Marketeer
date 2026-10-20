@@ -20,5 +20,6 @@
   "Guidance_Legend_Orange": "出品取消と価格更新",
   "Guidance_Btn_ExecuteAction": "アクションを実行",
   "Command_Guide_Description": "ガイダンスウィンドウの表示を切り替えます。",
-  "Guide_AveragePrice": "平均価格:"
+  "Guide_AveragePrice": "平均価格:",
+  "Guidance_CrashProtection_Active": "市場の暴落を検知！保護が有効です。"
 }

@@ -25,5 +25,9 @@
   "Notification_Sale_Aborted": "出品中止（損失防止）: {0}",
   "Notification_Cancellation_Success": "出品取消（損失防止）: {0}",
   "Notification_Price_Kept": "価格維持（{1:N0}G）: {0}",
-  "Notification_Price_Updated": "価格更新（{1:N0}G）: {0}"
+  "Notification_Price_Updated": "価格更新（{1:N0}G）: {0}",
+  "Legend_IncreasePrice": "値上げが必要",
+  "Legend_DecreasePrice": "値下げが必要",
+  "Guidance_Action_IncreasePrice": "価格を上げる",
+  "Guidance_Action_DecreasePrice": "価格を下げる"
 }

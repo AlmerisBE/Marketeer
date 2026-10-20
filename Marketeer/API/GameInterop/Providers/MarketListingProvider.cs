@@ -46,7 +46,6 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
 
         var activeRetainerIdOpt = this.GetActiveRetainerId();
         if (!activeRetainerIdOpt.HasValue) {
-            //this.logger.Debug("[MarketListingProvider] No active retainer detected. Aborting scan.");
             return listings;
         }
 
@@ -67,12 +66,11 @@ public unsafe class MarketListingProvider : IMarketListingProvider {
                 PricePerUnit = slot.PricePerUnit,
                 TotalPrice = totalPrice,
                 Tax = tax,
-                IsHq = slot.ItemId > 1000000u
+                IsHq = slot.IsHq
             });
         }
 
         stopwatch.Stop();
-        //this.logger.Debug($"[MarketListingProvider] Extracted {listings.Count} listings natively via FFXIVClientStructs in {stopwatch.ElapsedMilliseconds}ms.");
         return listings;
     }
 

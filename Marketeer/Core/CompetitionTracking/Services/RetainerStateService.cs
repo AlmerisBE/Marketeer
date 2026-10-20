@@ -45,7 +45,7 @@ public class RetainerStateService : IRetainerStateService {
                     Quantity = listingKvp.Value.Quantity,
                     RetainerName = retainer.Name,
                     CurrentPrice = listingKvp.Value.PricePerUnit,
-                    IsHq = listingKvp.Value.ItemId > 1000000u
+                    IsHq = listingKvp.Value.IsHq
                 });
             }
         }
@@ -75,7 +75,7 @@ public class RetainerStateService : IRetainerStateService {
                         Quantity = listingKvp.Value.Quantity,
                         RetainerName = retainer.Name,
                         CurrentPrice = listingKvp.Value.PricePerUnit,
-                        IsHq = listingKvp.Value.ItemId > 1000000u
+                        IsHq = listingKvp.Value.IsHq
                     });
                 }
             }

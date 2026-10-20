@@ -20,5 +20,6 @@
   "Guidance_Legend_Orange": "Stornierung & Preisanpassung",
   "Guidance_Btn_ExecuteAction": "Aktion ausführen",
   "Command_Guide_Description": "Schaltet die Sichtbarkeit des Übersichtsfensters um.",
-  "Guide_AveragePrice": "Durchschnittspreis:"
+  "Guide_AveragePrice": "Durchschnittspreis:",
+  "Guidance_CrashProtection_Active": "Marktcrash erkannt! Schutz aktiv."
 }

@@ -59,7 +59,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
     }
 
     private unsafe void OnAddonUpdate(AddonEvent type, AddonArgs args) {
-        // Enforce a strict 1.5-second debounce to prevent micro-stuttering and cache thrashing during scroll events
         if ((DateTime.Now - this.lastScanTime).TotalMilliseconds < 1500) return;
 
         var addon = (AtkUnitBase*)args.Addon.Address;
@@ -78,6 +77,7 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
                 var node = addon->UldManager.NodeList[i];
                 if (node != null && node->Type == NodeType.Text && node->IsVisible()) {
                     var textNode = (AtkTextNode*)node;
+                    // First cast to byte* to unwrap CStringPointer, then cast to nint for MemoryHelper
                     var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr).Trim();
 
                     if (!string.IsNullOrWhiteSpace(text)) {
@@ -93,7 +93,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
             if (targetItemId == 0) return;
 
-            // Debounce matching same-item spam unless 5 seconds have passed
             if (targetItemId == this.lastScannedItemId && (DateTime.Now - this.lastScanTime).TotalSeconds < 5) return;
 
             var results = new List<LowestPriceResult>();
@@ -140,13 +139,13 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
 
                         if (childNode->Type == NodeType.Text) {
                             var textNode = (AtkTextNode*)childNode;
-                            var ptr = (byte*)textNode->NodeText.StringPtr;
-                            var text = this.ExtractString((nint)ptr);
+                            // First cast to byte* to unwrap CStringPointer, then cast to nint for MemoryHelper
+                            var text = this.ExtractString((nint)(byte*)textNode->NodeText.StringPtr);
 
-                            if (!string.IsNullOrWhiteSpace(text)) textNodes.Add((this.GetAbsoluteX((nint)childNode), text));
+                            if (!string.IsNullOrWhiteSpace(text)) textNodes.Add((childNode->X, text));
                         }
                         else if (childNode->Type == NodeType.Image) {
-                            if (this.GetAbsoluteX((nint)childNode) < 50f) isHq = true;
+                            if (childNode->X < 50f) isHq = true;
                         }
                     }
 
@@ -182,19 +181,6 @@ public class LocalMarketViewScanner : ILocalMarketViewScanner, IDisposable {
         catch (Exception) {
             return MemoryHelper.ReadStringNullTerminated(stringPtr);
         }
-    }
-
-    private unsafe float GetAbsoluteX(nint nodePtr) {
-        var node = (AtkResNode*)nodePtr;
-        if (node == null) return 0;
-
-        float x = node->X;
-        var parent = node->ParentNode;
-        while (parent != null) {
-            x += parent->X;
-            parent = parent->ParentNode;
-        }
-        return x;
     }
 
     public void Dispose() {

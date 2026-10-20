@@ -10,6 +10,7 @@ public class RetainerMarketListingSaveData {
     public uint Quantity { get; set; }
     public uint PricePerUnit { get; set; }
     public DateTime ListingDate { get; set; }
+    public bool IsHq { get; set; }
 }
 
 [Serializable]

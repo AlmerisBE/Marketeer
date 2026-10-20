@@ -6,4 +6,5 @@ public class InventorySlotInfo {
     public uint ItemId { get; set; }
     public uint Quantity { get; set; }
     public uint PricePerUnit { get; set; }
+    public bool IsHq { get; set; }
 }

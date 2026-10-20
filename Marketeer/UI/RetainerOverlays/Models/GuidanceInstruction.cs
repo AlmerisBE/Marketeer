@@ -11,4 +11,5 @@ public class GuidanceInstruction {
     public string RetainerName { get; set; } = string.Empty;
     public string CharacterName { get; set; } = string.Empty;
     public uint HomeWorldId { get; set; }
+    public bool IsCrashProtected { get; set; }
 }

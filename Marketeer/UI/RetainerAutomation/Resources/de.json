@@ -25,5 +25,9 @@
   "Notification_Sale_Aborted": "Abgebrochen (Verlust): {0}",
   "Notification_Cancellation_Success": "Storniert (Verlust): {0}",
   "Notification_Price_Kept": "Belassen bei {1:N0}g: {0}",
-  "Notification_Price_Updated": "Aktualisiert auf {1:N0}g: {0}"
+  "Notification_Price_Updated": "Aktualisiert auf {1:N0}g: {0}",
+  "Legend_IncreasePrice": "Preiserhöhung erforderlich",
+  "Legend_DecreasePrice": "Preissenkung erforderlich",
+  "Guidance_Action_IncreasePrice": "Preis erhöhen",
+  "Guidance_Action_DecreasePrice": "Preis senken"
 }

@@ -14,17 +14,24 @@ public class PriceCalculationService : IPriceCalculationService {
     private IConfigurationService configService;
     private IItemResolverService itemResolver;
     private IPriceRuleProvider ruleProvider;
+    private IPriceCrashProtector crashProtector;
 
-    public PriceCalculationService(IConfigurationService configService, IItemResolverService itemResolver, IPriceRuleProvider ruleProvider) {
+    public PriceCalculationService(
+        IConfigurationService configService,
+        IItemResolverService itemResolver,
+        IPriceRuleProvider ruleProvider,
+        IPriceCrashProtector crashProtector) {
+
         this.configService = configService;
         this.itemResolver = itemResolver;
         this.ruleProvider = ruleProvider;
+        this.crashProtector = crashProtector;
     }
 
     public PriceCalculationResult CalculateTargetPrice(uint itemId, uint currentPrice, MarketItemPricing pricing, bool isHq) {
         var config = this.configService.GetConfig();
         var rule = this.ruleProvider.GetRuleForItem(itemId);
-        var result = new PriceCalculationResult { Action = PricingAction.UpdatePrice, CalculatedPrice = currentPrice };
+        var result = new PriceCalculationResult { Action = PricingAction.DecreasePrice, CalculatedPrice = currentPrice };
 
         var vendorSellPrice = this.itemResolver.ResolveVendorPrice(itemId);
         var vendorBuyPrice = this.itemResolver.ResolveVendorBuyPrice(itemId);
@@ -37,6 +44,15 @@ public class PriceCalculationService : IPriceCalculationService {
             .Where(l => !(config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore && this.IsWhitelisted(l.RetainerName, whitelist, ownRetainers, config)))
             .OrderBy(l => l.Price)
             .ToList();
+
+        // Application de la protection via le contrat agnostique
+        this.crashProtector.ApplyProtection(pricing, isHq, validCompetitors, out bool holdPrice);
+
+        if (holdPrice) {
+            result.CalculatedPrice = currentPrice;
+            result.Action = PricingAction.KeepPrice;
+            return result;
+        }
 
         if (validCompetitors.Count == 0) {
             if (currentPrice > 0) {
@@ -70,9 +86,7 @@ public class PriceCalculationService : IPriceCalculationService {
         else {
             if (isHq) {
                 bestCompetitor = validCompetitors.FirstOrDefault(l => l.IsHq);
-                if (bestCompetitor == null) {
-                    bestCompetitor = validCompetitors.FirstOrDefault(l => !l.IsHq);
-                }
+                if (bestCompetitor == null) bestCompetitor = validCompetitors.FirstOrDefault(l => !l.IsHq);
             }
             else {
                 bestCompetitor = validCompetitors.FirstOrDefault();
@@ -109,6 +123,11 @@ public class PriceCalculationService : IPriceCalculationService {
         }
 
         result.CalculatedPrice = targetPrice;
+
+        if (targetPrice == currentPrice) result.Action = PricingAction.KeepPrice;
+        else if (targetPrice > currentPrice) result.Action = PricingAction.IncreasePrice;
+        else result.Action = PricingAction.DecreasePrice;
+
         if (this.EvaluateLoss(targetPrice, vendorSellPrice, currentPrice, config, out var evaluatedAction)) {
             result.Action = evaluatedAction;
             if (evaluatedAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
@@ -131,13 +150,13 @@ public class PriceCalculationService : IPriceCalculationService {
     }
 
     private bool EvaluateLoss(uint targetPrice, uint vendorSellPrice, uint currentPrice, PluginConfiguration config, out PricingAction action) {
-        action = PricingAction.UpdatePrice;
+        action = targetPrice > currentPrice ? PricingAction.IncreasePrice : PricingAction.DecreasePrice;
         if (!config.EnforceVendorPriceMinimum || vendorSellPrice == 0 || targetPrice >= vendorSellPrice) return false;
 
         action = config.LossBehavior switch {
             MinimumPriceBehavior.KeepCurrentPrice => PricingAction.KeepPrice,
             MinimumPriceBehavior.CancelToInventory => PricingAction.CancelListing,
-            _ => PricingAction.UpdatePrice
+            _ => targetPrice > currentPrice ? PricingAction.IncreasePrice : PricingAction.DecreasePrice
         };
         return true;
     }

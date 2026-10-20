@@ -1,7 +1,8 @@
 ﻿namespace Marketeer.Core.MarketPricing.Models;
 
 public enum PricingAction {
-    UpdatePrice,
+    DecreasePrice,
+    IncreasePrice,
     KeepPrice,
     CancelListing
 }

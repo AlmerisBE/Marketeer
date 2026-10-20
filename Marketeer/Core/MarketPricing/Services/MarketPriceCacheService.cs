@@ -91,7 +91,7 @@ public class MarketPriceCacheService : IMarketPriceCacheService, IDisposable {
                             var hqKey = $"{worldId}_{hqId}";
 
                             if (!this.cache.TryGetValue(nqKey, out var nqExisting) || nqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - nqExisting.LastUpdated).TotalMinutes >= 10) {
-                                var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.Where(l => !l.IsHq).ToList(), AverageSalePrice = data.AveragePriceNq, SalesPerDay = data.NqSaleVelocity };
+                                var nqPricing = new MarketItemPricing { ItemId = nqId, Listings = data.Listings.ToList(), AverageSalePrice = data.AveragePriceNq, SalesPerDay = data.NqSaleVelocity };
                                 this.cache[nqKey] = new CachedPriceData { ItemId = nqId, Pricing = nqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
                             }
                             else {
@@ -100,7 +100,7 @@ public class MarketPriceCacheService : IMarketPriceCacheService, IDisposable {
                             }
 
                             if (!this.cache.TryGetValue(hqKey, out var hqExisting) || hqExisting.Source != PriceSourceType.LocalScanner || (DateTime.UtcNow - hqExisting.LastUpdated).TotalMinutes >= 10) {
-                                var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.Where(l => l.IsHq).ToList(), AverageSalePrice = data.AveragePriceHq, SalesPerDay = data.HqSaleVelocity };
+                                var hqPricing = new MarketItemPricing { ItemId = hqId, Listings = data.Listings.ToList(), AverageSalePrice = data.AveragePriceHq, SalesPerDay = data.HqSaleVelocity };
                                 this.cache[hqKey] = new CachedPriceData { ItemId = hqId, Pricing = hqPricing, LastUpdated = DateTime.UtcNow, Source = PriceSourceType.Universalis };
                             }
                             else {
@@ -140,22 +140,33 @@ public class MarketPriceCacheService : IMarketPriceCacheService, IDisposable {
         return results;
     }
 
-    public void UpdateLocalPrices(uint itemId, uint worldId, IReadOnlyList<LowestPriceResult> prices) {
-        var key = $"{worldId}_{itemId}";
-        uint existingAvg = 0;
+    public void UpdateLocalPrices(uint baseItemId, uint worldId, IReadOnlyList<LowestPriceResult> prices) {
+        uint nqId = baseItemId > 1000000u ? baseItemId - 1000000u : baseItemId;
+        uint hqId = nqId + 1000000u;
+        var nqKey = $"{worldId}_{nqId}";
+        var hqKey = $"{worldId}_{hqId}";
 
-        if (this.cache.TryGetValue(key, out var existing)) existingAvg = existing.Pricing.AverageSalePrice;
-
-        this.cache[key] = new CachedPriceData {
-            ItemId = itemId,
-            Pricing = new MarketItemPricing { ItemId = itemId, Listings = prices.ToList(), AverageSalePrice = existingAvg },
+        // Update NQ cache explicitly
+        uint nqAvg = this.cache.TryGetValue(nqKey, out var nqExisting) ? nqExisting.Pricing.AverageSalePrice : 0;
+        this.cache[nqKey] = new CachedPriceData {
+            ItemId = nqId,
+            Pricing = new MarketItemPricing { ItemId = nqId, Listings = prices.ToList(), AverageSalePrice = nqAvg },
             LastUpdated = DateTime.UtcNow,
             Source = PriceSourceType.LocalScanner
         };
 
-        _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, new[] { itemId }));
+        // Update HQ cache explicitly to ensure PriceCalculationService accesses the full mixed context
+        uint hqAvg = this.cache.TryGetValue(hqKey, out var hqExisting) ? hqExisting.Pricing.AverageSalePrice : 0;
+        this.cache[hqKey] = new CachedPriceData {
+            ItemId = hqId,
+            Pricing = new MarketItemPricing { ItemId = hqId, Listings = prices.ToList(), AverageSalePrice = hqAvg },
+            LastUpdated = DateTime.UtcNow,
+            Source = PriceSourceType.LocalScanner
+        };
 
-        this.logger.Debug($"[MarketPriceCache] Local cache updated instantly for item {itemId} with {prices.Count} live entries.");
+        _ = this.framework.RunOnFrameworkThread(() => this.PricesUpdated?.Invoke(worldId, new[] { nqId, hqId }));
+
+        this.logger.Debug($"[MarketPriceCache] Local cache updated instantly for item {nqId} (and HQ {hqId}) with {prices.Count} live entries.");
     }
 
     public void Dispose() {

@@ -25,5 +25,9 @@
   "Notification_Sale_Aborted": "Annulée (Perte) : {0}",
   "Notification_Cancellation_Success": "Retirée (Perte) : {0}",
   "Notification_Price_Kept": "Maintenu à {1:N0}g : {0}",
-  "Notification_Price_Updated": "Mis à jour à {1:N0}g : {0}"
+  "Notification_Price_Updated": "Mis à jour à {1:N0}g : {0}",
+  "Legend_IncreasePrice": "Hausse de prix requise",
+  "Legend_DecreasePrice": "Baisse de prix requise",
+  "Guidance_Action_IncreasePrice": "Augmenter le prix",
+  "Guidance_Action_DecreasePrice": "Diminuer le prix"
 }
