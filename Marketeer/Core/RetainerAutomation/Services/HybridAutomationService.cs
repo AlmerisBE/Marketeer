@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Marketeer.API.GameInterop.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
@@ -25,13 +26,13 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     private IPriceCalculationService priceCalculationService;
     private INotificationService notificationService;
     private IAutomationDelayProvider delayProvider;
+    private IMarketListingProvider listingProvider;
 
     private TrackedListing? currentListing;
     private DateTime sequenceStartTime;
     private DateTime nextActionAt;
     private DateTime searchResultOpenTime;
 
-    // Updated to expect MarketItemPricing models instead of raw LowestPriceResult lists
     private Task<IReadOnlyList<MarketItemPricing>>? priceFetchTask;
     private int stateMachineIndex;
 
@@ -49,7 +50,8 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         IRetainerGuidanceService guidanceService,
         IPriceCalculationService priceCalculationService,
         INotificationService notificationService,
-        IAutomationDelayProvider delayProvider) {
+        IAutomationDelayProvider delayProvider,
+        IMarketListingProvider listingProvider) {
 
         this.framework = framework;
         this.uiInteraction = uiInteraction;
@@ -62,6 +64,7 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         this.priceCalculationService = priceCalculationService;
         this.notificationService = notificationService;
         this.delayProvider = delayProvider;
+        this.listingProvider = listingProvider;
 
         this.priceProvider.PricesUpdated += this.OnPricesUpdated;
         this.framework.Update += this.OnFrameworkUpdate;
@@ -84,13 +87,15 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
     public void StartNewSale(uint itemId, string itemName) {
         if (this.IsActive) return;
 
+        var activeId = this.listingProvider.GetActiveRetainerId() ?? 0;
+
         this.IsActive = true;
         this.currentListing = new TrackedListing {
             ItemId = itemId,
             ItemName = itemName,
             PricePerUnit = 0,
             Quantity = 1,
-            AssociatedRetainerId = 0,
+            AssociatedRetainerId = activeId, // Attaches the listing to the currently visible retainer
             IsHq = itemId > 1000000u
         };
 
@@ -110,7 +115,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
         if (updatedItemIds.Contains(listing.ItemId)) {
             var localPlayer = this.objectTable.LocalPlayer;
             if (localPlayer != null && localPlayer.CurrentWorld.RowId == worldId) {
-                // Updated to call GetPricingsAsync
                 this.priceFetchTask = this.priceProvider.GetPricingsAsync(new[] { listing.ItemId }, worldId, false);
             }
         }
@@ -159,7 +163,6 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
                             var localPlayer = this.objectTable.LocalPlayer;
                             if (localPlayer != null && this.currentListing != null) {
                                 this.logger.Warning("[HybridAutomation] Live scanner timed out or market is empty. Falling back to API.");
-                                // Updated to call GetPricingsAsync
                                 this.priceFetchTask = this.priceProvider.GetPricingsAsync(new[] { this.currentListing.ItemId }, localPlayer.CurrentWorld.RowId, true);
                             }
                             this.searchResultOpenTime = DateTime.MinValue;
@@ -190,33 +193,44 @@ public class HybridAutomationService : IHybridAutomationService, IDisposable {
 
         this.uiInteraction.CloseItemSearchResult();
 
-        bool isNewSale = listing.AssociatedRetainerId == 0;
+        bool isNewSale = listing.PricePerUnit == 0;
 
-        if (isNewSale && (calcResult.Action == PricingAction.CancelListing || (calcResult.Action == PricingAction.KeepPrice && listing.PricePerUnit == 0))) {
+        string reasonKey = $"Reason_{calcResult.Reason}";
+        string localizedReason = this.localization.Translate(reasonKey, calcResult.ContextData);
+        if (localizedReason == reasonKey) localizedReason = calcResult.Reason.ToString();
+
+        if (isNewSale && (calcResult.Action == PricingAction.CancelListing || (calcResult.Action == PricingAction.KeepPrice && calcResult.CalculatedPrice == 0))) {
             this.logger.Info($"[HybridAutomation] Loss prevention triggered for new sale. Aborting {listing.ItemName}.");
             this.uiInteraction.CloseUnexpectedWindows();
 
             var format = this.localization.Translate("Notification_Sale_Aborted") ?? "{0} sale aborted to prevent loss.";
-            this.notificationService.ShowError("Marketeer", string.Format(format, listing.ItemName));
+
+            string fullMsg = $"{string.Format(format, listing.ItemName)}\n{localizedReason}";
+            this.notificationService.ShowError("Marketeer", fullMsg);
         }
         else if (calcResult.Action == PricingAction.CancelListing) {
             this.logger.Info($"[HybridAutomation] Loss prevention triggered. Emitting cancellation request for {listing.ItemName}.");
             this.CancellationRequested?.Invoke(listing.ItemId);
         }
-        else if (calcResult.Action == PricingAction.KeepPrice) {
+        else if (calcResult.Action == PricingAction.KeepPrice && !isNewSale) {
             this.logger.Info($"[HybridAutomation] Target price is identical or restricted. Keeping current price.");
             this.uiInteraction.CloseUnexpectedWindows();
 
             var format = this.localization.Translate("Notification_Price_Kept") ?? "{0} price kept at {1:N0}g.";
-            this.notificationService.ShowWarning("Marketeer", string.Format(format, listing.ItemName, calcResult.CalculatedPrice));
+
+            string fullMsg = $"{string.Format(format, listing.ItemName, calcResult.CalculatedPrice)}\n{localizedReason}";
+            this.notificationService.ShowWarning("Marketeer", fullMsg);
         }
         else {
             this.uiInteraction.SetPriceAndConfirm(calcResult.CalculatedPrice);
-            if (!isNewSale) this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, calcResult.CalculatedPrice);
+
+            this.listingTracker.RegisterPriceUpdate(listing.AssociatedRetainerId, listing.ItemId, calcResult.CalculatedPrice);
             this.logger.Info($"[HybridAutomation] Price natively updated to {calcResult.CalculatedPrice}.");
 
             var format = this.localization.Translate("Notification_Price_Updated") ?? "{0} updated to {1:N0}g.";
-            this.notificationService.ShowSuccess("Marketeer", string.Format(format, listing.ItemName, calcResult.CalculatedPrice));
+
+            string fullMsg = $"{string.Format(format, listing.ItemName, calcResult.CalculatedPrice)}\n{localizedReason}";
+            this.notificationService.ShowSuccess("Marketeer", fullMsg);
         }
 
         this.guidanceService.ClearInstruction();

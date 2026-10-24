@@ -55,7 +55,11 @@ public class MarketListingTrackerService : IMarketListingTrackerService, IDispos
         lock (config) {
             foreach (var charData in config.FinancialRecords.Values) {
                 if (charData.Retainers.TryGetValue(retainerId, out var rData)) {
-                    var listing = rData.MarketListings.Values.FirstOrDefault(l => l.ItemId == itemId);
+
+                    var listing = rData.MarketListings.Values.FirstOrDefault(l => l.ItemId == itemId && l.PricePerUnit != newPrice);
+
+                    if (listing == null) listing = rData.MarketListings.Values.FirstOrDefault(l => l.ItemId == itemId);
+
                     if (listing != null) {
                         if (listing.PricePerUnit != newPrice) {
                             listing.PricePerUnit = newPrice;

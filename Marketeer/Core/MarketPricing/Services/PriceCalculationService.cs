@@ -31,11 +31,12 @@ public class PriceCalculationService : IPriceCalculationService {
     public PriceCalculationResult CalculateTargetPrice(uint itemId, uint currentPrice, MarketItemPricing pricing, bool isHq) {
         var config = this.configService.GetConfig();
         var rule = this.ruleProvider.GetRuleForItem(itemId);
-        var result = new PriceCalculationResult { Action = PricingAction.DecreasePrice, CalculatedPrice = currentPrice };
+        var result = new PriceCalculationResult { Action = PricingAction.DecreasePrice, CalculatedPrice = currentPrice, Reason = PricingReason.Unknown };
 
         if (config.EnableStorageProtection && currentPrice >= config.StorageProtectionThreshold) {
             result.CalculatedPrice = currentPrice;
             result.Action = PricingAction.KeepPrice;
+            result.Reason = PricingReason.StorageProtection;
             return result;
         }
 
@@ -45,18 +46,36 @@ public class PriceCalculationService : IPriceCalculationService {
         var ownRetainers = this.GetOwnRetainers(config);
         var whitelist = config.CompetitorWhitelist ?? new List<string>();
 
+        // Dynamic relative outlier filter using user configuration
+        uint maxSanePrice = pricing.AverageSalePrice > 0 ? Math.Max(config.OutlierMinimumFloor, (uint)(pricing.AverageSalePrice * config.OutlierMultiplier)) : uint.MaxValue;
+
         var validCompetitors = pricing.Listings
             .Where(l => !ownRetainers.Contains(l.RetainerName))
             .Where(l => !(config.CompetitorWhitelistBehavior == WhitelistBehavior.Ignore && this.IsWhitelisted(l.RetainerName, whitelist, ownRetainers, config)))
             .Where(l => !config.EnableStorageProtection || l.Price < config.StorageProtectionThreshold)
+            .Where(l => l.Price <= maxSanePrice)
             .OrderBy(l => l.Price)
             .ToList();
 
         this.crashProtector.ApplyProtection(pricing, isHq, validCompetitors, out bool holdPrice);
 
+        // Fill competitor data early so UI can display who we are matching/crashing against
+        var cheapestValid = validCompetitors.FirstOrDefault(l => l.IsHq == isHq) ?? validCompetitors.FirstOrDefault();
+        if (cheapestValid != null) {
+            result.CompetitorPrice = cheapestValid.Price;
+            result.ContextData = cheapestValid.RetainerName;
+        }
+
         if (holdPrice) {
-            result.CalculatedPrice = currentPrice;
-            result.Action = PricingAction.KeepPrice;
+            if (currentPrice == 0) {
+                result.CalculatedPrice = pricing.AverageSalePrice > 0 ? pricing.AverageSalePrice : this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+                result.Action = PricingAction.IncreasePrice;
+            }
+            else {
+                result.CalculatedPrice = currentPrice;
+                result.Action = PricingAction.KeepPrice;
+            }
+            result.Reason = PricingReason.MarketCrashProtection;
             return result;
         }
 
@@ -64,10 +83,17 @@ public class PriceCalculationService : IPriceCalculationService {
             if (currentPrice > 0) {
                 result.CalculatedPrice = currentPrice;
                 result.Action = PricingAction.KeepPrice;
+                result.Reason = PricingReason.AlreadyLowest;
             }
             else {
-                if (pricing.Listings.Count > 0) result.CalculatedPrice = pricing.Listings.Min(l => l.Price);
-                else result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+                if (pricing.Listings.Count > 0) {
+                    result.CalculatedPrice = pricing.Listings.Min(l => l.Price);
+                    result.Reason = PricingReason.AlreadyLowest;
+                }
+                else {
+                    result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+                    result.Reason = PricingReason.NoCompetition;
+                }
 
                 if (result.CalculatedPrice == currentPrice) result.Action = PricingAction.KeepPrice;
                 else if (result.CalculatedPrice > currentPrice) result.Action = PricingAction.IncreasePrice;
@@ -76,6 +102,7 @@ public class PriceCalculationService : IPriceCalculationService {
                 if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
                     result.Action = lossAction;
                     if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
+                    result.Reason = PricingReason.VendorMinimumReached;
                 }
             }
             return result;
@@ -89,21 +116,18 @@ public class PriceCalculationService : IPriceCalculationService {
 
         LowestPriceResult? bestCompetitor = null;
 
-        if (ignoreHq) {
-            bestCompetitor = validCompetitors.FirstOrDefault();
-        }
+        if (ignoreHq) bestCompetitor = validCompetitors.FirstOrDefault();
         else {
             if (isHq) {
                 bestCompetitor = validCompetitors.FirstOrDefault(l => l.IsHq);
                 if (bestCompetitor == null) bestCompetitor = validCompetitors.FirstOrDefault(l => !l.IsHq);
             }
-            else {
-                bestCompetitor = validCompetitors.FirstOrDefault();
-            }
+            else bestCompetitor = validCompetitors.FirstOrDefault();
         }
 
         if (bestCompetitor == null) {
             result.CalculatedPrice = this.CalculateFallbackPrice(pricing, vendorSellPrice, vendorBuyPrice, config);
+            result.Reason = PricingReason.NoCompetition;
 
             if (result.CalculatedPrice == currentPrice) result.Action = PricingAction.KeepPrice;
             else if (result.CalculatedPrice > currentPrice) result.Action = PricingAction.IncreasePrice;
@@ -112,6 +136,7 @@ public class PriceCalculationService : IPriceCalculationService {
             if (this.EvaluateLoss(result.CalculatedPrice, vendorSellPrice, currentPrice, config, out var lossAction)) {
                 result.Action = lossAction;
                 if (lossAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
+                result.Reason = PricingReason.VendorMinimumReached;
             }
             return result;
         }
@@ -119,32 +144,39 @@ public class PriceCalculationService : IPriceCalculationService {
         uint targetPrice = currentPrice;
         bool isWhitelistedCompetitor = this.IsWhitelisted(bestCompetitor.RetainerName, whitelist, ownRetainers, config);
 
+        result.ContextData = bestCompetitor.RetainerName;
+        result.CompetitorPrice = bestCompetitor.Price;
+
         if (!ignoreHq && isHq && !bestCompetitor.IsHq) {
             targetPrice = (uint)Math.Floor(bestCompetitor.Price * (1.0 + (premium / 100.0)));
+            result.Reason = PricingReason.UndercutCompetitor;
         }
         else {
             if (isWhitelistedCompetitor && config.CompetitorWhitelistBehavior == WhitelistBehavior.MatchPrice) {
                 targetPrice = bestCompetitor.Price;
+                result.Reason = PricingReason.MatchedWhitelistedCompetitor;
             }
             else {
-                if (undercutMode == UndercutMode.Absolute) {
-                    targetPrice = (uint)Math.Max(1, (int)bestCompetitor.Price - (int)undercutAmount);
-                }
-                else {
-                    targetPrice = (uint)Math.Max(1, bestCompetitor.Price - (bestCompetitor.Price * (undercutPct / 100.0)));
-                }
+                if (undercutMode == UndercutMode.Absolute) targetPrice = (uint)Math.Max(1, (int)bestCompetitor.Price - (int)undercutAmount);
+                else targetPrice = (uint)Math.Max(1, bestCompetitor.Price - (bestCompetitor.Price * (undercutPct / 100.0)));
+
+                result.Reason = PricingReason.UndercutCompetitor;
             }
         }
 
         result.CalculatedPrice = targetPrice;
 
-        if (targetPrice == currentPrice) result.Action = PricingAction.KeepPrice;
+        if (targetPrice == currentPrice) {
+            result.Action = PricingAction.KeepPrice;
+            if (result.Reason == PricingReason.UndercutCompetitor) result.Reason = PricingReason.AlreadyLowest;
+        }
         else if (targetPrice > currentPrice) result.Action = PricingAction.IncreasePrice;
         else result.Action = PricingAction.DecreasePrice;
 
         if (this.EvaluateLoss(targetPrice, vendorSellPrice, currentPrice, config, out var evaluatedAction)) {
             result.Action = evaluatedAction;
             if (evaluatedAction == PricingAction.KeepPrice) result.CalculatedPrice = currentPrice;
+            result.Reason = PricingReason.VendorMinimumReached;
         }
 
         return result;

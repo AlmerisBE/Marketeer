@@ -29,5 +29,13 @@
   "Legend_IncreasePrice": "Price increase required",
   "Legend_DecreasePrice": "Price decrease required",
   "Guidance_Action_IncreasePrice": "Increase Price",
-  "Guidance_Action_DecreasePrice": "Decrease Price"
+  "Guidance_Action_DecreasePrice": "Decrease Price",
+  "Reason_Unknown": "Unknown reason.",
+  "Reason_StorageProtection": "Storage item protected.",
+  "Reason_MarketCrashProtection": "Market crash protection active.",
+  "Reason_NoCompetition": "No competition (Fallback price).",
+  "Reason_VendorMinimumReached": "Vendor minimum price limit reached.",
+  "Reason_MatchedWhitelistedCompetitor": "Matching ally ({0}).",
+  "Reason_UndercutCompetitor": "Undercutting {0}.",
+  "Reason_AlreadyLowest": "Already at target price."
 }

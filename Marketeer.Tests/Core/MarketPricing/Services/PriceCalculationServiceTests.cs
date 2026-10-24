@@ -35,11 +35,11 @@ public class PriceCalculationServiceTests {
         var service = new PriceCalculationService(this.configService, this.itemResolver, this.ruleProvider, this.crashProtector);
         var pricing = new MarketItemPricing { ItemId = 1, Listings = new List<LowestPriceResult>() };
 
-        // currentPrice = 0, calculated target = 2000 -> Price increases
         var result = service.CalculateTargetPrice(1, 0, pricing, false);
 
         Assert.Equal(PricingAction.IncreasePrice, result.Action);
         Assert.Equal(2000u, result.CalculatedPrice);
+        Assert.Equal(PricingReason.NoCompetition, result.Reason);
     }
 
     [Fact]
@@ -55,11 +55,12 @@ public class PriceCalculationServiceTests {
             }
         };
 
-        // currentPrice = 6000, calculated target = 4999 -> Price decreases
         var result = service.CalculateTargetPrice(1, 6000, pricing, false);
 
         Assert.Equal(PricingAction.DecreasePrice, result.Action);
         Assert.Equal(4999u, result.CalculatedPrice);
+        Assert.Equal(PricingReason.UndercutCompetitor, result.Reason);
+        Assert.Equal("Competitor", result.ContextData);
     }
 
     [Fact]
@@ -75,11 +76,11 @@ public class PriceCalculationServiceTests {
             }
         };
 
-        // currentPrice = 5000, calculated target = 1100 -> Price decreases
         var result = service.CalculateTargetPrice(1, 5000, pricing, true);
 
         Assert.Equal(PricingAction.DecreasePrice, result.Action);
-        Assert.Equal(1100u, result.CalculatedPrice); // 1000 + 10%
+        Assert.Equal(1100u, result.CalculatedPrice);
+        Assert.Equal(PricingReason.UndercutCompetitor, result.Reason);
     }
 
     [Fact]
@@ -96,11 +97,11 @@ public class PriceCalculationServiceTests {
             }
         };
 
-        // currentPrice = 5000, calculated target = 1995 -> Price decreases
         var result = service.CalculateTargetPrice(1, 5000, pricing, true);
 
         Assert.Equal(PricingAction.DecreasePrice, result.Action);
         Assert.Equal(1995u, result.CalculatedPrice);
+        Assert.Equal(PricingReason.UndercutCompetitor, result.Reason);
     }
 
     [Fact]
@@ -108,7 +109,6 @@ public class PriceCalculationServiceTests {
         this.configService.GetConfig().Returns(new PluginConfiguration());
         this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { UndercutMode = UndercutMode.Absolute, UndercutAmount = 1 });
 
-        // Mock the out parameter to simulate a crash protection trigger that enforces holding the true value
         this.crashProtector.When(x => x.ApplyProtection(Arg.Any<MarketItemPricing>(), Arg.Any<bool>(), Arg.Any<List<LowestPriceResult>>(), out Arg.Any<bool>()))
             .Do(x => x[3] = true);
 
@@ -124,5 +124,6 @@ public class PriceCalculationServiceTests {
 
         Assert.Equal(PricingAction.KeepPrice, result.Action);
         Assert.Equal(6000u, result.CalculatedPrice);
+        Assert.Equal(PricingReason.MarketCrashProtection, result.Reason);
     }
 }

@@ -55,7 +55,9 @@ public class ListingActionResolverService : IListingActionResolverService, IDisp
     }
 
     public void ProcessListingClick(TrackedListing listing) {
-        var action = this.ResolveAction(listing.ItemId);
+        if (listing == null) return;
+
+        var action = this.ResolveAction(listing);
 
         if (action == ListingClickAction.CancelListing) {
             this.logger.Info($"[ListingActionResolver] Routing {listing.ItemName} to cancellation.");
@@ -90,20 +92,18 @@ public class ListingActionResolverService : IListingActionResolverService, IDisp
         }
     }
 
-    public ListingClickAction ResolveAction(uint itemId) {
+    public ListingClickAction ResolveAction(TrackedListing clickedListing) {
+        if (clickedListing == null) return ListingClickAction.None;
+
         var config = this.configService.GetConfig();
         bool isRedLine = false;
 
-        var activeListings = this.listingProvider.GetActiveRetainerListings();
-        var clickedListing = activeListings.FirstOrDefault(l => l.ItemId == itemId);
-
-        // Protection de stockage : empêche les clics manuels ou automatisés de déclencher une mise à jour sur des objets hors-normes
-        if (config.EnableStorageProtection && clickedListing != null && clickedListing.PricePerUnit >= config.StorageProtectionThreshold) {
-            this.logger.Info($"[ListingActionResolver] Item {itemId} is marked as a storage/outlier listing. Automation aborted.");
+        if (config.EnableStorageProtection && clickedListing.PricePerUnit >= config.StorageProtectionThreshold) {
+            this.logger.Info($"[ListingActionResolver] Item {clickedListing.ItemId} is marked as a storage/outlier listing. Automation aborted.");
             return ListingClickAction.None;
         }
 
-        var undercut = this.competitionState.GetUndercutItems().FirstOrDefault(u => u.ItemId == itemId);
+        var undercut = this.competitionState.GetUndercutItems().FirstOrDefault(u => u.ItemId == clickedListing.ItemId);
 
         if (undercut != null && undercut.AnomalyData != null && undercut.AnomalyData.IsAnomalyDetected) {
             if (config.AnomalyStrategy == AnomalyDefenseStrategy.AlertAndPause || config.AnomalyStrategy == AnomalyDefenseStrategy.HoldPrice) {
@@ -115,15 +115,15 @@ public class ListingActionResolverService : IListingActionResolverService, IDisp
             isRedLine = true;
         }
         else {
-            uint vendorSellPrice = this.itemResolver.ResolveVendorPrice(itemId);
+            uint vendorSellPrice = this.itemResolver.ResolveVendorPrice(clickedListing.ItemId);
 
-            if (config.EnforceVendorPriceMinimum && vendorSellPrice > 0 && clickedListing != null && clickedListing.PricePerUnit <= vendorSellPrice) {
+            if (config.EnforceVendorPriceMinimum && vendorSellPrice > 0 && clickedListing.PricePerUnit <= vendorSellPrice) {
                 isRedLine = true;
             }
         }
 
         if (isRedLine && config.LossBehavior == MinimumPriceBehavior.CancelToInventory) {
-            this.logger.Info($"[ListingActionResolver] Loss condition (Red Line) detected for Item ID {itemId}. Routing to cancellation.");
+            this.logger.Info($"[ListingActionResolver] Loss condition (Red Line) detected for Item ID {clickedListing.ItemId}. Routing to cancellation.");
             return ListingClickAction.CancelListing;
         }
 

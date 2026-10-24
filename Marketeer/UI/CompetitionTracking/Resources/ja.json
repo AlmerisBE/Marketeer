@@ -59,5 +59,9 @@
   "Competition_ColAveragePrice": "平均価格 (差額)",
   "Competition_ColActions": "操作",
   "Tooltip_AddWhitelist": "競合他社をホワイトリストに追加",
-  "Tooltip_OpenChart": "Universalisで価格履歴を表示"
+  "Tooltip_OpenChart": "Universalisで価格履歴を表示",
+  "Config_OutlierMultiplier": "外れ値の倍率 (x 平均価格)",
+  "Config_OutlierMultiplier_Tooltip": "平均価格にこの倍率を掛けた値を超える価格設定をしている競合は無視されます。",
+  "Config_OutlierMinimumFloor": "外れ値の最小下限 (ギル)",
+  "Config_OutlierMinimumFloor_Tooltip": "この値以下の価格は決して外れ値と見なされず、非常に安価なアイテムでの誤検知を防ぎます。"
 }

@@ -29,5 +29,13 @@
   "Legend_IncreasePrice": "値上げが必要",
   "Legend_DecreasePrice": "値下げが必要",
   "Guidance_Action_IncreasePrice": "価格を上げる",
-  "Guidance_Action_DecreasePrice": "価格を下げる"
+  "Guidance_Action_DecreasePrice": "価格を下げる",
+  "Reason_Unknown": "理由不明。",
+  "Reason_StorageProtection": "保管アイテム保護。",
+  "Reason_MarketCrashProtection": "市場暴落保護が有効。",
+  "Reason_NoCompetition": "競合なし（フォールバック価格）。",
+  "Reason_VendorMinimumReached": "NPC買取価格の制限に到達。",
+  "Reason_MatchedWhitelistedCompetitor": "味方と価格を合わせる ({0})。",
+  "Reason_UndercutCompetitor": "{0} を値下げ。",
+  "Reason_AlreadyLowest": "すでに目標価格です。"
 }

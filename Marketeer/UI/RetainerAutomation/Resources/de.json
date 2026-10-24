@@ -29,5 +29,13 @@
   "Legend_IncreasePrice": "Preiserhöhung erforderlich",
   "Legend_DecreasePrice": "Preissenkung erforderlich",
   "Guidance_Action_IncreasePrice": "Preis erhöhen",
-  "Guidance_Action_DecreasePrice": "Preis senken"
+  "Guidance_Action_DecreasePrice": "Preis senken",
+  "Reason_Unknown": "Unbekannter Grund.",
+  "Reason_StorageProtection": "Lagergegenstand geschützt.",
+  "Reason_MarketCrashProtection": "Marktcrash-Schutz aktiv.",
+  "Reason_NoCompetition": "Keine Konkurrenz (Standardpreis).",
+  "Reason_VendorMinimumReached": "NPC-Mindestpreis erreicht.",
+  "Reason_MatchedWhitelistedCompetitor": "Anpassung an Verbündeten ({0}).",
+  "Reason_UndercutCompetitor": "Unterbietet {0}.",
+  "Reason_AlreadyLowest": "Bereits auf Zielpreis."
 }

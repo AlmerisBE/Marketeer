@@ -1,115 +1,92 @@
 ﻿using Marketeer.API.Universalis.Models;
-using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.CompetitionTracking.Models;
 using Marketeer.Core.CompetitionTracking.Services;
-using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.MarketStrategy.Contracts;
+using Marketeer.Core.MarketStrategy.Models;
 using NSubstitute;
 using Xunit;
 
 namespace Marketeer.Tests.Core.CompetitionTracking.Services;
 
 public class CompetitionEvaluatorServiceTests {
-    private IConfigurationService configService;
-    private IWhitelistManagerService whitelistManager;
+    private IPriceCalculationService priceCalculationService;
     private IMarketAnomalyDetector anomalyDetector;
-    private ICompetitionRuleProvider ruleProvider;
 
     public CompetitionEvaluatorServiceTests() {
-        this.configService = Substitute.For<IConfigurationService>();
-        this.whitelistManager = Substitute.For<IWhitelistManagerService>();
+        this.priceCalculationService = Substitute.For<IPriceCalculationService>();
         this.anomalyDetector = Substitute.For<IMarketAnomalyDetector>();
-        this.ruleProvider = Substitute.For<ICompetitionRuleProvider>();
+    }
+
+    private CompetitionEvaluatorService CreateService() {
+        return new CompetitionEvaluatorService(this.priceCalculationService, this.anomalyDetector);
     }
 
     [Fact]
-    public void TryEvaluateListing_HqVsHq_UndercutsLowestHq() {
-        this.configService.GetConfig().Returns(new PluginConfiguration());
-        this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { UndercutMode = UndercutMode.Absolute, UndercutAmount = 1 });
+    public void TryEvaluateListing_WithEmptyListings_ReturnsFalse() {
+        var service = this.CreateService();
+        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 1000 };
+        var pricing = new MarketItemPricing { ItemId = 1, Listings = new List<LowestPriceResult>() };
 
-        var service = new CompetitionEvaluatorService(this.configService, this.whitelistManager, this.anomalyDetector, this.ruleProvider);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 1, "Item", out var undercut);
 
-        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 5000, IsHq = true, RetainerName = "Me" };
-        var pricing = new MarketItemPricing {
-            ItemId = 1,
-            Listings = new List<LowestPriceResult> {
-                new LowestPriceResult { Price = 2000, RetainerName = "CheapNQ", IsHq = false },
-                new LowestPriceResult { Price = 4000, RetainerName = "TargetHQ", IsHq = true }
-            }
-        };
-
-        bool result = service.TryEvaluateListing(listing, pricing, "PlayerName", 33u, "Test Item", out var undercut);
-
-        Assert.True(result);
-        Assert.Equal(3999u, undercut!.TargetPrice);
-        Assert.Equal("TargetHQ", undercut.CompetitorName);
+        Assert.False(result);
+        Assert.Null(undercut);
     }
 
     [Fact]
-    public void TryEvaluateListing_HqVsNqWithPremium_AppliesPremium() {
-        this.configService.GetConfig().Returns(new PluginConfiguration());
-        this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { HqPremiumPercentage = 20.0, UndercutMode = UndercutMode.Absolute, UndercutAmount = 1 });
+    public void TryEvaluateListing_WhenAlreadyLowest_ReturnsFalse() {
+        var service = this.CreateService();
+        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 1000 };
+        var pricing = new MarketItemPricing { ItemId = 1, Listings = new List<LowestPriceResult> { new LowestPriceResult { Price = 1000 } } };
 
-        var service = new CompetitionEvaluatorService(this.configService, this.whitelistManager, this.anomalyDetector, this.ruleProvider);
+        this.priceCalculationService.CalculateTargetPrice(1, 1000, pricing, false)
+            .Returns(new PriceCalculationResult { Action = PricingAction.KeepPrice, Reason = PricingReason.AlreadyLowest });
 
-        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 5000, IsHq = true, RetainerName = "Me" };
-        var pricing = new MarketItemPricing {
-            ItemId = 1,
-            Listings = new List<LowestPriceResult> {
-                new LowestPriceResult { Price = 1000, RetainerName = "CheapNQ", IsHq = false }
-            }
-        };
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 1, "Item", out var undercut);
 
-        bool result = service.TryEvaluateListing(listing, pricing, "PlayerName", 33u, "Test Item", out var undercut);
-
-        Assert.True(result);
-        Assert.Equal(1200u, undercut!.TargetPrice); // 1000 + 20%
-        Assert.Equal("CheapNQ", undercut.CompetitorName);
+        Assert.False(result);
+        Assert.Null(undercut);
     }
 
     [Fact]
-    public void TryEvaluateListing_WithIgnoreHq_UndercutsLowestRegardlessOfQuality() {
-        this.configService.GetConfig().Returns(new PluginConfiguration());
-        this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { IgnoreHq = true, UndercutMode = UndercutMode.Absolute, UndercutAmount = 1 });
+    public void TryEvaluateListing_WhenUndercutNeeded_ReturnsTrueAndMapsData() {
+        var service = this.CreateService();
+        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 2000, Quantity = 5, RetainerName = "MyRetainer", SlotIndex = 0 };
+        var pricing = new MarketItemPricing { ItemId = 1, AverageSalePrice = 1500, Listings = new List<LowestPriceResult> { new LowestPriceResult { Price = 1500 } } };
 
-        var service = new CompetitionEvaluatorService(this.configService, this.whitelistManager, this.anomalyDetector, this.ruleProvider);
+        this.priceCalculationService.CalculateTargetPrice(1, 2000, pricing, false)
+            .Returns(new PriceCalculationResult { Action = PricingAction.DecreasePrice, CalculatedPrice = 1499, CompetitorPrice = 1500, ContextData = "Rival" });
 
-        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 5000, IsHq = true, RetainerName = "Me" };
-        var pricing = new MarketItemPricing {
-            ItemId = 1,
-            Listings = new List<LowestPriceResult> {
-                new LowestPriceResult { Price = 2000, RetainerName = "CheapNQ", IsHq = false },
-                new LowestPriceResult { Price = 4000, RetainerName = "ExpensiveHQ", IsHq = true }
-            }
-        };
-
-        bool result = service.TryEvaluateListing(listing, pricing, "PlayerName", 33u, "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 1, "Item", out var undercut);
 
         Assert.True(result);
-        Assert.Equal(1999u, undercut!.TargetPrice);
-        Assert.Equal("CheapNQ", undercut.CompetitorName);
+        Assert.NotNull(undercut);
+        Assert.Equal(1499u, undercut.TargetPrice);
+        Assert.Equal(1500u, undercut.ServerCheapestPrice);
+        Assert.Equal("Rival", undercut.CompetitorName);
+        Assert.Equal(PricingAction.DecreasePrice, undercut.SuggestedAction);
     }
 
     [Fact]
-    public void TryEvaluateListing_AutoHealsMarket_WhenOurPriceIsCheaperThanTarget() {
-        this.configService.GetConfig().Returns(new PluginConfiguration());
-        this.ruleProvider.GetRuleForItem(1).Returns(new PricingRule { UndercutMode = UndercutMode.Absolute, UndercutAmount = 1 });
+    public void TryEvaluateListing_WithMarketCrash_MapsAnomalyData() {
+        var service = this.CreateService();
+        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 5000 };
+        var pricing = new MarketItemPricing { ItemId = 1, Listings = new List<LowestPriceResult> { new LowestPriceResult { Price = 100 } } };
+        var anomaly = new AnomalyReport { IsAnomalyDetected = true };
 
-        var service = new CompetitionEvaluatorService(this.configService, this.whitelistManager, this.anomalyDetector, this.ruleProvider);
+        this.priceCalculationService.CalculateTargetPrice(1, 5000, pricing, false)
+            .Returns(new PriceCalculationResult { Action = PricingAction.KeepPrice, Reason = PricingReason.MarketCrashProtection, CalculatedPrice = 5000 });
 
-        var listing = new RetainerListing { ItemId = 1, CurrentPrice = 100, IsHq = false, RetainerName = "Me" };
-        var pricing = new MarketItemPricing {
-            ItemId = 1,
-            Listings = new List<LowestPriceResult> {
-                new LowestPriceResult { Price = 5000, RetainerName = "Competitor", IsHq = false }
-            }
-        };
+        this.anomalyDetector.EvaluateMarket(pricing, false).Returns(anomaly);
 
-        bool result = service.TryEvaluateListing(listing, pricing, "PlayerName", 33u, "Test Item", out var undercut);
+        bool result = service.TryEvaluateListing(listing, pricing, "Player", 1, "Item", out var undercut);
 
         Assert.True(result);
-        Assert.Equal(4999u, undercut!.TargetPrice); // Raised price from 100 to 4999!
+        Assert.NotNull(undercut);
+        Assert.Equal(PricingAction.KeepPrice, undercut.SuggestedAction);
+        Assert.NotNull(undercut.AnomalyData);
+        Assert.True(undercut.AnomalyData.IsAnomalyDetected);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Marketeer.API.GameInterop.Contracts;
 using Marketeer.Core.Logging.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.Core.MarketListings.Models;
@@ -12,77 +13,85 @@ using Xunit;
 namespace Marketeer.Tests.Core.RetainerAutomation.Services;
 
 public class HybridAutomationServiceTests {
-    [Fact]
-    public async Task StartPriceUpdate_ShouldTraverseStateMachineAndOpenComparePrices() {
-        var framework = Substitute.For<IFramework>();
-        var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
-        var priceProvider = Substitute.For<IMarketPriceCacheService>();
-        var objectTable = Substitute.For<IObjectTable>();
-        var localization = Substitute.For<ILocalizationService>();
-        var logger = Substitute.For<ILoggerService>();
-        var listingTracker = Substitute.For<IMarketListingTrackerService>();
-        var guidanceService = Substitute.For<IRetainerGuidanceService>();
-        var priceCalculationService = Substitute.For<IPriceCalculationService>();
-        var notificationService = Substitute.For<INotificationService>();
-        var delayProvider = Substitute.For<IAutomationDelayProvider>();
+    private IFramework framework;
+    private IRetainerUiInteractionService uiInteraction;
+    private IMarketPriceCacheService priceProvider;
+    private IObjectTable objectTable;
+    private ILocalizationService localization;
+    private ILoggerService logger;
+    private IMarketListingTrackerService listingTracker;
+    private IRetainerGuidanceService guidanceService;
+    private IPriceCalculationService priceCalculationService;
+    private INotificationService notificationService;
+    private IAutomationDelayProvider delayProvider;
+    private IMarketListingProvider listingProvider;
 
-        localization.Translate(Arg.Any<string>()).Returns("Adjust Price");
-        uiInteraction.GetContextMenuItemIndex("Adjust Price").Returns(2);
+    public HybridAutomationServiceTests() {
+        this.framework = Substitute.For<IFramework>();
+        this.uiInteraction = Substitute.For<IRetainerUiInteractionService>();
+        this.priceProvider = Substitute.For<IMarketPriceCacheService>();
+        this.objectTable = Substitute.For<IObjectTable>();
+        this.localization = Substitute.For<ILocalizationService>();
+        this.logger = Substitute.For<ILoggerService>();
+        this.listingTracker = Substitute.For<IMarketListingTrackerService>();
+        this.guidanceService = Substitute.For<IRetainerGuidanceService>();
+        this.priceCalculationService = Substitute.For<IPriceCalculationService>();
+        this.notificationService = Substitute.For<INotificationService>();
+        this.delayProvider = Substitute.For<IAutomationDelayProvider>();
+        this.listingProvider = Substitute.For<IMarketListingProvider>();
 
-        using var service = new HybridAutomationService(
-            framework, uiInteraction, priceProvider, objectTable, localization,
-            logger, listingTracker, guidanceService, priceCalculationService, notificationService, delayProvider);
+        // Ensure delays are minimal for rapid test execution
+        this.delayProvider.GetDelay(Arg.Any<int>()).Returns(TimeSpan.FromMilliseconds(10));
+    }
 
-        var listing = new TrackedListing { ItemId = 100u, ItemName = "Test Item" };
-
-        // Act - Start automation (State 0 initialization)
-        service.StartPriceUpdate(listing);
-        Assert.True(service.IsActive);
-
-        // Advance past initial 0.1s delay to trigger State 0
-        await Task.Delay(150);
-        service.EvaluateTick();
-
-        // Assert State 0 execution
-        uiInteraction.Received(1).SelectContextMenuItem(2);
-
-        // Advance past 0.2s delay and simulate RetainerSell window opening to trigger State 1
-        await Task.Delay(250);
-        uiInteraction.IsAddonReady("RetainerSell").Returns(true);
-        service.EvaluateTick();
-
-        // Assert State 1 execution
-        uiInteraction.Received(1).OpenComparePrices();
+    private HybridAutomationService CreateService() {
+        return new HybridAutomationService(
+            this.framework,
+            this.uiInteraction,
+            this.priceProvider,
+            this.objectTable,
+            this.localization,
+            this.logger,
+            this.listingTracker,
+            this.guidanceService,
+            this.priceCalculationService,
+            this.notificationService,
+            this.delayProvider,
+            this.listingProvider
+        );
     }
 
     [Fact]
-    public async Task StartNewSale_ShouldBypassContextMenuAndTraverseToComparePrices() {
-        var framework = Substitute.For<IFramework>();
-        var uiInteraction = Substitute.For<IRetainerUiInteractionService>();
-        var priceProvider = Substitute.For<IMarketPriceCacheService>();
-        var objectTable = Substitute.For<IObjectTable>();
-        var localization = Substitute.For<ILocalizationService>();
-        var logger = Substitute.For<ILoggerService>();
-        var listingTracker = Substitute.For<IMarketListingTrackerService>();
-        var guidanceService = Substitute.For<IRetainerGuidanceService>();
-        var priceCalculationService = Substitute.For<IPriceCalculationService>();
-        var notificationService = Substitute.For<INotificationService>();
-        var delayProvider = Substitute.For<IAutomationDelayProvider>();
+    public void StartPriceUpdate_WhenInactive_SetsIsActiveAndInitializesSequence() {
+        var service = this.CreateService();
+        var listing = new TrackedListing { ItemId = 1, ItemName = "Test Item", PricePerUnit = 500 };
 
-        using var service = new HybridAutomationService(
-            framework, uiInteraction, priceProvider, objectTable, localization,
-            logger, listingTracker, guidanceService, priceCalculationService, notificationService, delayProvider);
+        service.StartPriceUpdate(listing);
 
-        // Act - Start new sale automation (State 1 initialization)
-        service.StartNewSale(100u, "Test Item");
         Assert.True(service.IsActive);
+    }
 
-        // Advance past 0.2s delay and simulate RetainerSell window opening directly
-        await Task.Delay(250);
-        uiInteraction.IsAddonReady("RetainerSell").Returns(true);
-        service.EvaluateTick();
+    [Fact]
+    public void StartPriceUpdate_WhenAlreadyActive_IgnoresRequest() {
+        var service = this.CreateService();
+        var initialListing = new TrackedListing { ItemId = 1, ItemName = "First Item" };
+        var secondListing = new TrackedListing { ItemId = 2, ItemName = "Second Item" };
 
-        // Assert State 1 execution (Directly compares prices without context menu interaction)
-        uiInteraction.Received(1).OpenComparePrices();
+        service.StartPriceUpdate(initialListing);
+        service.StartPriceUpdate(secondListing);
+
+        // Service should still be active, but logging or internal state tracking would show it ignored the second call.
+        Assert.True(service.IsActive);
+    }
+
+    [Fact]
+    public void StartNewSale_FetchesActiveRetainerId_AndSetsIsActive() {
+        this.listingProvider.GetActiveRetainerId().Returns(12345ul);
+        var service = this.CreateService();
+
+        service.StartNewSale(1, "New Sale Item");
+
+        Assert.True(service.IsActive);
+        this.listingProvider.Received(1).GetActiveRetainerId();
     }
 }

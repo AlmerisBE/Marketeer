@@ -74,4 +74,8 @@ public class PluginConfiguration : IPluginConfiguration {
     // Storage & Outlier Protection
     public bool EnableStorageProtection { get; set; } = true;
     public uint StorageProtectionThreshold { get; set; } = 10000000;
+
+    // Dynamic Outlier Filtering
+    public double OutlierMultiplier { get; set; } = 10.0;
+    public uint OutlierMinimumFloor { get; set; } = 5000;
 }

@@ -29,5 +29,13 @@
   "Legend_IncreasePrice": "Hausse de prix requise",
   "Legend_DecreasePrice": "Baisse de prix requise",
   "Guidance_Action_IncreasePrice": "Augmenter le prix",
-  "Guidance_Action_DecreasePrice": "Diminuer le prix"
+  "Guidance_Action_DecreasePrice": "Diminuer le prix",
+  "Reason_Unknown": "Raison inconnue.",
+  "Reason_StorageProtection": "Objet de stockage protégé.",
+  "Reason_MarketCrashProtection": "Protection contre les krachs activée.",
+  "Reason_NoCompetition": "Aucune concurrence (Prix par défaut).",
+  "Reason_VendorMinimumReached": "Limite du prix d'achat PNJ atteinte.",
+  "Reason_MatchedWhitelistedCompetitor": "Alignement sur un allié ({0}).",
+  "Reason_UndercutCompetitor": "Sous-cotation de {0}.",
+  "Reason_AlreadyLowest": "Déjà au prix cible."
 }

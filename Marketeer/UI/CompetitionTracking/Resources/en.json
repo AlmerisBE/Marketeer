@@ -59,5 +59,9 @@
   "Competition_ColAveragePrice": "Average Price (Diff)",
   "Competition_ColActions": "Actions",
   "Tooltip_AddWhitelist": "Add competitor to whitelist",
-  "Tooltip_OpenChart": "View price history on Universalis"
+  "Tooltip_OpenChart": "View price history on Universalis",
+  "Config_OutlierMultiplier": "Outlier Multiplier (x Average)",
+  "Config_OutlierMultiplier_Tooltip": "Competitors pricing their items this many times above the average price will be ignored.",
+  "Config_OutlierMinimumFloor": "Outlier Minimum Floor (Gil)",
+  "Config_OutlierMinimumFloor_Tooltip": "Prices below this value will never be considered outliers, preventing false positives on very cheap items."
 }

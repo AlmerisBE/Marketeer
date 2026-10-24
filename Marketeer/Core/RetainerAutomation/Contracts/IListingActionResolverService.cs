@@ -5,5 +5,5 @@ namespace Marketeer.Core.RetainerAutomation.Contracts;
 
 public interface IListingActionResolverService {
     void ProcessListingClick(TrackedListing listing);
-    ListingClickAction ResolveAction(uint itemId);
+    ListingClickAction ResolveAction(TrackedListing clickedListing);
 }

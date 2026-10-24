@@ -59,5 +59,9 @@
   "Competition_ColAveragePrice": "Prix Moyen (Écart)",
   "Competition_ColActions": "Actions",
   "Tooltip_AddWhitelist": "Ajouter le concurrent à la liste blanche",
-  "Tooltip_OpenChart": "Voir l'historique sur Universalis"
+  "Tooltip_OpenChart": "Voir l'historique sur Universalis",
+  "Config_OutlierMultiplier": "Multiplicateur d'aberration (x Moyenne)",
+  "Config_OutlierMultiplier_Tooltip": "Les concurrents dont le prix dépasse ce multiplicateur par rapport à la moyenne seront ignorés.",
+  "Config_OutlierMinimumFloor": "Plancher minimum d'aberration (Gils)",
+  "Config_OutlierMinimumFloor_Tooltip": "Les prix en dessous de cette valeur ne seront jamais considérés comme aberrants, évitant les faux positifs sur les objets très bon marché."
 }

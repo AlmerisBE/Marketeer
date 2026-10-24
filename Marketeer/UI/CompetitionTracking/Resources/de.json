@@ -59,5 +59,9 @@
   "Competition_ColAveragePrice": "Durchschnittspreis (Abweichung)",
   "Competition_ColActions": "Aktionen",
   "Tooltip_AddWhitelist": "Konkurrent zur Whitelist hinzufügen",
-  "Tooltip_OpenChart": "Preisverlauf auf Universalis ansehen"
+  "Tooltip_OpenChart": "Preisverlauf auf Universalis ansehen",
+  "Config_OutlierMultiplier": "Ausreißer-Multiplikator (x Durchschnitt)",
+  "Config_OutlierMultiplier_Tooltip": "Konkurrenten, deren Preis diesen Faktor über dem Durchschnittspreis liegt, werden ignoriert.",
+  "Config_OutlierMinimumFloor": "Ausreißer-Mindestgrenze (Gil)",
+  "Config_OutlierMinimumFloor_Tooltip": "Preise unter diesem Wert werden niemals als Ausreißer betrachtet, um falsch-positive Ergebnisse bei sehr günstigen Gegenständen zu vermeiden."
 }

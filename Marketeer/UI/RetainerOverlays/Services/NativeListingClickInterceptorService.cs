@@ -10,6 +10,7 @@ using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Marketeer.UI.RetainerOverlays.Services;
@@ -37,6 +38,10 @@ public class NativeListingClickInterceptorService : IDisposable {
     private DateTime clickTime;
     private DateTime retainerSellOpenTime;
     private ulong cachedHoverItemId;
+
+    // Cache to prevent picking the same stack index twice in a row when dealing with identical items
+    private HashSet<uint> recentlyAutomatedSlots = new();
+    private ulong currentRetainerIdForSlots = 0;
 
     public NativeListingClickInterceptorService(
         IContextMenu contextMenu,
@@ -108,19 +113,36 @@ public class NativeListingClickInterceptorService : IDisposable {
                 this.logger.Info($"[ClickInterceptor] Intercepted inventory item {name} (ID: {resolvedItemId}). Awaiting ContextMenu for sale.");
             }
             else {
+                var activeId = this.listingProvider.GetActiveRetainerId() ?? 0;
+                if (activeId != this.currentRetainerIdForSlots) {
+                    this.currentRetainerIdForSlots = activeId;
+                    this.recentlyAutomatedSlots.Clear();
+                }
+
                 var activeListings = this.listingProvider.GetActiveRetainerListings();
-                var currentListing = activeListings.FirstOrDefault(l => l.ItemId == resolvedItemId);
+                var availableListings = activeListings.Where(l => l.ItemId == resolvedItemId).ToList();
+
+                // Select a stack that hasn't been clicked recently
+                var currentListing = availableListings.FirstOrDefault(l => !this.recentlyAutomatedSlots.Contains(l.SlotIndex));
+
+                // If all stacks of this item were clicked, reset the cache for this specific item and start over
+                if (currentListing == null) {
+                    this.recentlyAutomatedSlots.RemoveWhere(s => availableListings.Any(al => al.SlotIndex == s));
+                    currentListing = availableListings.FirstOrDefault();
+                }
 
                 if (currentListing == null) {
                     this.logger.Warning($"[ClickInterceptor] Item ID {resolvedItemId} not found in active listings.");
                     return;
                 }
 
+                this.recentlyAutomatedSlots.Add(currentListing.SlotIndex);
+
                 this.pendingListing = currentListing;
                 this.isInventorySale = false;
                 this.wantsToAutomateContextMenu = true;
                 this.clickTime = DateTime.Now;
-                this.logger.Info($"[ClickInterceptor] Intercepted {currentListing.ItemName} (ID: {currentListing.ItemId}) via OnMenuOpened. Awaiting UI readiness.");
+                this.logger.Info($"[ClickInterceptor] Intercepted {currentListing.ItemName} (ID: {currentListing.ItemId}) at Slot {currentListing.SlotIndex}.");
             }
         }
     }
@@ -137,7 +159,6 @@ public class NativeListingClickInterceptorService : IDisposable {
             return;
         }
 
-        // Support for Drag & Drop automation: FFXIV skips ContextMenu and opens RetainerSell directly
         if (isRetainerSellVisible && !this.wasRetainerSellVisible) {
             if (this.IsModifierPressed()) {
                 this.logger.Info("[ClickInterceptor] Detected direct RetainerSell window opening (Drag & Drop) with modifier pressed. Awaiting UI text binding...");
@@ -147,7 +168,6 @@ public class NativeListingClickInterceptorService : IDisposable {
         }
         this.wasRetainerSellVisible = isRetainerSellVisible;
 
-        // Loop to wait for Atk engine to inject localized text payloads into the visible UI nodes
         if (this.isAwaitingRetainerSellData) {
             if ((DateTime.Now - this.retainerSellOpenTime).TotalSeconds > 1.5) {
                 this.logger.Warning("[ClickInterceptor] Could not resolve Item ID from RetainerSell text nodes (Data binding timeout).");
