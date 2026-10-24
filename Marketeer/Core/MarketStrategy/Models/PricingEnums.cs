@@ -1,4 +1,4 @@
-﻿namespace Marketeer.Core.Configuration.Models;
+﻿namespace Marketeer.Core.MarketStrategy.Models;
 
 public enum UndercutMode {
     Absolute,

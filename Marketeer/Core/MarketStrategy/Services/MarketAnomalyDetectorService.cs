@@ -1,6 +1,5 @@
 ﻿using Marketeer.API.Universalis.Models;
 using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.MarketStrategy.Contracts;

@@ -2,8 +2,8 @@
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Marketeer.API.GameInterop.Contracts;
 using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.Logging.Contracts;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.Core.RetainerAutomation.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
 using Marketeer.UI.Localization.Contracts;

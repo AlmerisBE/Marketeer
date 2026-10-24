@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Keys;
 using Marketeer.API.InventoryTracking.Models;
 using Marketeer.Core.CraftingProfit.Models;
 using Marketeer.Core.Financials.Models;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.Core.MarketWatch.Models;
 using Marketeer.Core.SalesHistory.Models;
 using System;

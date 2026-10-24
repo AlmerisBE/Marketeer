@@ -1,4 +1,4 @@
-﻿using Marketeer.Core.Configuration.Models;
+﻿using Marketeer.Core.MarketStrategy.Models;
 
 namespace Marketeer.Core.MarketPricing.Contracts;
 

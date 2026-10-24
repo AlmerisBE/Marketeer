@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.Core.MarketStrategy.Services;
 using NSubstitute;
 using Xunit;

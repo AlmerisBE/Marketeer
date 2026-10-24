@@ -4,6 +4,7 @@ using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
 using Marketeer.Core.MarketPricing.Services;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using NSubstitute;
 using Xunit;

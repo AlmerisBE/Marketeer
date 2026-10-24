@@ -1,6 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System;

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Marketeer.Core.Configuration.Models;
+namespace Marketeer.Core.MarketStrategy.Models;
 
 public class PricingProfile {
     public string Id { get; set; } = Guid.NewGuid().ToString();

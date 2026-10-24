@@ -3,6 +3,7 @@ using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.MarketPricing.Contracts;
 using Marketeer.Core.MarketPricing.Models;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.Core.SalesHistory.Contracts;
 using System;
 using System.Collections.Generic;
@@ -46,8 +47,12 @@ public class PriceCalculationService : IPriceCalculationService {
         var ownRetainers = this.GetOwnRetainers(config);
         var whitelist = config.CompetitorWhitelist ?? new List<string>();
 
-        // Dynamic relative outlier filter using user configuration
-        uint maxSanePrice = pricing.AverageSalePrice > 0 ? Math.Max(config.OutlierMinimumFloor, (uint)(pricing.AverageSalePrice * config.OutlierMultiplier)) : uint.MaxValue;
+        // Cascade configuration: Rule overrides take precedence over global config
+        double outlierMultiplier = rule.OutlierMultiplier ?? config.OutlierMultiplier;
+        uint outlierFloor = rule.OutlierMinimumFloor ?? config.OutlierMinimumFloor;
+
+        // Dynamic relative outlier filter
+        uint maxSanePrice = pricing.AverageSalePrice > 0 ? Math.Max(outlierFloor, (uint)(pricing.AverageSalePrice * outlierMultiplier)) : uint.MaxValue;
 
         var validCompetitors = pricing.Listings
             .Where(l => !ownRetainers.Contains(l.RetainerName))

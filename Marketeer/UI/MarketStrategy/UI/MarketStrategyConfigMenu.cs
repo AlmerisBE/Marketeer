@@ -3,6 +3,7 @@ using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.Configuration.Models;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System;
@@ -142,6 +143,33 @@ public class MarketStrategyConfigMenu : INavigationNode {
             ImGui.Unindent();
         }
 
+        ImGui.Spacing();
+        ImGui.Indent();
+
+        double outlierMultiplier = config.OutlierMultiplier;
+        ImGui.SetNextItemWidth(150f);
+        if (ImGui.InputDouble("##OutlierMultiplier", ref outlierMultiplier, 1.0, 5.0, "%.1f")) {
+            if (outlierMultiplier < 1.0) outlierMultiplier = 1.0;
+            config.OutlierMultiplier = outlierMultiplier;
+            changed = true;
+        }
+        ImGui.SameLine();
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_OutlierMultiplier") ?? "Outlier Multiplier (x Average)");
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_OutlierMultiplier_Tooltip"));
+
+        int outlierFloor = (int)config.OutlierMinimumFloor;
+        ImGui.SetNextItemWidth(150f);
+        if (ImGui.InputInt("##OutlierFloor", ref outlierFloor, 1000, 5000)) {
+            if (outlierFloor < 0) outlierFloor = 0;
+            config.OutlierMinimumFloor = (uint)outlierFloor;
+            changed = true;
+        }
+        ImGui.SameLine();
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_OutlierMinimumFloor") ?? "Minimum Floor (Gil)");
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_OutlierMinimumFloor_Tooltip"));
+
+        ImGui.Unindent();
+
         return changed;
     }
 
@@ -215,7 +243,7 @@ public class MarketStrategyConfigMenu : INavigationNode {
             }
 
             ImGui.Spacing();
-            if (this.DrawProfileEditor(profile)) changed = true;
+            if (this.DrawProfileEditor(profile, config)) changed = true;
 
             ImGui.Spacing();
             if (this.DrawCategoryMappings(config)) changed = true;
@@ -224,7 +252,7 @@ public class MarketStrategyConfigMenu : INavigationNode {
         return changed;
     }
 
-    private bool DrawProfileEditor(PricingProfile profile) {
+    private bool DrawProfileEditor(PricingProfile profile, PluginConfiguration config) {
         bool changed = false;
 
         string headerText = string.Format(this.localizationService.Translate("Label_ProfileOverrides") ?? "Overrides for '{0}'", profile.Name);
@@ -282,6 +310,44 @@ public class MarketStrategyConfigMenu : INavigationNode {
                 profile.Rule.UndercutAmount = (uint)underVal;
                 changed = true;
             }
+        }
+
+        bool hasOutlierMultOverride = profile.Rule.OutlierMultiplier.HasValue;
+        if (ImGui.Checkbox($"{this.localizationService.Translate("Override_OutlierMultiplier") ?? "Override Outlier Multiplier"}##cbOutMult", ref hasOutlierMultOverride)) {
+            profile.Rule.OutlierMultiplier = hasOutlierMultOverride ? config.OutlierMultiplier : null;
+            changed = true;
+        }
+
+        if (hasOutlierMultOverride) {
+            ImGui.SameLine();
+            double multVal = profile.Rule.OutlierMultiplier!.Value;
+            ImGui.SetNextItemWidth(150f);
+            if (ImGui.InputDouble("##valOutMult", ref multVal, 1.0, 5.0, "%.1f")) {
+                if (multVal < 1.0) multVal = 1.0;
+                profile.Rule.OutlierMultiplier = multVal;
+                changed = true;
+            }
+            ImGui.SameLine();
+            ImGui.TextUnformatted(this.localizationService.Translate("OverrideValue_OutlierMultiplier") ?? "Multiplier");
+        }
+
+        bool hasOutlierFloorOverride = profile.Rule.OutlierMinimumFloor.HasValue;
+        if (ImGui.Checkbox($"{this.localizationService.Translate("Override_OutlierFloor") ?? "Override Minimum Floor"}##cbOutFloor", ref hasOutlierFloorOverride)) {
+            profile.Rule.OutlierMinimumFloor = hasOutlierFloorOverride ? config.OutlierMinimumFloor : null;
+            changed = true;
+        }
+
+        if (hasOutlierFloorOverride) {
+            ImGui.SameLine();
+            int floorVal = (int)profile.Rule.OutlierMinimumFloor!.Value;
+            ImGui.SetNextItemWidth(150f);
+            if (ImGui.InputInt("##valOutFloor", ref floorVal, 1000, 5000)) {
+                if (floorVal < 0) floorVal = 0;
+                profile.Rule.OutlierMinimumFloor = (uint)floorVal;
+                changed = true;
+            }
+            ImGui.SameLine();
+            ImGui.TextUnformatted(this.localizationService.Translate("OverrideValue_OutlierFloor") ?? "Floor (Gil)");
         }
 
         return changed;

@@ -2,8 +2,8 @@
 using Lumina.Excel.Sheets;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.Configuration.Contracts;
-using Marketeer.Core.Configuration.Models;
 using Marketeer.Core.MarketPricing.Contracts;
+using Marketeer.Core.MarketStrategy.Models;
 
 namespace Marketeer.Core.MarketStrategy.Services;
 
