@@ -15,12 +15,12 @@ public class ShellFeature : IFeatureModule {
     public void RegisterServices(IServiceCollection services) {
         services.AddSingleton<ILocalizationProvider, ShellLocalizationProvider>();
 
-        // Abstractions et Services Globaux
+        // Global Abstractions and Services
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<CommandDispatcher>();
         services.AddSingleton<HotkeyTrackerService>();
 
-        // Fenêtre principale et vue par défaut
+        // Main Window and Default View
         services.AddSingleton<MainWindow>();
         services.AddSingleton<Window>(provider => provider.GetRequiredService<MainWindow>());
 
@@ -30,16 +30,17 @@ public class ShellFeature : IFeatureModule {
         services.AddSingleton<AboutMenu>();
         services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<AboutMenu>());
 
-        services.AddSingleton<IStatusBarProvider, UniversalisStatusBarItem>();
+        services.AddSingleton<UniversalisStatusBarItem>();
+        services.AddSingleton<IStatusBarProvider>(provider => provider.GetRequiredService<UniversalisStatusBarItem>());
 
-        // Configurations Globales (Shell)
-        services.AddSingleton<HotkeyConfigMenu>();
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<HotkeyConfigMenu>());
+        // Consolidated Global Configurations (Shell)
+        services.AddSingleton<SystemConfigMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<SystemConfigMenu>());
 
-        services.AddSingleton<OtherConfigMenu>();
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<OtherConfigMenu>());
+        services.AddSingleton<InterfaceConfigMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<InterfaceConfigMenu>());
 
-        // Commandes Shell
+        // Shell Commands
         services.AddSingleton<ICommand, MainCommand>();
         services.AddSingleton<ICommand, ConfigCommand>();
     }
