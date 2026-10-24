@@ -22,8 +22,8 @@ public class MarketStrategyFeature : IFeatureModule {
         services.AddSingleton<IPriceRuleProvider>(provider => provider.GetRequiredService<PricingRuleResolver>());
 
         // UI Nodes
-        services.AddSingleton<MarketStrategyConfigMenu>();
-        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<MarketStrategyConfigMenu>());
+        services.AddSingleton<PricingStrategyConfigMenu>();
+        services.AddSingleton<INavigationNode>(provider => provider.GetRequiredService<PricingStrategyConfigMenu>());
 
         // Localization Providers
         services.AddSingleton<ILocalizationProvider, MarketStrategyLocalizationProvider>();

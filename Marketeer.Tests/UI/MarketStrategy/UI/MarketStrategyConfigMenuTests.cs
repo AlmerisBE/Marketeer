@@ -30,7 +30,7 @@ public class MarketStrategyConfigMenuTests {
 
     [Fact]
     public void Constructor_InitializesCorrectly_AndLoadsCategories() {
-        var menu = new MarketStrategyConfigMenu(this.configService, this.localizationService, this.dataManager);
+        var menu = new PricingStrategyConfigMenu(this.configService, this.localizationService, this.dataManager);
 
         Assert.NotNull(menu);
         Assert.True(menu.HasContent);
