@@ -75,5 +75,14 @@
   "Config_Theme_Tooltip": "Ändert das visuelle Erscheinungsbild der Marketeer-Fenster.",
   "Config_AutomationDelay_Tooltip": "Fügt eine zufällige Pause zwischen automatisierten Aktionen ein, um menschliches Verhalten nachzuahmen.",
   "Config_EnableChatNotifications_Tooltip": "Zeigt Marktalarme und Unterbietungsbenachrichtigungen in Ihrem Spiel-Chat an.",
-  "Config_EnableDebugMode_Tooltip": "Zeigt erweiterte Protokolle an. Für die normale Nutzung deaktiviert lassen."
+  "Config_EnableDebugMode_Tooltip": "Zeigt erweiterte Protokolle an. Für die normale Nutzung deaktiviert lassen.",
+  "Menu_SystemConfig": "Automatisierung & System",
+  "Label_AutomationSettings": "Automatisierungsverzögerungen",
+  "Label_UniversalisSettings": "Universalis-API",
+  "Label_NotificationSettings": "Benachrichtigungen & Debug",
+  "Menu_InterfaceConfig": "Oberfläche & Tastenkürzel",
+  "Label_ThemeSettings": "Oberflächendesign",
+  "Label_HotkeySettings": "Dashboard-Tastenkürzel",
+  "Label_ModifierKeys": "Automatisierungs-Modifikatoren",
+  "Config_UniversalisCacheMinutes": "Cache-Dauer (Minuten)"
 }

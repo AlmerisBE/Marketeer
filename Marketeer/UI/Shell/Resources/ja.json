@@ -75,5 +75,14 @@
   "Config_Theme_Tooltip": "Marketeerウィンドウの視覚的な外観を変更します。",
   "Config_AutomationDelay_Tooltip": "自動アクションの間にランダムな一時停止を挿入して、人間の操作を模倣します。",
   "Config_EnableChatNotifications_Tooltip": "市場のアラートと値下げの通知をゲームチャットに表示します。",
-  "Config_EnableDebugMode_Tooltip": "高度なログと開発者ツールを表示します。通常は無効にしておいてください。"
+  "Config_EnableDebugMode_Tooltip": "高度なログと開発者ツールを表示します。通常は無効にしておいてください。",
+  "Menu_SystemConfig": "自動化とシステム",
+  "Label_AutomationSettings": "自動化の遅延",
+  "Label_UniversalisSettings": "Universalis API",
+  "Label_NotificationSettings": "通知とデバッグ",
+  "Menu_InterfaceConfig": "インターフェースとショートカット",
+  "Label_ThemeSettings": "インターフェーステーマ",
+  "Label_HotkeySettings": "ダッシュボードのホットキー",
+  "Label_ModifierKeys": "自動化の修飾キー",
+  "Config_UniversalisCacheMinutes": "キャッシュ期間（分）"
 }
