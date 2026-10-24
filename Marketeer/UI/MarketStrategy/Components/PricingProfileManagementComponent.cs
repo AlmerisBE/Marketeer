@@ -39,9 +39,6 @@ public class PricingProfileManagementComponent {
     public bool Draw(PluginConfiguration config) {
         bool changed = false;
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Label_Profiles") ?? "Pricing Profiles");
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Label_Profiles_Tooltip"));
-
         ImGui.SetNextItemWidth(200f);
         if (ImGui.BeginCombo("##ProfileSelector", config.PricingProfiles.TryGetValue(this.selectedProfileId, out var p) ? p.Name : "...")) {
             foreach (var kvp in config.PricingProfiles) {
@@ -51,6 +48,7 @@ public class PricingProfileManagementComponent {
             }
             ImGui.EndCombo();
         }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Label_Profiles_Tooltip"));
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f);

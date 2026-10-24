@@ -39,25 +39,25 @@ public class MarketStrategyConfigMenu : INavigationNode {
         var config = this.configService.GetConfig();
         bool changed = false;
 
-        if (this.anomalyComponent.Draw(config)) changed = true;
+        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_AnomalyProtection_Header") ?? "Market Crash Protection", ImGuiTreeNodeFlags.DefaultOpen)) {
+            if (this.anomalyComponent.Draw(config)) changed = true;
+            ImGui.Spacing();
+        }
 
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
+        if (ImGui.CollapsingHeader(this.localizationService.Translate("Label_StorageProtection") ?? "Storage & Outlier Protection", ImGuiTreeNodeFlags.DefaultOpen)) {
+            if (this.protectionComponent.Draw(config)) changed = true;
+            ImGui.Spacing();
+        }
 
-        if (this.protectionComponent.Draw(config)) changed = true;
+        if (ImGui.CollapsingHeader(this.localizationService.Translate("Label_GlobalHqSettings") ?? "Global HQ Settings", ImGuiTreeNodeFlags.DefaultOpen)) {
+            if (this.globalPricingComponent.Draw(config)) changed = true;
+            ImGui.Spacing();
+        }
 
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-
-        if (this.globalPricingComponent.Draw(config)) changed = true;
-
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-
-        if (this.profileManagementComponent.Draw(config)) changed = true;
+        if (ImGui.CollapsingHeader(this.localizationService.Translate("Label_Profiles") ?? "Pricing Profiles", ImGuiTreeNodeFlags.DefaultOpen)) {
+            if (this.profileManagementComponent.Draw(config)) changed = true;
+            ImGui.Spacing();
+        }
 
         if (changed) this.configService.Save();
     }

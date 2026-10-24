@@ -15,8 +15,6 @@ public class GlobalPricingSettingsComponent {
     public bool Draw(PluginConfiguration config) {
         bool changed = false;
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Label_GlobalHqSettings") ?? "Global HQ Settings");
-
         bool ignoreHq = config.GlobalIgnoreHq;
         if (ImGui.Checkbox(this.localizationService.Translate("Config_GlobalIgnoreHq") ?? "Ignore HQ Status Globally", ref ignoreHq)) {
             config.GlobalIgnoreHq = ignoreHq;

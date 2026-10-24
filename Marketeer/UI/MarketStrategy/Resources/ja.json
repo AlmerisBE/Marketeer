@@ -40,5 +40,6 @@
   "Override_OutlierMultiplier": "外れ値の倍率を上書きする",
   "OverrideValue_OutlierMultiplier": "倍率",
   "Override_OutlierFloor": "最小下限を上書きする",
-  "OverrideValue_OutlierFloor": "下限 (ギル)"
+  "OverrideValue_OutlierFloor": "下限 (ギル)",
+  "Config_AnomalyProtection_Header": "市場暴落保護"
 }

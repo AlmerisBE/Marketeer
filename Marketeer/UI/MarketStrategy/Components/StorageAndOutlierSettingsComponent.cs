@@ -14,8 +14,6 @@ public class StorageAndOutlierSettingsComponent {
     public bool Draw(PluginConfiguration config) {
         bool changed = false;
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Label_StorageProtection") ?? "Storage & Outlier Protection");
-
         bool enableStorage = config.EnableStorageProtection;
         if (ImGui.Checkbox(this.localizationService.Translate("Config_EnableStorageProtection") ?? "Ignore Storage Listings", ref enableStorage)) {
             config.EnableStorageProtection = enableStorage;

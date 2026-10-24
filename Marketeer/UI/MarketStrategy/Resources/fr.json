@@ -40,5 +40,6 @@
   "Override_OutlierMultiplier": "Surcharger le multiplicateur d'aberration",
   "OverrideValue_OutlierMultiplier": "Multiplicateur",
   "Override_OutlierFloor": "Surcharger le plancher minimum",
-  "OverrideValue_OutlierFloor": "Plancher (Gils)"
+  "OverrideValue_OutlierFloor": "Plancher (Gils)",
+  "Config_AnomalyProtection_Header": "Protection contre les Krachs Boursiers"
 }

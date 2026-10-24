@@ -40,5 +40,6 @@
   "Override_OutlierMultiplier": "Override Outlier Multiplier",
   "OverrideValue_OutlierMultiplier": "Multiplier",
   "Override_OutlierFloor": "Override Minimum Floor",
-  "OverrideValue_OutlierFloor": "Floor (Gil)"
+  "OverrideValue_OutlierFloor": "Floor (Gil)",
+  "Config_AnomalyProtection_Header": "Market Crash Protection"
 }
