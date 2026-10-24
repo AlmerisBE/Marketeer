@@ -82,24 +82,21 @@ public class MainWindow : Window {
     private void DrawSidebar() {
         var groupedNodes = this.nodes.GroupBy(n => n.GroupName);
 
-        // Enhance both internal highlight height (FramePadding) and external margins (ItemSpacing)
         var currentFramePadding = ImGui.GetStyle().FramePadding;
         var currentSpacing = ImGui.GetStyle().ItemSpacing;
 
-        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(currentFramePadding.X, currentFramePadding.Y + 2f));
+        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(currentFramePadding.X, currentFramePadding.Y + 4f));
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(currentSpacing.X, currentSpacing.Y + 2f));
 
         foreach (var group in groupedNodes) {
             if (string.IsNullOrEmpty(group.Key)) {
-                foreach (var node in group) {
-                    this.DrawNodeTree(node);
-                }
+                foreach (var node in group) this.DrawNodeTree(node);
             }
             else {
                 bool isGroupActive = group.Any(n => this.IsNodeActiveOrContainsActive(n));
 
-                // Added SpanFullWidth to guarantee the entire row is clickable despite the hidden label
-                var flags = ImGuiTreeNodeFlags.CollapsingHeader | ImGuiTreeNodeFlags.AllowItemOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
+                // Added ImGuiTreeNodeFlags.FramePadding so the node hit box respects our FramePadding.Y injection
+                var flags = ImGuiTreeNodeFlags.CollapsingHeader | ImGuiTreeNodeFlags.AllowItemOverlap | ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.FramePadding;
 
                 if (isGroupActive) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
@@ -116,9 +113,7 @@ public class MainWindow : Window {
                 ImGui.TextUnformatted(group.Key);
 
                 if (isOpen) {
-                    foreach (var node in group) {
-                        this.DrawNodeTree(node);
-                    }
+                    foreach (var node in group) this.DrawNodeTree(node);
                 }
             }
         }
@@ -140,25 +135,20 @@ public class MainWindow : Window {
         var children = node.GetChildren().ToList();
         bool hasChildren = children.Count > 0;
 
-        // Added SpanFullWidth to extend the clickable hitbox to the end of the column
-        var flags = ImGuiTreeNodeFlags.AllowItemOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
+        // Added ImGuiTreeNodeFlags.FramePadding here as well
+        var flags = ImGuiTreeNodeFlags.AllowItemOverlap | ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.FramePadding;
 
         if (hasChildren) {
             flags |= ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick;
             if (node.DefaultExpanded || this.IsNodeActiveOrContainsActive(node)) flags |= ImGuiTreeNodeFlags.DefaultOpen;
         }
-        else {
-            flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
-        }
+        else flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
 
         if (this.navigationService.CurrentNode == node) flags |= ImGuiTreeNodeFlags.Selected;
 
         bool isOpen = ImGui.TreeNodeEx($"##{node.Name}", flags);
 
-        // Since the node spans the full width, clicks on the overlapping text will correctly trigger this check
-        if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) {
-            this.navigationService.NavigateTo(node);
-        }
+        if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) this.navigationService.NavigateTo(node);
 
         ImGui.SameLine();
         if (node.Icon.HasValue) {
@@ -170,9 +160,7 @@ public class MainWindow : Window {
         ImGui.TextUnformatted(node.Name);
 
         if (hasChildren && isOpen) {
-            foreach (var child in children) {
-                this.DrawNodeTree(child);
-            }
+            foreach (var child in children) this.DrawNodeTree(child);
             ImGui.TreePop();
         }
     }
