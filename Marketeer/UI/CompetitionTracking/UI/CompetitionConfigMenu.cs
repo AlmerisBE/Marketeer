@@ -13,8 +13,8 @@ public class CompetitionConfigMenu : INavigationNode {
     private IConfigurationService configService;
     private ILocalizationService localizationService;
 
-    public string GroupName => this.localizationService.Translate("Group_Configuration");
-    public string Name => this.localizationService.Translate("Config_Competition_TabName");
+    public string GroupName => this.localizationService.Translate("Group_Configuration") ?? "Configuration";
+    public string Name => this.localizationService.Translate("Config_Competition_TabName") ?? "Competition";
     public int Priority => 100;
     public bool HasContent => true;
     public bool DefaultExpanded => false;
@@ -29,19 +29,15 @@ public class CompetitionConfigMenu : INavigationNode {
         var config = this.configService.GetConfig();
         bool isChanged = false;
 
-        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_Pricing_Header"), ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_Pricing_Header") ?? "Pricing Strategy", ImGuiTreeNodeFlags.DefaultOpen)) {
             isChanged |= this.DrawUndercutSettings(config);
         }
 
-        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_Whitelist_Header"), ImGuiTreeNodeFlags.DefaultOpen)) {
-            isChanged |= this.DrawWhitelistSettings(config);
-        }
-
-        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_LossPrevention_Header"), ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_LossPrevention_Header") ?? "Loss Prevention", ImGuiTreeNodeFlags.DefaultOpen)) {
             isChanged |= this.DrawLossPreventionSettings(config);
         }
 
-        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_Fallback_Header"), ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.CollapsingHeader(this.localizationService.Translate("Config_Fallback_Header") ?? "Empty Market Fallback", ImGuiTreeNodeFlags.DefaultOpen)) {
             isChanged |= this.DrawFallbackSettings(config);
         }
 
@@ -51,7 +47,7 @@ public class CompetitionConfigMenu : INavigationNode {
     private bool DrawUndercutSettings(PluginConfiguration config) {
         bool changed = false;
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_UndercutMode"));
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_UndercutMode") ?? "Undercut Mode");
         ImGui.SetNextItemWidth(250f);
         if (ImGui.BeginCombo("##UndercutMode", this.localizationService.Translate($"Config_UndercutMode_{config.UndercutMode}"))) {
             foreach (UndercutMode mode in Enum.GetValues(typeof(UndercutMode))) {
@@ -67,7 +63,7 @@ public class CompetitionConfigMenu : INavigationNode {
         ImGui.Spacing();
 
         if (config.UndercutMode == UndercutMode.Absolute) {
-            ImGui.TextUnformatted(this.localizationService.Translate("Config_UndercutAmount"));
+            ImGui.TextUnformatted(this.localizationService.Translate("Config_UndercutAmount") ?? "Amount");
             ImGui.SetNextItemWidth(150f);
             int amount = (int)config.UndercutAmount;
             if (ImGui.InputInt("##UndercutAmount", ref amount)) {
@@ -78,7 +74,7 @@ public class CompetitionConfigMenu : INavigationNode {
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_UndercutAmount_Tooltip"));
         }
         else {
-            ImGui.TextUnformatted(this.localizationService.Translate("Config_UndercutPercentage"));
+            ImGui.TextUnformatted(this.localizationService.Translate("Config_UndercutPercentage") ?? "Percentage");
             ImGui.SetNextItemWidth(250f);
             float percentage = (float)config.UndercutRelativePercentage;
             if (ImGui.SliderFloat("##UndercutPercentage", ref percentage, 0.1f, 100.0f, "%.1f%%")) {
@@ -92,40 +88,11 @@ public class CompetitionConfigMenu : INavigationNode {
         return changed;
     }
 
-    private bool DrawWhitelistSettings(PluginConfiguration config) {
-        bool changed = false;
-
-        bool autoWhitelist = config.AutoWhitelistOwnRetainers;
-        if (ImGui.Checkbox(this.localizationService.Translate("Config_AutoWhitelistOwnRetainers") ?? "Auto-whitelist own retainers", ref autoWhitelist)) {
-            config.AutoWhitelistOwnRetainers = autoWhitelist;
-            changed = true;
-        }
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_AutoWhitelistOwnRetainers_Tooltip"));
-
-        ImGui.Spacing();
-
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_WhitelistBehavior") ?? "Whitelist Behavior");
-        ImGui.SetNextItemWidth(250f);
-        if (ImGui.BeginCombo("##WhitelistBehavior", this.localizationService.Translate($"Config_WhitelistBehavior_{config.CompetitorWhitelistBehavior}"))) {
-            foreach (WhitelistBehavior behavior in Enum.GetValues(typeof(WhitelistBehavior))) {
-                if (ImGui.Selectable(this.localizationService.Translate($"Config_WhitelistBehavior_{behavior}"), config.CompetitorWhitelistBehavior == behavior)) {
-                    config.CompetitorWhitelistBehavior = behavior;
-                    changed = true;
-                }
-            }
-            ImGui.EndCombo();
-        }
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_WhitelistBehavior_Tooltip"));
-
-        ImGui.Spacing();
-        return changed;
-    }
-
     private bool DrawLossPreventionSettings(PluginConfiguration config) {
         bool changed = false;
 
         bool enforceVendor = config.EnforceVendorPriceMinimum;
-        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnforceVendorPriceMinimum"), ref enforceVendor)) {
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_EnforceVendorPriceMinimum") ?? "Enforce Vendor Minimum", ref enforceVendor)) {
             config.EnforceVendorPriceMinimum = enforceVendor;
             changed = true;
         }
@@ -135,7 +102,7 @@ public class CompetitionConfigMenu : INavigationNode {
 
         ImGui.Spacing();
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_LossBehavior"));
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_LossBehavior") ?? "Action if Target < Vendor Price");
         ImGui.SetNextItemWidth(250f);
         if (ImGui.BeginCombo("##LossBehavior", this.localizationService.Translate($"Config_LossBehavior_{config.LossBehavior}"))) {
             foreach (MinimumPriceBehavior behavior in Enum.GetValues(typeof(MinimumPriceBehavior))) {
@@ -150,7 +117,7 @@ public class CompetitionConfigMenu : INavigationNode {
 
         ImGui.Spacing();
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_CancelPriority_Label"));
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_CancelPriority_Label") ?? "Cancellation Priority");
         ImGui.SetNextItemWidth(250f);
         if (ImGui.BeginCombo("##CancelPriority", this.localizationService.Translate($"Config_CancelPriority_{config.CancelInventoryPriority}"))) {
             foreach (InventoryPriority priority in Enum.GetValues(typeof(InventoryPriority))) {
@@ -172,7 +139,7 @@ public class CompetitionConfigMenu : INavigationNode {
     private bool DrawFallbackSettings(PluginConfiguration config) {
         bool changed = false;
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_FallbackMode"));
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_FallbackMode") ?? "Fallback Strategy");
         ImGui.SetNextItemWidth(250f);
         if (ImGui.BeginCombo("##FallbackMode", this.localizationService.Translate($"Config_FallbackMode_{config.EmptyMarketFallbackMode}"))) {
             foreach (FallbackPricingMode mode in Enum.GetValues(typeof(FallbackPricingMode))) {
@@ -187,7 +154,7 @@ public class CompetitionConfigMenu : INavigationNode {
 
         ImGui.Spacing();
 
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_FallbackMultiplier"));
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_FallbackMultiplier") ?? "Fallback Multiplier");
         ImGui.SetNextItemWidth(150f);
         float multiplier = (float)config.EmptyMarketFallbackMultiplier;
         if (ImGui.InputFloat("##FallbackMultiplier", ref multiplier, 0.1f, 1.0f, "%.1f")) {

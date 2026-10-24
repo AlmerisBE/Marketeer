@@ -41,5 +41,10 @@
   "OverrideValue_OutlierMultiplier": "Multiplier",
   "Override_OutlierFloor": "Override Minimum Floor",
   "OverrideValue_OutlierFloor": "Floor (Gil)",
-  "Config_AnomalyProtection_Header": "Market Crash Protection"
+  "Config_AnomalyProtection_Header": "Market Crash Protection",
+  "Button_AssignGroup": "Assign Group",
+  "CategoryGroup_Weapons": "Weapons & Tools",
+  "CategoryGroup_Armor": "Armor & Accessories",
+  "CategoryGroup_Items": "Items & Materials",
+  "CategoryGroup_Housing": "Housing"
 }

@@ -41,5 +41,10 @@
   "OverrideValue_OutlierMultiplier": "Multiplikator",
   "Override_OutlierFloor": "Mindestgrenze überschreiben",
   "OverrideValue_OutlierFloor": "Untergrenze (Gil)",
-  "Config_AnomalyProtection_Header": "Marktcrash-Schutz"
+  "Config_AnomalyProtection_Header": "Marktcrash-Schutz",
+  "Button_AssignGroup": "Gruppe zuweisen",
+  "CategoryGroup_Weapons": "Waffen & Werkzeuge",
+  "CategoryGroup_Armor": "Rüstung & Accessoires",
+  "CategoryGroup_Items": "Gegenstände & Materialien",
+  "CategoryGroup_Housing": "Unterkunft"
 }

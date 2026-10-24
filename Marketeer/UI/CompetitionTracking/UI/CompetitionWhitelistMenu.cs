@@ -1,13 +1,17 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Marketeer.Core.CompetitionTracking.Contracts;
+using Marketeer.Core.Configuration.Contracts;
+using Marketeer.Core.MarketStrategy.Models;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
+using System;
 using System.Collections.Generic;
 
 namespace Marketeer.UI.CompetitionTracking.UI;
 
 public class CompetitionWhitelistMenu : INavigationNode {
     private IWhitelistManagerService whitelistManager;
+    private IConfigurationService configService;
     private ILocalizationService localizationService;
     private string newRetainerName = string.Empty;
 
@@ -18,19 +22,45 @@ public class CompetitionWhitelistMenu : INavigationNode {
     public bool DefaultExpanded => false;
     public IEnumerable<INavigationNode> GetChildren() => [];
 
-    public CompetitionWhitelistMenu(IWhitelistManagerService whitelistManager, ILocalizationService localizationService) {
+    public CompetitionWhitelistMenu(IWhitelistManagerService whitelistManager, IConfigurationService configService, ILocalizationService localizationService) {
         this.whitelistManager = whitelistManager;
+        this.configService = configService;
         this.localizationService = localizationService;
     }
 
     public void DrawContent() {
-        ImGui.TextUnformatted(this.localizationService.Translate("Config_WhitelistedRetainers") ?? "Whitelisted Retainers:");
+        var config = this.configService.GetConfig();
+        bool changed = false;
 
-        if (ImGui.Button(this.localizationService.Translate("Config_Whitelist_AutoAdd") ?? "Auto-detect Own Retainers")) {
-            this.whitelistManager.AutoAddKnownRetainers();
+        bool autoWhitelist = config.AutoWhitelistOwnRetainers;
+        if (ImGui.Checkbox(this.localizationService.Translate("Config_AutoWhitelistOwnRetainers") ?? "Auto-whitelist own retainers", ref autoWhitelist)) {
+            config.AutoWhitelistOwnRetainers = autoWhitelist;
+            changed = true;
         }
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_Whitelist_AutoAdd_Tooltip"));
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_AutoWhitelistOwnRetainers_Tooltip"));
 
+        ImGui.Spacing();
+
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_WhitelistBehavior") ?? "Whitelist Behavior");
+        ImGui.SetNextItemWidth(250f);
+        if (ImGui.BeginCombo("##WhitelistBehavior", this.localizationService.Translate($"Config_WhitelistBehavior_{config.CompetitorWhitelistBehavior}"))) {
+            foreach (WhitelistBehavior behavior in Enum.GetValues(typeof(WhitelistBehavior))) {
+                if (ImGui.Selectable(this.localizationService.Translate($"Config_WhitelistBehavior_{behavior}"), config.CompetitorWhitelistBehavior == behavior)) {
+                    config.CompetitorWhitelistBehavior = behavior;
+                    changed = true;
+                }
+            }
+            ImGui.EndCombo();
+        }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(this.localizationService.Translate("Config_WhitelistBehavior_Tooltip"));
+
+        if (changed) this.configService.Save();
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        ImGui.TextUnformatted(this.localizationService.Translate("Config_WhitelistedRetainers") ?? "Whitelisted Retainers:");
         ImGui.Spacing();
 
         ImGui.SetNextItemWidth(200f);
@@ -38,7 +68,7 @@ public class CompetitionWhitelistMenu : INavigationNode {
         ImGui.SameLine();
 
         if (ImGui.Button(this.localizationService.Translate("Button_Add") ?? "Add") && !string.IsNullOrWhiteSpace(this.newRetainerName)) {
-            this.whitelistManager.AddToWhitelist(this.newRetainerName);
+            this.whitelistManager.AddToWhitelist(this.newRetainerName.Trim());
             this.newRetainerName = string.Empty;
         }
 

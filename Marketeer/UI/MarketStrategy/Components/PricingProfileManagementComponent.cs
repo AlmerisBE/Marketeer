@@ -15,9 +15,11 @@ public class PricingProfileManagementComponent {
     private IDataManager dataManager;
 
     private Dictionary<uint, string> categoryNames = [];
+    private Dictionary<int, List<uint>> categoryGroups = [];
     private string newProfileName = string.Empty;
     private string selectedProfileId = string.Empty;
     private int selectedCategoryId = 0;
+    private int selectedGroupId = 0;
 
     public PricingProfileManagementComponent(ILocalizationService localizationService, IDataManager dataManager) {
         this.localizationService = localizationService;
@@ -32,7 +34,14 @@ public class PricingProfileManagementComponent {
 
         foreach (var cat in sheet) {
             var name = cat.Name.ToString();
-            if (cat.RowId > 0 && !string.IsNullOrWhiteSpace(name)) this.categoryNames[cat.RowId] = name;
+            if (cat.RowId > 0 && !string.IsNullOrWhiteSpace(name)) {
+                this.categoryNames[cat.RowId] = name;
+
+                int groupId = cat.Category;
+                if (!this.categoryGroups.ContainsKey(groupId)) this.categoryGroups[groupId] = [];
+
+                this.categoryGroups[groupId].Add(cat.RowId);
+            }
         }
     }
 
@@ -210,6 +219,7 @@ public class PricingProfileManagementComponent {
 
         ImGui.Spacing();
 
+        // Individual Assignment
         var unassignedCategories = this.categoryNames.Where(kvp => !config.CategoryProfileMappings.ContainsKey(kvp.Key)).OrderBy(kvp => kvp.Value).ToList();
 
         ImGui.SetNextItemWidth(250f);
@@ -227,6 +237,38 @@ public class PricingProfileManagementComponent {
             config.CategoryProfileMappings[(uint)this.selectedCategoryId] = this.selectedProfileId;
             this.selectedCategoryId = 0;
             changed = true;
+        }
+
+        ImGui.Spacing();
+
+        // Bulk Group Assignment
+        var groupTypes = new Dictionary<int, string> {
+            { 1, this.localizationService.Translate("CategoryGroup_Weapons") ?? "Weapons & Tools" },
+            { 2, this.localizationService.Translate("CategoryGroup_Armor") ?? "Armor & Accessories" },
+            { 3, this.localizationService.Translate("CategoryGroup_Items") ?? "Items & Materials" },
+            { 4, this.localizationService.Translate("CategoryGroup_Housing") ?? "Housing" }
+        };
+
+        ImGui.SetNextItemWidth(250f);
+        string groupPreview = this.selectedGroupId != 0 && groupTypes.TryGetValue(this.selectedGroupId, out var gName) ? gName : "...";
+
+        if (ImGui.BeginCombo("##AssignGroupCombo", groupPreview)) {
+            foreach (var group in groupTypes) {
+                if (ImGui.Selectable(group.Value, this.selectedGroupId == group.Key)) this.selectedGroupId = group.Key;
+            }
+            ImGui.EndCombo();
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Button(this.localizationService.Translate("Button_AssignGroup") ?? "Assign Entire Group") && this.selectedGroupId != 0) {
+            if (this.categoryGroups.TryGetValue(this.selectedGroupId, out var groupCatIds)) {
+                foreach (var catId in groupCatIds) {
+                    // This will safely overwrite if a category was assigned to another profile
+                    config.CategoryProfileMappings[catId] = this.selectedProfileId;
+                }
+                changed = true;
+            }
+            this.selectedGroupId = 0;
         }
 
         return changed;

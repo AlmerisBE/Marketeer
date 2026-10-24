@@ -41,5 +41,10 @@
   "OverrideValue_OutlierMultiplier": "Multiplicateur",
   "Override_OutlierFloor": "Surcharger le plancher minimum",
   "OverrideValue_OutlierFloor": "Plancher (Gils)",
-  "Config_AnomalyProtection_Header": "Protection contre les Krachs Boursiers"
+  "Config_AnomalyProtection_Header": "Protection contre les Krachs Boursiers",
+  "Button_AssignGroup": "Assigner le groupe",
+  "CategoryGroup_Weapons": "Armes & Outils",
+  "CategoryGroup_Armor": "Armures & Accessoires",
+  "CategoryGroup_Items": "Objets & Matériaux",
+  "CategoryGroup_Housing": "Logement (Housing)"
 }

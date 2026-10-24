@@ -41,5 +41,10 @@
   "OverrideValue_OutlierMultiplier": "倍率",
   "Override_OutlierFloor": "最小下限を上書きする",
   "OverrideValue_OutlierFloor": "下限 (ギル)",
-  "Config_AnomalyProtection_Header": "市場暴落保護"
+  "Config_AnomalyProtection_Header": "市場暴落保護",
+  "Button_AssignGroup": "グループを割り当てる",
+  "CategoryGroup_Weapons": "武器・道具",
+  "CategoryGroup_Armor": "防具・アクセサリー",
+  "CategoryGroup_Items": "アイテム・素材",
+  "CategoryGroup_Housing": "ハウジング"
 }
