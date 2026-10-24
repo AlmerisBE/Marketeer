@@ -10,6 +10,7 @@ using System.Numerics;
 namespace Marketeer.UI.Shell.UI;
 
 public class MainWindow : Window {
+    private IDalamudPluginInterface pluginInterface;
     private INavigationService navigationService;
     private IReadOnlyList<INavigationNode> nodes;
     private IReadOnlyList<IToolbarAction> toolbarActions;
@@ -23,6 +24,7 @@ public class MainWindow : Window {
         IEnumerable<IStatusBarProvider> statusBarProviders)
         : base($"Marketeer v{pluginInterface.Manifest?.AssemblyVersion?.ToString() ?? "Dev"}", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse) {
 
+        this.pluginInterface = pluginInterface;
         this.navigationService = navigationService;
         this.nodes = nodes.OrderBy(n => n.Priority).ToList();
         this.toolbarActions = toolbarActions.OrderBy(a => a.Priority).ToList();
@@ -80,9 +82,8 @@ public class MainWindow : Window {
     private void DrawSidebar() {
         var groupedNodes = this.nodes.GroupBy(n => n.GroupName);
 
-        // Augmente l'espacement vertical des éléments du menu de 4 pixels pour laisser respirer l'interface
         var currentSpacing = ImGui.GetStyle().ItemSpacing;
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(currentSpacing.X, currentSpacing.Y + 4f));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(currentSpacing.X, currentSpacing.Y + 6f));
 
         foreach (var group in groupedNodes) {
             if (string.IsNullOrEmpty(group.Key)) {
@@ -92,15 +93,24 @@ public class MainWindow : Window {
             }
             else {
                 bool isGroupActive = group.Any(n => this.IsNodeActiveOrContainsActive(n));
-                var flags = ImGuiTreeNodeFlags.CollapsingHeader;
+                var flags = ImGuiTreeNodeFlags.CollapsingHeader | ImGuiTreeNodeFlags.AllowItemOverlap;
 
                 if (isGroupActive) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
-                // Récupère l'icône de groupe définie par au moins l'un des nœuds enfants
-                var groupIcon = group.FirstOrDefault(n => n.GroupIcon.HasValue)?.GroupIcon;
-                string groupDisplayName = groupIcon.HasValue ? $"{groupIcon.Value.ToIconString()}   {group.Key}" : group.Key;
+                bool isOpen = ImGui.TreeNodeEx($"##{group.Key}", flags);
+                ImGui.SameLine();
 
-                if (ImGui.TreeNodeEx(groupDisplayName, flags)) {
+                var groupIcon = group.FirstOrDefault(n => n.GroupIcon.HasValue)?.GroupIcon;
+                if (groupIcon.HasValue) {
+                    // Fix: On utilise l'accès statique défini par la nouvelle API de Dalamud
+                    ImGui.PushFont(UiBuilder.IconFont);
+                    ImGui.TextUnformatted(groupIcon.Value.ToIconString());
+                    ImGui.PopFont();
+                    ImGui.SameLine();
+                }
+                ImGui.TextUnformatted(group.Key);
+
+                if (isOpen) {
                     foreach (var node in group) {
                         this.DrawNodeTree(node);
                     }
@@ -125,29 +135,39 @@ public class MainWindow : Window {
         var children = node.GetChildren().ToList();
         bool hasChildren = children.Count > 0;
 
-        string displayName = node.Icon.HasValue ? $"{node.Icon.Value.ToIconString()}   {node.Name}" : node.Name;
+        var flags = ImGuiTreeNodeFlags.AllowItemOverlap;
 
         if (hasChildren) {
-            var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick;
-            bool isActiveHierarchy = this.IsNodeActiveOrContainsActive(node);
-
-            if (node.DefaultExpanded || isActiveHierarchy) flags |= ImGuiTreeNodeFlags.DefaultOpen;
-            if (this.navigationService.CurrentNode == node) flags |= ImGuiTreeNodeFlags.Selected;
-
-            bool isOpen = ImGui.TreeNodeEx(displayName, flags);
-
-            if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) this.navigationService.NavigateTo(node);
-
-            if (isOpen) {
-                foreach (var child in children) {
-                    this.DrawNodeTree(child);
-                }
-                ImGui.TreePop();
-            }
+            flags |= ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick;
+            if (node.DefaultExpanded || this.IsNodeActiveOrContainsActive(node)) flags |= ImGuiTreeNodeFlags.DefaultOpen;
         }
         else {
-            bool isSelected = this.navigationService.CurrentNode == node;
-            if (ImGui.Selectable(displayName, isSelected)) this.navigationService.NavigateTo(node);
+            flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+        }
+
+        if (this.navigationService.CurrentNode == node) flags |= ImGuiTreeNodeFlags.Selected;
+
+        bool isOpen = ImGui.TreeNodeEx($"##{node.Name}", flags);
+
+        if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) {
+            this.navigationService.NavigateTo(node);
+        }
+
+        ImGui.SameLine();
+        if (node.Icon.HasValue) {
+            // Fix: On utilise l'accès statique défini par la nouvelle API de Dalamud
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.TextUnformatted(node.Icon.Value.ToIconString());
+            ImGui.PopFont();
+            ImGui.SameLine();
+        }
+        ImGui.TextUnformatted(node.Name);
+
+        if (hasChildren && isOpen) {
+            foreach (var child in children) {
+                this.DrawNodeTree(child);
+            }
+            ImGui.TreePop();
         }
     }
 
@@ -174,8 +194,6 @@ public class MainWindow : Window {
         var height = ImGui.GetFrameHeight();
 
         if (ImGui.BeginChild("StatusBar", new Vector2(0f, height), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
-
-            // Mathematically center the text vertically within the fixed-height child container
             var textHeight = ImGui.GetTextLineHeight();
             ImGui.SetCursorPosY((height - textHeight) * 0.5f);
 
@@ -184,7 +202,6 @@ public class MainWindow : Window {
                 if (!isFirst) {
                     ImGui.SameLine();
 
-                    // Prevent drawing the separator if the upcoming element pushes itself to the right
                     if (!provider.IsRightAligned) {
                         ImGui.TextDisabled("|");
                         ImGui.SameLine();
