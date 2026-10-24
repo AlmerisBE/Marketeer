@@ -36,5 +36,9 @@
   "Config_EnableStorageProtection": "保管用アイテムを無視する",
   "Config_EnableStorageProtection_Tooltip": "自身の保管用アイテムの自動化を防ぎ、異常に高額な価格を設定している競合他社を無視します。",
   "Config_StorageProtectionThreshold": "保管価格のしきい値 (ギル)",
-  "Config_StorageProtectionThreshold_Tooltip": "この価格以上の出品（自身または競合）は、アルゴリズムによって完全に無視されます。"
+  "Config_StorageProtectionThreshold_Tooltip": "この価格以上の出品（自身または競合）は、アルゴリズムによって完全に無視されます。",
+  "Override_OutlierMultiplier": "外れ値の倍率を上書きする",
+  "OverrideValue_OutlierMultiplier": "倍率",
+  "Override_OutlierFloor": "最小下限を上書きする",
+  "OverrideValue_OutlierFloor": "下限 (ギル)"
 }

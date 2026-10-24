@@ -36,5 +36,9 @@
   "Config_EnableStorageProtection": "Ignorer les objets de stockage",
   "Config_EnableStorageProtection_Tooltip": "Empêche l'automatisation de vos propres objets de stockage et ignore les concurrents aux prix absurdement élevés.",
   "Config_StorageProtectionThreshold": "Seuil de prix de stockage (Gils)",
-  "Config_StorageProtectionThreshold_Tooltip": "Toute vente (la vôtre ou concurrente) atteignant ou dépassant ce prix sera totalement ignorée par l'algorithme."
+  "Config_StorageProtectionThreshold_Tooltip": "Toute vente (la vôtre ou concurrente) atteignant ou dépassant ce prix sera totalement ignorée par l'algorithme.",
+  "Override_OutlierMultiplier": "Surcharger le multiplicateur d'aberration",
+  "OverrideValue_OutlierMultiplier": "Multiplicateur",
+  "Override_OutlierFloor": "Surcharger le plancher minimum",
+  "OverrideValue_OutlierFloor": "Plancher (Gils)"
 }
