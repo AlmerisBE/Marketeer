@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Marketeer.Core.MarketWatch.Contracts;
 using Marketeer.Core.MarketWatch.Models;
 using Marketeer.UI.Localization.Contracts;
@@ -15,6 +16,8 @@ public class MarketWatchAlertsMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_MarketWatch") ?? "Market Watch";
     public string Name => this.localization.Translate("Menu_Opportunities") ?? "Opportunities";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Binoculars;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.SearchDollar;
     public int Priority => 51;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

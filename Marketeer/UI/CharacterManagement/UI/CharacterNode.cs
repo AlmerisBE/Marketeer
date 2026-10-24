@@ -1,4 +1,5 @@
-﻿using Marketeer.API.GameData.Contracts;
+﻿using Dalamud.Interface;
+using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
@@ -19,8 +20,10 @@ public class CharacterNode : INavigationNode {
     private IMarketListingTrackerService marketListingTrackerService;
 
     public string GroupName => string.Empty;
+    public FontAwesomeIcon? GroupIcon => null;
     // Appending the world name ensures ImGui generates a unique Hash ID even if character names are identical across DCs
     public string Name => $"{this.Character.Name} ({this.worldDataPresenter.GetWorldName(this.Character.HomeWorldId)})";
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.UserAlt;
     public int Priority => 0;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

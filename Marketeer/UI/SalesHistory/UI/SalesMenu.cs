@@ -1,5 +1,6 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Bindings.ImPlot;
+using Dalamud.Interface;
 using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.SalesHistory.Contracts;
@@ -28,6 +29,8 @@ public class SalesMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_History") ?? "Analysis & History";
     public string Name => this.localization.Translate("Menu_SalesHistory") ?? "Sales History";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.ChartLine;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.History;
     public int Priority => 30;
 
     public bool HasContent => true;

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Plugin;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
@@ -13,6 +14,8 @@ public class WelcomeMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_General");
     public string Name => this.localization.Translate("Dashboard_WelcomeTab");
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Globe;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Home;
     public int Priority => 0;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

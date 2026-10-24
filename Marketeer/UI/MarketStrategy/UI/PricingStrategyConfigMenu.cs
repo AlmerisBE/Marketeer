@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.UI.Localization.Contracts;
@@ -22,6 +23,8 @@ public class PricingStrategyConfigMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Configuration") ?? "Configuration";
     public string Name => this.localizationService.Translate("Config_Competition_TabName") ?? "Pricing Strategy";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Cogs;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Gavel;
     public int Priority => 100;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

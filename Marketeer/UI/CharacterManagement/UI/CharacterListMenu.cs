@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.CharacterManagement.Models;
@@ -25,6 +26,8 @@ public class CharacterListMenu : INavigationNode {
 
     public string GroupName => string.Empty;
     public string Name => this.localizationService.Translate("CharacterList_TabName");
+    public FontAwesomeIcon? GroupIcon => null;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.BoxOpen;
     public int Priority => 10;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

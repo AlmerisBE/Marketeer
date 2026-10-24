@@ -1,4 +1,5 @@
-﻿using Marketeer.Core.CharacterManagement.Models;
+﻿using Dalamud.Interface;
+using Marketeer.Core.CharacterManagement.Models;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.UI.Shell.Contracts;
 using System.Collections.Generic;
@@ -11,6 +12,8 @@ public class RetainerNode : INavigationNode {
 
     public string GroupName => string.Empty;
     public string Name => this.Retainer.Name;
+    public FontAwesomeIcon? GroupIcon => null;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Sync;
     public int Priority => 0;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

@@ -29,6 +29,8 @@ public class CraftingProfitMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_Crafting");
     public string Name => this.localization.Translate("CraftingProfit_TabName");
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Tools;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Calculator;
     public int Priority => 60;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

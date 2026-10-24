@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Marketeer.Core.MarketListings.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
@@ -13,6 +14,8 @@ public class VendorAlertsMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_ActiveSales") ?? "Sales & Competition";
     public string Name => this.localization.Translate("Menu_VendorAlerts") ?? "Price Alerts";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Store;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Bell;
     public int Priority => 25;
 
     public bool HasContent => true;

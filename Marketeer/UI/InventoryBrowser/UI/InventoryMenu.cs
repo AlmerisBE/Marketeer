@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.Configuration.Contracts;
@@ -18,7 +19,9 @@ public class InventoryMenu : INavigationNode {
     private ITextureProvider textureProvider;
 
     public string GroupName => this.localization.Translate("CharacterList_TabName");
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Users;
     public string Name => this.localization.Translate("InventoryTab_Title");
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.BoxOpen;
     public int Priority => 50;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

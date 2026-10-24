@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Marketeer.Core.CompetitionTracking.Contracts;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.MarketStrategy.Models;
@@ -17,6 +18,8 @@ public class CompetitionWhitelistMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Configuration") ?? "Configuration";
     public string Name => this.localizationService.Translate("Menu_CompetitionWhitelist") ?? "Whitelist";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Cogs;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.ShieldAlt;
     public int Priority => 102;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

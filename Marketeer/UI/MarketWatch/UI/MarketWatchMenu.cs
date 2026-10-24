@@ -25,6 +25,8 @@ public class MarketWatchMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_MarketWatch") ?? "Market Watch";
     public string Name => this.localization.Translate("Menu_Watchlist") ?? "Watchlist";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Binoculars;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Star;
     public int Priority => 50;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

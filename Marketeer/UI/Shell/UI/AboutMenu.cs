@@ -14,6 +14,8 @@ public class AboutMenu : INavigationNode {
 
     public string GroupName => this.localization.Translate("Group_General");
     public string Name => this.localization.Translate("About_TabName");
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Globe;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.InfoCircle;
     public int Priority => 5;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

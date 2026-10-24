@@ -17,6 +17,8 @@ public class CompetitionMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_ActiveSales") ?? "Sales & Competition";
     public string Name => this.localizationService.Translate("Menu_Competition") ?? "Competition";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Store;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.BalanceScale;
     public int Priority => 20;
 
     public bool HasContent => true;

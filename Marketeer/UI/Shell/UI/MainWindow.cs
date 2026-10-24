@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Marketeer.UI.Shell.Contracts;
@@ -79,6 +80,10 @@ public class MainWindow : Window {
     private void DrawSidebar() {
         var groupedNodes = this.nodes.GroupBy(n => n.GroupName);
 
+        // Augmente l'espacement vertical des éléments du menu de 4 pixels pour laisser respirer l'interface
+        var currentSpacing = ImGui.GetStyle().ItemSpacing;
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(currentSpacing.X, currentSpacing.Y + 4f));
+
         foreach (var group in groupedNodes) {
             if (string.IsNullOrEmpty(group.Key)) {
                 foreach (var node in group) {
@@ -91,13 +96,19 @@ public class MainWindow : Window {
 
                 if (isGroupActive) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
-                if (ImGui.TreeNodeEx(group.Key, flags)) {
+                // Récupère l'icône de groupe définie par au moins l'un des nœuds enfants
+                var groupIcon = group.FirstOrDefault(n => n.GroupIcon.HasValue)?.GroupIcon;
+                string groupDisplayName = groupIcon.HasValue ? $"{groupIcon.Value.ToIconString()}   {group.Key}" : group.Key;
+
+                if (ImGui.TreeNodeEx(groupDisplayName, flags)) {
                     foreach (var node in group) {
                         this.DrawNodeTree(node);
                     }
                 }
             }
         }
+
+        ImGui.PopStyleVar();
     }
 
     private bool IsNodeActiveOrContainsActive(INavigationNode node) {
@@ -114,6 +125,8 @@ public class MainWindow : Window {
         var children = node.GetChildren().ToList();
         bool hasChildren = children.Count > 0;
 
+        string displayName = node.Icon.HasValue ? $"{node.Icon.Value.ToIconString()}   {node.Name}" : node.Name;
+
         if (hasChildren) {
             var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick;
             bool isActiveHierarchy = this.IsNodeActiveOrContainsActive(node);
@@ -121,7 +134,7 @@ public class MainWindow : Window {
             if (node.DefaultExpanded || isActiveHierarchy) flags |= ImGuiTreeNodeFlags.DefaultOpen;
             if (this.navigationService.CurrentNode == node) flags |= ImGuiTreeNodeFlags.Selected;
 
-            bool isOpen = ImGui.TreeNodeEx(node.Name, flags);
+            bool isOpen = ImGui.TreeNodeEx(displayName, flags);
 
             if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) this.navigationService.NavigateTo(node);
 
@@ -134,7 +147,7 @@ public class MainWindow : Window {
         }
         else {
             bool isSelected = this.navigationService.CurrentNode == node;
-            if (ImGui.Selectable(node.Name, isSelected)) this.navigationService.NavigateTo(node);
+            if (ImGui.Selectable(displayName, isSelected)) this.navigationService.NavigateTo(node);
         }
     }
 

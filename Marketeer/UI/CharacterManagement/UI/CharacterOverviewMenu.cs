@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Marketeer.API.GameData.Contracts;
 using Marketeer.Core.CharacterManagement.Contracts;
 using Marketeer.Core.MarketListings.Contracts;
@@ -23,7 +24,9 @@ public class CharacterOverviewMenu : INavigationNode {
     private InventoryView inventoryView;
 
     public string GroupName => this.localizationService.Translate("Group_Characters");
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Users;
     public string Name => this.localizationService.Translate("CharacterOverview_TabName");
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.AddressCard;
     public int Priority => 10;
     public bool HasContent => true;
     public bool DefaultExpanded => true;

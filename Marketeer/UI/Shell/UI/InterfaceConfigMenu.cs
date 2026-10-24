@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.UI.Localization.Contracts;
@@ -20,6 +21,8 @@ public class InterfaceConfigMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Configuration") ?? "Configuration";
     public string Name => this.localizationService.Translate("Menu_InterfaceConfig") ?? "Interface & Shortcuts";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Cogs;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Keyboard;
     public int Priority => 104;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

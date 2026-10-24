@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Components;
@@ -18,6 +19,8 @@ public class SystemConfigMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_Configuration") ?? "Configuration";
     public string Name => this.localizationService.Translate("Menu_SystemConfig") ?? "Automation & System";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.Cogs;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.Robot;
     public int Priority => 105;
     public bool HasContent => true;
     public bool DefaultExpanded => false;

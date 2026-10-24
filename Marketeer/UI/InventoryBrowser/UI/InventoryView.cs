@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Marketeer.Core.Configuration.Contracts;
 using Marketeer.Core.SalesHistory.Contracts;
@@ -26,6 +27,8 @@ public class InventoryView : INavigationNode {
     public string Name => this.isRetainerMode
         ? this.localization.Translate("InventoryTab_RetainerInventory", this.targetRetainerName)
         : this.localization.Translate("InventoryTab_PlayerInventory", this.targetCharacterName);
+    public FontAwesomeIcon? GroupIcon => null;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.BoxOpen;
 
     public int Priority => 0;
     public bool HasContent => true;

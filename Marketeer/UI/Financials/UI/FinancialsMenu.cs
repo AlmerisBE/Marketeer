@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Marketeer.Core.Financials.Contracts;
 using Marketeer.UI.Localization.Contracts;
 using Marketeer.UI.Shell.Contracts;
@@ -13,6 +14,8 @@ public class FinancialsMenu : INavigationNode {
 
     public string GroupName => this.localizationService.Translate("Group_History") ?? "Analysis & History";
     public string Name => this.localizationService.Translate("Menu_Financials") ?? "Financial Overview";
+    public FontAwesomeIcon? GroupIcon => FontAwesomeIcon.ChartLine;
+    public FontAwesomeIcon? Icon => FontAwesomeIcon.FileInvoiceDollar;
     public int Priority => 35;
 
     public bool HasContent => true;
