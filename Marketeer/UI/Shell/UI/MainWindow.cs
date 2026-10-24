@@ -82,8 +82,12 @@ public class MainWindow : Window {
     private void DrawSidebar() {
         var groupedNodes = this.nodes.GroupBy(n => n.GroupName);
 
+        // Enhance both internal highlight height (FramePadding) and external margins (ItemSpacing)
+        var currentFramePadding = ImGui.GetStyle().FramePadding;
         var currentSpacing = ImGui.GetStyle().ItemSpacing;
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(currentSpacing.X, currentSpacing.Y + 6f));
+
+        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(currentFramePadding.X, currentFramePadding.Y + 2f));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(currentSpacing.X, currentSpacing.Y + 2f));
 
         foreach (var group in groupedNodes) {
             if (string.IsNullOrEmpty(group.Key)) {
@@ -93,7 +97,9 @@ public class MainWindow : Window {
             }
             else {
                 bool isGroupActive = group.Any(n => this.IsNodeActiveOrContainsActive(n));
-                var flags = ImGuiTreeNodeFlags.CollapsingHeader | ImGuiTreeNodeFlags.AllowItemOverlap;
+
+                // Added SpanFullWidth to guarantee the entire row is clickable despite the hidden label
+                var flags = ImGuiTreeNodeFlags.CollapsingHeader | ImGuiTreeNodeFlags.AllowItemOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
 
                 if (isGroupActive) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
@@ -102,7 +108,6 @@ public class MainWindow : Window {
 
                 var groupIcon = group.FirstOrDefault(n => n.GroupIcon.HasValue)?.GroupIcon;
                 if (groupIcon.HasValue) {
-                    // Fix: On utilise l'accès statique défini par la nouvelle API de Dalamud
                     ImGui.PushFont(UiBuilder.IconFont);
                     ImGui.TextUnformatted(groupIcon.Value.ToIconString());
                     ImGui.PopFont();
@@ -118,7 +123,7 @@ public class MainWindow : Window {
             }
         }
 
-        ImGui.PopStyleVar();
+        ImGui.PopStyleVar(2);
     }
 
     private bool IsNodeActiveOrContainsActive(INavigationNode node) {
@@ -135,7 +140,8 @@ public class MainWindow : Window {
         var children = node.GetChildren().ToList();
         bool hasChildren = children.Count > 0;
 
-        var flags = ImGuiTreeNodeFlags.AllowItemOverlap;
+        // Added SpanFullWidth to extend the clickable hitbox to the end of the column
+        var flags = ImGuiTreeNodeFlags.AllowItemOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
 
         if (hasChildren) {
             flags |= ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick;
@@ -149,13 +155,13 @@ public class MainWindow : Window {
 
         bool isOpen = ImGui.TreeNodeEx($"##{node.Name}", flags);
 
+        // Since the node spans the full width, clicks on the overlapping text will correctly trigger this check
         if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) {
             this.navigationService.NavigateTo(node);
         }
 
         ImGui.SameLine();
         if (node.Icon.HasValue) {
-            // Fix: On utilise l'accès statique défini par la nouvelle API de Dalamud
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.TextUnformatted(node.Icon.Value.ToIconString());
             ImGui.PopFont();
